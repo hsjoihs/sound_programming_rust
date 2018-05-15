@@ -73,7 +73,7 @@ extern {
 	pub fn wave_read_8bit_stereo(pcm: *mut STEREO_PCM, file_name: *const c_char);
 	pub fn wave_write_8bit_stereo(pcm: *mut STEREO_PCM, file_name: *const c_char);
 
-	pub fn wave_read_16bit_mono(pcm: *mut MONO_PCM, file_name: *const c_char);
+	/*pub*/ fn wave_read_16bit_mono(pcm: *mut MONO_PCM, file_name: *const c_char);
 	pub fn wave_write_16bit_mono(pcm: *mut MONO_PCM, file_name: *const c_char);
 	pub fn wave_read_16bit_stereo(pcm: *mut STEREO_PCM, file_name: *const c_char);
 	pub fn wave_write_16bit_stereo(pcm: *mut STEREO_PCM, file_name: *const c_char);
