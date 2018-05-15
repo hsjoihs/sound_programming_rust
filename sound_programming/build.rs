@@ -5,9 +5,6 @@ fn main() {
         .file("src/adsr.c")
         .compile("libadsr.a");
     cc::Build::new()
-        .file("src/fft.c")
-        .compile("libfft.a");
-    cc::Build::new()
         .file("src/fir_filter.c")
         .compile("libfir_filter.a");
     cc::Build::new()

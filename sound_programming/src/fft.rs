@@ -1,13 +1,6 @@
 use std::f64::consts::PI;
 use libc::c_double;
-use libc::c_int;
-
-#[link(name = "fft")]
-extern {
-	//pub fn FFT(x_real: *mut c_double, x_imag: *mut c_double, N: c_int);
-	pub fn IFFT(x_real: *mut c_double, x_imag: *mut c_double, N: c_int);
-}
-
+//use libc::c_int;
 
 fn log2_(x : usize) -> usize {/* y = log2(x) */
   let mut y = 0;
