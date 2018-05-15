@@ -1,6 +1,8 @@
 extern crate sound_programming;
 extern crate rand;
 //use std::io::Write;
+use sound_programming::FIR_filtering;
+use sound_programming::FIR_LPF;
 use sound_programming::safe_ADSR;
 use sound_programming::wave_write_16bit_stereo_safer2;
 use sound_programming::wave_write_16bit_mono_safer2;
@@ -36,6 +38,7 @@ fn main() {
 	ex5_3();
 	ex5_4();
 	ex5_5();
+	ex6_1();
 	ex6_4();
 	ex10_4();
 	assert_eq!(sinc(2.1),2.1f64.sin()/2.1 );
@@ -583,6 +586,32 @@ fn ex5_5(){
   	wave_write_16bit_mono_safer2("ex5_5.wav", (&mut pcm_s, pcm_fs as i32, pcm_bits, pcm_length as i32));
 }
 
+#[allow(non_snake_case, unused_variables)]
+fn ex6_1(){
+	let (pcm0_s, pcm0_fs, pcm0_bits, pcm0_length) = wave_read_16bit_mono_safer2("sine_500hz_3500hz.wav");
+    let pcm1_fs = pcm0_fs; /* 標本化周波数 */
+    let pcm1_bits = pcm0_bits; /* 量子化精度 */
+    let pcm1_length = pcm0_length; /* 音データの長さ */
+    let mut pcm1_s = vec![0.0; pcm1_length as usize]; /* 音データ */	
+
+    let fe = 1000.0 / pcm0_fs as f64; /* エッジ周波数 */
+    let delta = 1000.0 / pcm0_fs as f64; /* 遷移帯域幅 */
+
+    let mut J = (3.1 / delta + 0.5) as usize - 1; /* 遅延器の数 */
+    if J % 2 == 1 {
+	    J+=1; /* J+1が奇数になるように調整する */
+	}
+
+	let mut b = vec![0.0; J + 1];
+	let mut w = vec![0.0; J + 1];
+	safe_Hanning_window(&mut w); /* ハニング窓 */
+unsafe{
+	FIR_LPF(fe, J as i32, b.as_mut_ptr(), w.as_mut_ptr()); /* FIRフィルタの設計 */
+
+	FIR_filtering(pcm0_s.as_ptr(), pcm1_s.as_mut_ptr(), pcm1_length as i32, b.as_mut_ptr(), J as i32)
+}
+  	wave_write_16bit_mono_safer2("ex6_1.wav", (&mut pcm1_s, pcm1_fs, pcm1_bits, pcm1_length));
+}
 
 #[allow(non_snake_case)]
 fn ex6_4(){

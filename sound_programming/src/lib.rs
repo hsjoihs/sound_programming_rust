@@ -45,7 +45,7 @@ extern {
 	pub fn FIR_HPF(fe: c_double, J: c_int, b: *mut c_double, w: *mut c_double);
 	pub fn FIR_BPF(fe1: c_double, fe2: c_double, J: c_int, b: *mut c_double, w: *mut c_double);
 	pub fn FIR_BEF(fe1: c_double, fe2: c_double, J: c_int, b: *mut c_double, w: *mut c_double);
-	pub fn FIR_filtering(x: *mut c_double, y: *mut c_double, L: c_int, b: *mut c_double, J: c_int);
+	pub fn FIR_filtering(x: *const c_double, y: *mut c_double, L: c_int, b: *mut c_double, J: c_int);
 }
 
 #[link(name = "iir_filter")]

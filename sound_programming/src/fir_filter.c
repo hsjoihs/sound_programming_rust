@@ -90,7 +90,7 @@ void FIR_BEF(double fe1, double fe2, int J, double b[], double w[])
   }
 }
 
-void FIR_filtering(double x[], double y[], int L, double b[], int J)
+void FIR_filtering(const double x[], double y[], int L, double b[], int J)
 {
   int n, m;
   
