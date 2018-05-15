@@ -1,4 +1,6 @@
 extern crate sound_programming;
+use std::slice::from_raw_parts_mut;
+use sound_programming::c_int;
 use sound_programming::wave_write_16bit_mono;
 use std::f64::consts::PI;
 use sound_programming::c_double;
@@ -15,8 +17,8 @@ fn main() {
 
 fn ex2_1(){
 
-	let pcm_fs : usize = 44100;
-	let pcm_length : usize = pcm_fs * 1;
+	let pcm_fs : usize = 44100; /* 標本化周波数 */
+	let pcm_length : usize = pcm_fs * 1; /* 音データの長さ */
 	let mut pcm_s : Vec<c_double> = vec![0.0  ; pcm_length];
 	
 	
@@ -69,10 +71,57 @@ int main(void)
 }
 */
 
+
+
+unsafe fn sine_wave(pcm : *mut MONO_PCM, f0: c_double, a: c_double, offset: c_int, duration: c_int) {
+	let mut s : Vec<c_double> = vec![0.0; duration as usize];
+
+	/* サイン波 */
+	for n in 0..duration {
+		s[n as usize] = a * (2.0 * PI * f0 * (n as f64) / ((*pcm).fs as f64)).sin();
+	}
+
+	/* フェード処理 */
+	for n in 0..((*pcm).fs as f64*0.01).ceil() as usize {
+		s[n] *= n as c_double / ((*pcm).fs as f64 * 0.01);
+    	s[duration as usize - n - 1] *= n as c_double / ((*pcm).fs as f64 * 0.01);
+	}
+
+	for n in 0..duration as usize {
+		let mut slice = from_raw_parts_mut((*pcm).s, (*pcm).length as usize);
+		slice[offset as usize + n] += s[n];
+	}
+}
 fn ex2_2(){
-unsafe {
+	let pcm_fs : usize = 44100; /* 標本化周波数 */
+	let pcm_length : usize = pcm_fs * 2; /* 音データの長さ */
+	let mut pcm_s : Vec<c_double> = vec![0.0  ; pcm_length];
+
+	let mut pcm : MONO_PCM = MONO_PCM{ 
+		fs : pcm_fs as i32, /* 標本化周波数 */
+		bits : 16, /* 量子化精度 */
+		length : pcm_length as i32, /* 音データの長さ */
+		s: pcm_s.as_mut_ptr()
+	};
+unsafe{
+  sine_wave(&mut pcm, 261.63, 0.1, itdyi(pcm.fs, 0.00), itdyi(pcm.fs, 0.25)); /* C4 */
+  sine_wave(&mut pcm, 293.66, 0.1, itdyi(pcm.fs, 0.25), itdyi(pcm.fs, 0.25)); /* D4 */
+  sine_wave(&mut pcm, 329.63, 0.1, itdyi(pcm.fs, 0.50), itdyi(pcm.fs, 0.25)); /* E4 */
+  sine_wave(&mut pcm, 349.23, 0.1, itdyi(pcm.fs, 0.75), itdyi(pcm.fs, 0.25)); /* F4 */
+  sine_wave(&mut pcm, 392.00, 0.1, itdyi(pcm.fs, 1.00), itdyi(pcm.fs, 0.25)); /* G4 */
+  sine_wave(&mut pcm, 440.00, 0.1, itdyi(pcm.fs, 1.25), itdyi(pcm.fs, 0.25)); /* A4 */
+  sine_wave(&mut pcm, 493.88, 0.1, itdyi(pcm.fs, 1.50), itdyi(pcm.fs, 0.25)); /* B4 */
+  sine_wave(&mut pcm, 523.25, 0.1, itdyi(pcm.fs, 1.75), itdyi(pcm.fs, 0.25)); /* C5 */
+  
+  
+	wave_write_16bit_mono(&mut pcm, "ex2_2.wav".as_ptr() as *const i8);
+  }
 
 }
+
+// int_times_double_yielding_int
+fn itdyi (i : c_int, d: c_double) -> c_int {
+	((i as c_double) * d) as c_int
 }
 
 // ex2_2.c:
