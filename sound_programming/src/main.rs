@@ -87,16 +87,16 @@ fn ex1_2(){
 		wave_read_16bit_stereo(&mut pcm0, to_c_str("ex1_2_a.wav")); /* 音データの入力 */
 
 
-		let mut pcm1_sL : Vec<c_double> = vec![0.0  ; pcm0.length as usize];
-		let mut pcm1_sR : Vec<c_double> = vec![0.0  ; pcm0.length as usize];
-
 		let pcm0_sliceL = from_raw_parts(pcm0.sL, pcm0.length as usize);
 		let pcm0_sliceR = from_raw_parts(pcm0.sR, pcm0.length as usize);
-		
-		for n in 0..pcm0.length as usize {
-		    pcm1_sL[n] = pcm0_sliceL[n]; /* 音データ（左） のコピー */
-		    pcm1_sR[n] = pcm0_sliceR[n]; /* 音データ（右）のコピー */
-		}
+
+		let mut pcm1_sL : Vec<c_double> = (0..pcm0.length)
+		 .map(|n| pcm0_sliceL[n as usize])
+		 .collect();
+
+		let mut pcm1_sR : Vec<c_double> = (0..pcm0.length)
+		 .map(|n| pcm0_sliceR[n as usize])
+		 .collect();
 		
 		let mut pcm1 : STEREO_PCM = STEREO_PCM {
 			fs: pcm0.fs,
