@@ -14,6 +14,13 @@ extern {
     pub fn ADSR(e: *mut c_double, A: c_int, D: c_int, S: c_double, R: c_int, gate: c_int, duration: c_int);
 }
 
+#[allow(non_snake_case)]
+pub fn safe_ADSR(e: &mut [c_double], A: usize, D: usize, S: c_double, R: usize, gate: usize, duration: usize){
+	unsafe{
+		ADSR(e.as_mut_ptr(), A as i32, D as i32, S, R as i32, gate as i32, duration as i32);
+	}
+}
+
 
 #[link(name = "fir_filter")]
 extern {

@@ -1,6 +1,7 @@
 extern crate sound_programming;
 extern crate rand;
 //use std::io::Write;
+use sound_programming::safe_ADSR;
 use sound_programming::ADSR;
 use sound_programming::wave_write_16bit_stereo_safer2;
 use sound_programming::wave_write_16bit_mono_safer2;
@@ -448,9 +449,8 @@ fn ex10_4(){
 	let D = pcm_fs * 4;
 	let S = 0.0;
 	let R = pcm_fs * 4;
-unsafe{
-    ADSR(ac.as_mut_ptr(), A, D as i32, S, R as i32, gate as i32, duration as i32);
-}
+    safe_ADSR(&mut ac, A, D, S, R, gate, duration);
+
 	let fc = 440.0; /* キャリア周波数 */
   
     /* モジュレータ振幅 */
@@ -460,9 +460,7 @@ unsafe{
     let D = pcm_fs * 2;
     let S = 0.0;
     let R = pcm_fs * 2;
-unsafe{
-    ADSR(am.as_mut_ptr(), A, D as i32, S, R as i32, gate as i32, duration as i32);
-}
+    safe_ADSR(&mut am, A, D, S, R, gate, duration);
 
 	let ratio = 3.5;
 	let fm = fc * ratio; /* モジュレータ周波数 */
