@@ -44,6 +44,7 @@ fn main() {
 	ex6_2();
 	ex6_3();
 	ex6_4();
+	ex6_5();
 	ex10_4();
 	assert_eq!(sinc(2.1),2.1f64.sin()/2.1 );
 }
@@ -641,7 +642,7 @@ unsafe{
 	
 }
 
-#[allow(non_snake_case, unused_variables)]
+#[allow(non_snake_case)]
 fn ex6_3(){
 	let (pcm0_s, pcm0_fs, pcm0_bits, pcm0_length) = wave_read_16bit_mono_safer2("sine_500hz_3500hz.wav");
     let pcm1_fs = pcm0_fs; /* 標本化周波数 */
@@ -774,6 +775,33 @@ fn ex6_4(){
 	wave_write_16bit_mono_safer2("ex6_4.wav", (&mut pcm1_s, pcm0_fs, pcm0_bits, pcm0_length));
 }
 
+#[allow(non_snake_case, unused_variables)]
+fn ex6_5(){
+	let (pcm0_s, pcm0_fs, pcm0_bits, pcm0_length) = wave_read_16bit_mono_safer2("drum.wav");
+	let (pcm1_s, pcm1_fs, pcm1_bits, pcm1_length) = wave_read_16bit_mono_safer2("response.wav");
+	
+	let pcm2_fs = pcm0_fs;	/* 標本化周波数 */
+	let pcm2_bits = pcm0_bits;	/* 量子化精度 */
+	let pcm2_length = pcm0_length;	/* 音データの長さ */
+
+	let J = pcm1_fs; /* 遅延器の数 */
+
+	/* フィルタリング */
+	let mut pcm2_s : Vec<c_double> = (0..pcm2_length as usize).map(|n| {
+		let mut a = 0.0;
+    	for m in 0..=J as usize{
+      		if n >= m {
+        		a += pcm1_s[m] * pcm0_s[n - m];
+      		}
+    	}
+    	if n % 1000 == 0 {
+    		println!("{} / {}", n, pcm2_length);
+    	}
+    	a
+    }).collect();
+
+  	wave_write_16bit_mono_safer2("ex6_5.wav", (&mut pcm2_s, pcm2_fs, pcm2_bits, pcm2_length)); 
+}
 
 #[allow(non_snake_case, unused_variables)]
 fn ex10_4(){
