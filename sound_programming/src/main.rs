@@ -1,4 +1,5 @@
 extern crate sound_programming;
+use sound_programming::wave_read_16bit_mono;
 use std::slice::from_raw_parts_mut;
 use sound_programming::c_int;
 use sound_programming::wave_write_16bit_mono;
@@ -6,7 +7,10 @@ use std::f64::consts::PI;
 use sound_programming::c_double;
 use sound_programming::MONO_PCM;
 use sound_programming::sinc;
+use std::mem;
+use std::ffi::CString;
 fn main() {
+	ex1_1();
 	ex2_1();
 	ex2_2();
 	unsafe{
@@ -14,6 +18,66 @@ fn main() {
     }
 }
 
+fn to_c_str(a: &str) -> *mut i8 {
+	CString::new(a).unwrap().into_raw()
+}
+
+#[allow(unused_variables, unused_mut)]
+fn ex1_1(){
+
+	unsafe{
+		let mut pcm0 : MONO_PCM = mem::uninitialized();
+
+		wave_read_16bit_mono(&mut pcm0, to_c_str("ex1_1_a.wav"));  /* 音データの入力 */
+	
+
+		let mut pcm1_s : Vec<c_double> = vec![0.0  ; pcm0.length as usize];
+		
+
+		let mut pcm0_slice = from_raw_parts_mut(pcm0.s, pcm0.length as usize);
+
+		for n in 0..pcm0.length as usize {
+			pcm1_s[n] = pcm0_slice[n]; /* 音データのコピー */
+		}
+
+		let mut pcm1 : MONO_PCM = MONO_PCM{
+			fs : pcm0.fs, /* 標本化周波数 */
+			bits : pcm0.bits, /* 量子化精度 */
+			length : pcm0.length, /* 音データの長さ */
+			s : pcm1_s.as_mut_ptr()  /* 音データ */
+		};
+		wave_write_16bit_mono(&mut pcm1, to_c_str("ex1_1_b.wav")); /* 音データの出力 */
+	}	
+
+}
+// ex1_1.c:
+/*
+int main(void)
+{
+  MONO_PCM pcm0, pcm1;
+  int n;
+  
+  wave_read_16bit_mono(&pcm0, "a.wav");
+  
+  pcm1.fs = pcm0.fs; 
+  pcm1.bits = pcm0.bits; /* 量子化精度 */
+  pcm1.length = pcm0.length; /* 音データの長さ */
+  pcm1.s = calloc(pcm1.length, sizeof(double)); /* 音データ */
+  
+  for (n = 0; n < pcm1.length; n++)
+  {
+    pcm1.s[n] = pcm0.s[n]; /* 音データのコピー */
+  }
+  
+  wave_write_16bit_mono(&pcm1, "b.wav"); /* 音データの出力 */
+  
+  free(pcm0.s);
+  free(pcm1.s);
+  
+  return 0;
+}
+
+*/
 
 fn ex2_1(){
 
@@ -37,7 +101,7 @@ fn ex2_1(){
 		s: pcm_s.as_mut_ptr()
 	};
 	unsafe {
-		wave_write_16bit_mono(&mut pcm, "ex2_1.wav".as_ptr() as *const i8);
+		wave_write_16bit_mono(&mut pcm, to_c_str("ex2_1.wav"));
 	} 	
 }
 
@@ -114,7 +178,7 @@ unsafe{
   sine_wave(&mut pcm, 523.25, 0.1, itdyi(pcm.fs, 1.75), itdyi(pcm.fs, 0.25)); /* C5 */
   
   
-	wave_write_16bit_mono(&mut pcm, "ex2_2.wav".as_ptr() as *const i8);
+	wave_write_16bit_mono(&mut pcm, to_c_str("ex2_2.wav"));
   }
 
 }
