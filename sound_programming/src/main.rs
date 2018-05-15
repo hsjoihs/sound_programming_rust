@@ -42,6 +42,7 @@ fn main() {
 	ex5_5();
 	ex6_1();
 	ex6_2();
+	ex6_3();
 	ex6_4();
 	ex10_4();
 	assert_eq!(sinc(2.1),2.1f64.sin()/2.1 );
@@ -616,7 +617,7 @@ unsafe{
   	wave_write_16bit_mono_safer2("ex6_1.wav", (&mut pcm1_s, pcm1_fs, pcm1_bits, pcm1_length));
 }
 
-#[allow(non_snake_case, unused_variables)]
+#[allow(non_snake_case)]
 fn ex6_2(){
 	let (pcm0_s, pcm0_fs, pcm0_bits, pcm0_length) = wave_read_16bit_mono_safer2("sine_500hz_3500hz.wav");
     let pcm1_fs = pcm0_fs; /* 標本化周波数 */
@@ -638,6 +639,78 @@ unsafe{
 
   	wave_write_16bit_mono_safer2("ex6_2.wav",(&mut pcm1_s, pcm1_fs, pcm1_bits, pcm1_length));
 	
+}
+
+#[allow(non_snake_case, unused_variables)]
+fn ex6_3(){
+	let (pcm0_s, pcm0_fs, pcm0_bits, pcm0_length) = wave_read_16bit_mono_safer2("sine_500hz_3500hz.wav");
+    let pcm1_fs = pcm0_fs; /* 標本化周波数 */
+    let pcm1_bits = pcm0_bits; /* 量子化精度 */
+    let pcm1_length = pcm0_length; /* 音データの長さ */
+    let mut pcm1_s = vec![0.0; pcm1_length as usize]; /* 音データ */	   
+    let fe = 1000.0 / pcm0_fs as f64; /* エッジ周波数 */
+    let delta = 1000.0 / pcm0_fs as f64; /* 遷移帯域幅 */  
+
+    let mut J = (3.1 / delta + 0.5) as usize - 1; /* 遅延器の数 */
+    if J % 2 == 1 {
+	    J+=1; /* J+1が奇数になるように調整する */
+	} 
+
+	let mut b = vec![0.0; J + 1];
+	let mut w = vec![0.0; J + 1]; 
+	safe_Hanning_window(&mut w); /* ハニング窓 */
+unsafe{
+	FIR_LPF(fe, J as i32, b.as_mut_ptr(), w.as_mut_ptr()); /* FIRフィルタの設計 */
+}
+  	let L : usize = 128; /* フレームの長さ */
+  	let N = 256; /* DFTのサイズ */
+	
+  	let mut x_real = vec![0.0; N];
+  	let mut x_imag = vec![0.0; N];
+  	let mut y_real = vec![0.0; N];
+  	let mut y_imag = vec![0.0; N];
+  	let mut b_real = vec![0.0; N];
+  	let mut b_imag = vec![0.0; N];
+  	
+  	let number_of_frame = pcm0_length as usize / L; /* フレームの数 */
+  	for frame in 0..number_of_frame{
+  		let offset = (L * frame) as usize;
+  		/* X(k) */
+  		for n in 0..N {
+  			x_real[n] = 0.0;
+  			x_imag[n] = 0.0;
+  		}
+  		for n in 0..L {
+  			x_real[n] = pcm0_s[offset + n];
+  		}
+  		safe_FFT(&mut x_real, &mut x_imag);
+
+  		/* B(k) */
+  		for m in 0..N {
+  			b_real[m] = 0.0;
+  			b_imag[m] = 0.0;
+  		}
+  		for m in 0..=J {
+  			b_real[m] = b[m];
+  		}
+  		safe_FFT(&mut b_real, &mut b_imag);
+
+  		/* フィルタリング */
+  		for k in 0..N {
+  			y_real[k] = x_real[k] * b_real[k] - x_imag[k] * b_imag[k];
+      		y_imag[k] = x_imag[k] * b_real[k] + x_real[k] * b_imag[k];
+  		}
+  		safe_IFFT(&mut y_real, &mut y_imag);
+
+  		/* オーバーラップアド */
+  		for n in 0..(L*2) {
+  			if offset + n < pcm1_length as usize
+      		{
+        		pcm1_s[offset + n] += y_real[n];
+      		}
+  		}	
+  	}
+  wave_write_16bit_mono_safer2("ex6_3.wav", (&mut pcm1_s, pcm1_fs, pcm1_bits, pcm1_length)); 
 }
 
 #[allow(non_snake_case)]
