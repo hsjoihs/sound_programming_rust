@@ -4,17 +4,13 @@ use std::f64::consts::PI;
 pub use libc::c_char;
 pub use libc::c_int;
 pub use libc::c_double;
+pub mod fft;
 
 #[link(name = "adsr")]
 extern {
     pub fn ADSR(e: *mut c_double, A: c_int, D: c_int, S: c_double, R: c_int, gate: c_int, duration: c_int);
 }
 
-#[link(name = "fft")]
-extern {
-	pub fn FFT(x_real: *mut c_double, x_imag: *mut c_double, N: c_int);
-	pub fn IFFT(x_real: *mut c_double, x_imag: *mut c_double, N: c_int);
-}
 
 #[link(name = "fir_filter")]
 extern {

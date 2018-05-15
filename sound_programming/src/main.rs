@@ -1,8 +1,8 @@
 extern crate sound_programming;
 extern crate rand;
 //use std::io::Write;
+use sound_programming::fft::safe_FFT;
 use sound_programming::safe_Hanning_window;
-use sound_programming::FFT;
 use std::slice::from_raw_parts;
 use std::slice::from_raw_parts_mut;
 use std::f64::consts::PI;
@@ -878,7 +878,7 @@ fn ex4_3(){
  		   x_imag[n] = 0.0; /* x(n)の虚数部 */
 		}
 
-		FFT(x_real.as_mut_ptr(),x_imag.as_mut_ptr(), N as i32);  /* FFTの計算結果はx_realとx_imagに上書きされる */
+		safe_FFT(&mut x_real, &mut x_imag);  /* FFTの計算結果はx_realとx_imagに上書きされる */
 	}
 
 }
