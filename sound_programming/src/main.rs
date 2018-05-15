@@ -46,6 +46,7 @@ fn main() {
 	ex6_4();
 	// ex6_5(); // slow
 	ex7_1();
+	ex7_2();
 	ex10_4();
 	assert_eq!(sinc(2.1),2.1f64.sin()/2.1 );
 }
@@ -804,7 +805,7 @@ fn ex6_5(){
   	wave_write_16bit_mono_safer2("ex6_5.wav", (&mut pcm2_s, pcm2_fs, pcm2_bits, pcm2_length)); 
 }
 
-#[allow(non_snake_case, unused_variables)]
+#[allow(non_snake_case)]
 fn ex7_1(){
 	let (pcm0_s, pcm0_fs, pcm0_bits, pcm0_length) = wave_read_16bit_mono_safer2("pulse_train.wav");
 	
@@ -840,6 +841,42 @@ fn ex7_1(){
     	}
     }
     wave_write_16bit_mono_safer2("ex7_1.wav", (&mut pcm1_s, pcm1_fs, pcm1_bits, pcm1_length)); 
+}
+
+#[allow(non_snake_case, unused_variables)]
+fn ex7_2(){
+	let mut a = [0.0; 3];
+    let mut b = [0.0; 3];
+	let (pcm0_s, pcm0_fs, pcm0_bits, pcm0_length) = wave_read_16bit_mono_safer2("white_noise.wav");
+	let mut fc = vec![0.0; pcm0_length as usize];
+	/* LPFの遮断周波数 */
+	for n in 0..pcm0_length as usize{
+		fc[n] = 10000.0 * (-5.0 * n as f64 / pcm0_length as f64).exp();
+	}
+  	let Q = 1.0 / 2.0f64.sqrt(); /* クオリティファクタ */
+    let I = 2; /* 遅延器の数 */
+    let J = 2; /* 遅延器の数 */
+
+    let pcm1_fs = pcm0_fs; /* 標本化周波数 */
+    let pcm1_bits = pcm0_bits; /* 量子化精度 */
+    let pcm1_length = pcm0_length; /* 音データの長さ */
+    let mut pcm1_s = vec![0.0; pcm1_length as usize]; /* 音データ */	   
+    for n in 0..pcm1_length as usize {
+    	unsafe{
+    		IIR_LPF(fc[n] / pcm1_fs as f64, Q, a.as_mut_ptr(), b.as_mut_ptr()); /* IIRフィルタの設計 */
+    	}
+    	for m in 0..= J {
+    		if n >= m {
+    			pcm1_s[n] += b[m] * pcm0_s[n-m];
+    		}
+    	}
+    	for m in 1..=I {
+    		if n >= m {
+    			pcm1_s[n] += -a[m] * pcm1_s[n-m];
+    		}
+    	}
+    }
+ 	wave_write_16bit_mono_safer2("ex7_2.wav", (&mut pcm1_s, pcm1_fs, pcm1_bits, pcm1_length)); 
 }
 
 #[allow(non_snake_case, unused_variables)]
