@@ -43,23 +43,22 @@ fn to_c_str(a: &str) -> *mut i8 {
 
 fn ex1_1(){
 
-	unsafe{
-		let mut pcm0 : MONO_PCM = mem::uninitialized();
+	
+		/* 音データの入力 */	
 
-		wave_read_16bit_mono(&mut pcm0, to_c_str("ex1_1_a.wav"));  /* 音データの入力 */	
+		let (pcm0_slice, pcm0_fs, pcm0_bits, pcm0_length) = wave_read_16bit_mono_safer2("ex1_1_a.wav");
 
-		let pcm0_slice = from_raw_parts(pcm0.s, pcm0.length as usize);
-
-		let mut pcm1_s : Vec<c_double> = (0..pcm0.length)
+		let mut pcm1_s : Vec<c_double> = (0..pcm0_length)
 		  .map(|n| pcm0_slice[n as usize])/* 音データのコピー */
 		  .collect();
 
 		let mut pcm1 : MONO_PCM = MONO_PCM{
-			fs : pcm0.fs, /* 標本化周波数 */
-			bits : pcm0.bits, /* 量子化精度 */
-			length : pcm0.length, /* 音データの長さ */
+			fs : pcm0_fs, /* 標本化周波数 */
+			bits : pcm0_bits, /* 量子化精度 */
+			length : pcm0_length, /* 音データの長さ */
 			s : pcm1_s.as_mut_ptr()  /* 音データ */
 		};
+	unsafe{
 		wave_write_16bit_mono(&mut pcm1, to_c_str("ex1_1_b.wav")); /* 音データの出力 */
 	}	
 
@@ -388,17 +387,14 @@ fn foo(func : Box<Fn(usize) -> f64>) -> (Vec<c_double>, Vec<c_double>){
 	let mut X_real : Vec<c_double> = vec![0.0; N];
 	let mut X_imag : Vec<c_double> = vec![0.0; N];
 
-	unsafe{
-		let mut pcm : MONO_PCM = mem::uninitialized();
-		wave_read_16bit_mono(&mut pcm, to_c_str("sine_500hz.wav"));
-		let pcm_slice = from_raw_parts(pcm.s, pcm.length as usize);
+		let (pcm_slice, _, _, _) = wave_read_16bit_mono_safer2("sine_500hz.wav");
 
 		/* 波形 */
 		for n in 0..N {
  		   x_real[n] = pcm_slice[n] * func(n); /* x(n)の実数部 */
  		   x_imag[n] = 0.0; /* x(n)の虚数部 */
 		}
-	}
+	
 		/* DFT */
 		for k_ in 0..N {
 			let k = k_ as f64;
@@ -444,39 +440,42 @@ fn ex4_2(){
 }
 
 
+fn wave_read_16bit_mono_safer2(path : &str) -> (&[f64], i32, i32, i32){
+	unsafe{
+		let mut pcm : MONO_PCM = mem::uninitialized();
+		wave_read_16bit_mono(&mut pcm, to_c_str(path));
+		let pcm_slice = from_raw_parts(pcm.s, pcm.length as usize);
+		return (pcm_slice, pcm.fs, pcm.bits, pcm.length);
+	}
+}
+
 #[allow(non_snake_case)]
 fn ex4_3(){
 	let N = 64;
 	let mut x_real : Vec<c_double> = vec![0.0; N];
 	let mut x_imag : Vec<c_double> = vec![0.0; N];
+	let (pcm_slice, _, _, _) = wave_read_16bit_mono_safer2("sine_500hz.wav");
+		
 
-	unsafe{
-		let mut pcm : MONO_PCM = mem::uninitialized();
-		wave_read_16bit_mono(&mut pcm, to_c_str("sine_500hz.wav"));
-		let pcm_slice = from_raw_parts(pcm.s, pcm.length as usize);
-
-		/* 波形 */
-		for n in 0..N {
- 		   x_real[n] = pcm_slice[n]; /* x(n)の実数部 */
- 		   x_imag[n] = 0.0; /* x(n)の虚数部 */
-		}
-
-		safe_FFT(&mut x_real, &mut x_imag);  /* FFTの計算結果はx_realとx_imagに上書きされる */
+	/* 波形 */
+	for n in 0..N {
+ 		x_real[n] = pcm_slice[n]; /* x(n)の実数部 */
+ 		x_imag[n] = 0.0; /* x(n)の虚数部 */
 	}
 
+	safe_FFT(&mut x_real, &mut x_imag);  /* FFTの計算結果はx_realとx_imagに上書きされる */
 }
 
 
 #[allow(non_snake_case)]
 fn ex6_4(){
-	unsafe{
-		let mut pcm0 : MONO_PCM = mem::uninitialized();
-		wave_read_16bit_mono(&mut pcm0, to_c_str("sine_500hz_3500hz.wav")); /* 音データの入力 */
+	
 		
+    	let (pcm0_s, pcm0_fs, pcm0_bits, pcm0_length) = wave_read_16bit_mono_safer2("sine_500hz_3500hz.wav");
 
 		let N = 256; /* DFTのサイズ */
 
-		let mut pcm1_s : Vec<c_double> = vec![0.0; pcm0.length as usize];
+		let mut pcm1_s : Vec<c_double> = vec![0.0; pcm0_length as usize];
 
 		
 		let mut x_real : Vec<c_double> = vec![0.0; N];
@@ -486,12 +485,11 @@ fn ex6_4(){
     	let mut b_real : Vec<c_double> = vec![0.0; N];
     	let mut b_imag : Vec<c_double> = vec![0.0; N];
 
-    	let pcm0_s = from_raw_parts(pcm0.s, pcm0.length as usize);
 
     	let mut w : Vec<c_double> = vec![0.0; N];
     	safe_Hanning_window(&mut w); /* ハニング窓 */
 
-    	let number_of_frame = (pcm0.length as usize - N / 2) / (N / 2); /* フレームの数 */
+    	let number_of_frame = (pcm0_length as usize - N / 2) / (N / 2); /* フレームの数 */
 
   		for frame  in 0..number_of_frame {
     		let offset = N / 2 * frame;
@@ -504,7 +502,7 @@ fn ex6_4(){
    			safe_FFT(&mut x_real, &mut x_imag);
     
     		/* B(k) */
-    		let fe = 1000.0 / pcm0.fs as f64; /* エッジ周波数 */
+    		let fe = 1000.0 / pcm0_fs as f64; /* エッジ周波数 */
     		let fe = (fe * N as f64) as usize;
     		for k in 0..=fe {
       			b_real[k] = 1.0;
@@ -531,13 +529,14 @@ fn ex6_4(){
       			pcm1_s[offset + n] += y_real[n];
     		}
   		}
-  
+  	
   		let mut pcm1 : MONO_PCM = MONO_PCM{
-			fs : pcm0.fs,
-			bits : pcm0.bits,
-			length : pcm0.length,
+			fs : pcm0_fs,
+			bits : pcm0_bits,
+			length : pcm0_length,
 			s :pcm1_s.as_mut_ptr()
 		};
+	unsafe{
   		wave_write_16bit_mono(&mut pcm1, to_c_str("ex6_4.wav")); 
   
 	}
