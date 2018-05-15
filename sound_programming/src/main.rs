@@ -1,8 +1,8 @@
 extern crate sound_programming;
 extern crate rand;
 //use std::io::Write;
+use sound_programming::safe_Hanning_window;
 use sound_programming::FFT;
-use sound_programming::Hanning_window;
 use std::slice::from_raw_parts;
 use std::slice::from_raw_parts_mut;
 use std::f64::consts::PI;
@@ -780,9 +780,7 @@ fn assert_close(a : f64, b: f64){
 fn ex4_2(){
 	let N = 64;
 	let mut w : Vec<c_double> = vec![0.0; N];
-  	unsafe{
-  		Hanning_window(w.as_mut_ptr(), N as i32); /* ハニング窓 */
-  	}
+  	safe_Hanning_window(&mut w); /* ハニング窓 */
 
   	let (X_real, X_imag) = foo(Box::new(move |n| w[n]));
 
