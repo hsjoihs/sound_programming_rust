@@ -75,7 +75,7 @@ extern {
 
 	/*pub*/ fn wave_read_16bit_mono(pcm: *mut MONO_PCM, file_name: *const c_char);
 	pub fn wave_write_16bit_mono(pcm: *mut MONO_PCM, file_name: *const c_char);
-	pub fn wave_read_16bit_stereo(pcm: *mut STEREO_PCM, file_name: *const c_char);
+	/*pub*/ fn wave_read_16bit_stereo(pcm: *mut STEREO_PCM, file_name: *const c_char);
 	pub fn wave_write_16bit_stereo(pcm: *mut STEREO_PCM, file_name: *const c_char);
 	
 	pub fn wave_read_IMA_ADPCM_mono(pcm: *mut MONO_PCM, file_name: *const c_char);
@@ -116,6 +116,18 @@ pub fn wave_read_16bit_mono_safer2(path : &str) -> (&[f64], i32, i32, i32){
 		return (pcm_slice, pcm.fs, pcm.bits, pcm.length);
 	}
 }
+
+#[allow(non_snake_case)]
+pub fn wave_read_16bit_stereo_safer2(path : &str) -> (&[f64], &[f64], i32, i32, i32){
+	unsafe{
+		let mut pcm : STEREO_PCM = mem::uninitialized();
+		wave_read_16bit_stereo(&mut pcm, to_c_str(path));
+		let pcm_sliceL = from_raw_parts(pcm.sL, pcm.length as usize);
+		let pcm_sliceR = from_raw_parts(pcm.sR, pcm.length as usize);
+		return (pcm_sliceL, pcm_sliceR, pcm.fs, pcm.bits, pcm.length);
+	}
+}
+
 
 pub fn to_c_str(a: &str) -> *mut i8 {
 	CString::new(a).unwrap().into_raw()

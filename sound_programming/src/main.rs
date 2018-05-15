@@ -1,18 +1,16 @@
 extern crate sound_programming;
 extern crate rand;
 //use std::io::Write;
+use sound_programming::wave_read_16bit_stereo_safer2;
 use sound_programming::to_c_str;
 use sound_programming::wave_read_16bit_mono_safer2;
 use sound_programming::fft::safe_IFFT;
 use sound_programming::fft::safe_FFT;
 use sound_programming::safe_Hanning_window;
-use std::slice::from_raw_parts;
 use std::slice::from_raw_parts_mut;
 use std::f64::consts::PI;
-use std::mem;
 use sound_programming::wave_write_16bit_mono;
 use sound_programming::wave_write_16bit_stereo;
-use sound_programming::wave_read_16bit_stereo;
 use sound_programming::STEREO_PCM;
 use sound_programming::c_int;
 use sound_programming::c_double;
@@ -66,30 +64,25 @@ fn ex1_1(){
 
 #[allow(non_snake_case)]
 fn ex1_2(){
-	unsafe{
-		let mut pcm0 : STEREO_PCM = mem::uninitialized();
-		wave_read_16bit_stereo(&mut pcm0, to_c_str("ex1_2_a.wav")); /* 音データの入力 */
+	
 
-
-		let pcm0_sliceL = from_raw_parts(pcm0.sL, pcm0.length as usize);
-		let pcm0_sliceR = from_raw_parts(pcm0.sR, pcm0.length as usize);
-
-		let mut pcm1_sL : Vec<c_double> = (0..pcm0.length)
+		let (pcm0_sliceL, pcm0_sliceR, pcm0_fs, pcm0_bits, pcm0_length) = wave_read_16bit_stereo_safer2("ex1_2_a.wav");
+		let mut pcm1_sL : Vec<c_double> = (0..pcm0_length)
 		 .map(|n| pcm0_sliceL[n as usize])
 		 .collect();
 
-		let mut pcm1_sR : Vec<c_double> = (0..pcm0.length)
+		let mut pcm1_sR : Vec<c_double> = (0..pcm0_length)
 		 .map(|n| pcm0_sliceR[n as usize])
 		 .collect();
 		
 		let mut pcm1 : STEREO_PCM = STEREO_PCM {
-			fs: pcm0.fs,
-			bits: pcm0.bits,
-			length: pcm0.length,
+			fs: pcm0_fs,
+			bits: pcm0_bits,
+			length: pcm0_length,
 			sL : pcm1_sL.as_mut_ptr(),
 			sR : pcm1_sR.as_mut_ptr()
 		};
-
+	unsafe{
 		wave_write_16bit_stereo(&mut pcm1, to_c_str("ex1_2_b.wav")); /* 音データの出力 */
 	}
 	// pcm0.sL and pcm0.sR possibly leaks?
