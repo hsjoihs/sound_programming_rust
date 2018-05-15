@@ -1,6 +1,7 @@
 extern crate sound_programming;
 extern crate rand;
 //use std::io::Write;
+use sound_programming::FFT;
 use sound_programming::Hanning_window;
 use std::slice::from_raw_parts;
 use std::slice::from_raw_parts_mut;
@@ -30,6 +31,7 @@ fn main() {
 	// ex3_5(); //slow
 	ex4_1();
 	ex4_2();
+	ex4_3();
     assert_eq!(sinc(2.1),2.1f64.sin()/2.1 );
 }
 
@@ -712,11 +714,10 @@ int main(void)
 }
 
 */
-
 #[allow(non_snake_case)]
-fn ex4_1(){
-	let (X_real, X_imag) = foo(Box::new(|_| 1.0));
+fn verify(X_real: Vec<c_double>, X_imag: Vec<c_double>){
 	let N = 64;
+
 	/* 周波数特性 */
 	for k in 0..N {
 		assert_close(X_real[k], 0.0);
@@ -726,6 +727,12 @@ fn ex4_1(){
 			_ => 0.0
 		});
 	}
+}
+
+#[allow(non_snake_case)]
+fn ex4_1(){
+	let (X_real, X_imag) = foo(Box::new(|_| 1.0));	
+	verify(X_real, X_imag)
 }
 
 #[allow(non_snake_case)]
@@ -849,6 +856,73 @@ int main(void)
   free(X_real);
   free(X_imag);
   free(w);
+  
+  return 0;
+}
+
+
+*/
+
+#[allow(non_snake_case, unused_mut, unused_variables)]
+fn ex4_3(){
+	let N = 64;
+	let mut x_real : Vec<c_double> = vec![0.0; N];
+	let mut x_imag : Vec<c_double> = vec![0.0; N];
+
+	unsafe{
+		let mut pcm : MONO_PCM = mem::uninitialized();
+		wave_read_16bit_mono(&mut pcm, to_c_str("sine_500hz.wav"));
+		let pcm_slice = from_raw_parts(pcm.s, pcm.length as usize);
+
+		/* 波形 */
+		for n in 0..N {
+ 		   x_real[n] = pcm_slice[n]; /* x(n)の実数部 */
+ 		   x_imag[n] = 0.0; /* x(n)の虚数部 */
+		}
+
+		FFT(x_real.as_mut_ptr(),x_imag.as_mut_ptr(), N as i32);  /* FFTの計算結果はx_realとx_imagに上書きされる */
+	}
+
+}
+
+/*
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+#include "wave.h"
+#include "fft.h"
+
+int main(void)
+{
+  MONO_PCM pcm;
+  int n, k, N;
+  double *x_real, *x_imag;
+  
+  wave_read_16bit_mono(&pcm, "sine_500hz.wav");
+  
+  N = 64; /* DFTのサイズ */
+  
+  x_real = calloc(N, sizeof(double));
+  x_imag = calloc(N, sizeof(double));
+  
+  /* 波形 */
+  for (n = 0; n < N; n++)
+  {
+    x_real[n] = pcm.s[n]; /* x(n)の実数部 */
+    x_imag[n] = 0.0; /* x(n)の虚数部 */
+  }
+  
+  FFT(x_real, x_imag, N);
+  
+  /* 周波数特性 */
+  for (k = 0; k < N; k++)
+  {
+    printf("X(%d) = %f+j%f¥n", k, x_real[k], x_imag[k]);
+  }
+  
+  free(pcm.s);
+  free(x_real);
+  free(x_imag);
   
   return 0;
 }
