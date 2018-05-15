@@ -715,21 +715,21 @@ int main(void)
 
 #[allow(non_snake_case)]
 fn ex4_1(){
-	let (X_real, X_imag) = foo(|_| 1.0);
+	let (X_real, X_imag) = foo(Box::new(|_| 1.0));
 	let N = 64;
 	/* 周波数特性 */
-		for k in 0..N {
-			assert_close(X_real[k], 0.0);
-			assert_close(X_imag[k], match k {
-				4 => -16.0,
-				60 => 16.0,
-				_ => 0.0
-			});
-		}
+	for k in 0..N {
+		assert_close(X_real[k], 0.0);
+		assert_close(X_imag[k], match k {
+			4 => -16.0,
+			60 => 16.0,
+			_ => 0.0
+		});
+	}
 }
 
 #[allow(non_snake_case)]
-fn foo(func : fn(usize) -> f64) -> (Vec<c_double>, Vec<c_double>){
+fn foo(func : Box<Fn(usize) -> f64>) -> (Vec<c_double>, Vec<c_double>){
 	let N = 64;
 	let mut x_real : Vec<c_double> = vec![0.0; N];
 	let mut x_imag : Vec<c_double> = vec![0.0; N];
@@ -775,6 +775,22 @@ fn ex4_2(){
 	let mut w : Vec<c_double> = vec![0.0; N];
   	unsafe{
   		Hanning_window(w.as_mut_ptr(), N as i32); /* ハニング窓 */
+  	}
+
+  	let (X_real, X_imag) = foo(Box::new(move |n| w[n]));
+
+  	for k in 0..N{
+  		assert_close(X_real[k], 0.0);
+  		assert_close(X_imag[k], match k {
+			3 => 4.0,
+			4 => -8.0,
+			5 => 4.0,
+			59 => -4.0,
+			60 => 8.0,
+			61 => -4.0,
+			_ => 0.0
+		});
+    	//println!("X({}) = j{}\n", k, X_imag[k]);
   	}
 }
 /*
