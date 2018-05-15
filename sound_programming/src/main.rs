@@ -1,6 +1,8 @@
 extern crate sound_programming;
 extern crate rand;
 //use std::io::Write;
+use sound_programming::to_c_str;
+use sound_programming::wave_read_16bit_mono_safer2;
 use sound_programming::fft::safe_IFFT;
 use sound_programming::fft::safe_FFT;
 use sound_programming::safe_Hanning_window;
@@ -8,8 +10,6 @@ use std::slice::from_raw_parts;
 use std::slice::from_raw_parts_mut;
 use std::f64::consts::PI;
 use std::mem;
-use std::ffi::CString;
-use sound_programming::wave_read_16bit_mono;
 use sound_programming::wave_write_16bit_mono;
 use sound_programming::wave_write_16bit_stereo;
 use sound_programming::wave_read_16bit_stereo;
@@ -37,9 +37,7 @@ fn main() {
     assert_eq!(sinc(2.1),2.1f64.sin()/2.1 );
 }
 
-fn to_c_str(a: &str) -> *mut i8 {
-	CString::new(a).unwrap().into_raw()
-}
+
 
 fn ex1_1(){
 
@@ -440,14 +438,7 @@ fn ex4_2(){
 }
 
 
-fn wave_read_16bit_mono_safer2(path : &str) -> (&[f64], i32, i32, i32){
-	unsafe{
-		let mut pcm : MONO_PCM = mem::uninitialized();
-		wave_read_16bit_mono(&mut pcm, to_c_str(path));
-		let pcm_slice = from_raw_parts(pcm.s, pcm.length as usize);
-		return (pcm_slice, pcm.fs, pcm.bits, pcm.length);
-	}
-}
+
 
 #[allow(non_snake_case)]
 fn ex4_3(){

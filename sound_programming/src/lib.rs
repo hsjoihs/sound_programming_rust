@@ -1,9 +1,12 @@
 extern crate libc;
+use std::slice::from_raw_parts;
+use std::mem;
 use std::slice::from_raw_parts_mut;
 use std::f64::consts::PI;
 pub use libc::c_char;
 pub use libc::c_int;
 pub use libc::c_double;
+use std::ffi::CString;
 pub mod fft;
 
 #[link(name = "adsr")]
@@ -103,4 +106,17 @@ pub fn safe_Hanning_window(w_slice: &mut [c_double])
 	  		/ (N as f64)
 	  	).cos();
   	}
+}
+
+pub fn wave_read_16bit_mono_safer2(path : &str) -> (&[f64], i32, i32, i32){
+	unsafe{
+		let mut pcm : MONO_PCM = mem::uninitialized();
+		wave_read_16bit_mono(&mut pcm, to_c_str(path));
+		let pcm_slice = from_raw_parts(pcm.s, pcm.length as usize);
+		return (pcm_slice, pcm.fs, pcm.bits, pcm.length);
+	}
+}
+
+pub fn to_c_str(a: &str) -> *mut i8 {
+	CString::new(a).unwrap().into_raw()
 }
