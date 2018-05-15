@@ -1,6 +1,7 @@
 extern crate sound_programming;
 extern crate rand;
 //use std::io::Write;
+use sound_programming::IIR_resonator;
 use sound_programming::IIR_filtering;
 use sound_programming::IIR_LPF;
 use sound_programming::FIR_filtering;
@@ -47,6 +48,7 @@ fn main() {
 	// ex6_5(); // slow
 	ex7_1();
 	ex7_2();
+	ex7_3();
 	ex10_4();
 	assert_eq!(sinc(2.1),2.1f64.sin()/2.1 );
 }
@@ -807,7 +809,7 @@ fn ex6_5(){
 
 #[allow(non_snake_case)]
 fn ex7_1(){
-	let (pcm0_s, pcm0_fs, pcm0_bits, pcm0_length) = wave_read_16bit_mono_safer2("pulse_train.wav");
+	let (pcm0_s, pcm0_fs, pcm0_bits, pcm0_length) = wave_read_16bit_mono_safer2("ex7_1_pulse_train.wav");
 	
 	let mut fc = vec![0.0; pcm0_length as usize];
 	/* LPFの遮断周波数 */
@@ -877,6 +879,76 @@ fn ex7_2(){
     	}
     }
  	wave_write_16bit_mono_safer2("ex7_2.wav", (&mut pcm1_s, pcm1_fs, pcm1_bits, pcm1_length)); 
+}
+
+#[allow(non_snake_case, unused_variables)]
+fn ex7_3(){
+	let mut a = [0.0; 3];
+    let mut b = [0.0; 3];
+	let (pcm0_s, pcm0_fs, pcm0_bits, pcm0_length) = wave_read_16bit_mono_safer2("ex7_3_pulse_train.wav");
+	let pcm1_fs = pcm0_fs; /* 標本化周波数 */
+    let pcm1_bits = pcm0_bits; /* 量子化精度 */
+    let pcm1_length = pcm0_length; /* 音データの長さ */
+    let mut pcm1_s = vec![0.0; pcm1_length as usize]; /* 音データ */	   
+    let mut s = vec![0.0; pcm1_length as usize];
+    let F1 = 800.0; /* F1の周波数 */
+    let F2 = 1200.0; /* F2の周波数 */
+    let F3 = 2500.0; /* F3の周波数 */
+    let F4 = 3500.0; /* F4の周波数 */
+    
+    let B1 = 100.0; /* F1の帯域幅 */
+    let B2 = 100.0; /* F2の帯域幅 */
+    let B3 = 100.0; /* F3の帯域幅 */
+    let B4 = 100.0; /* F4の帯域幅 */
+    
+    let I = 2; /* 遅延器の数 */
+    let J = 2; /* 遅延器の数 */
+    unsafe{
+    	IIR_resonator(F1 / pcm0_fs as f64, F1 / B1, a.as_mut_ptr(), b.as_mut_ptr()); /* IIRフィルタの設計 */
+    	IIR_filtering(pcm0_s.as_ptr(), s.as_mut_ptr(), pcm0_length, a.as_ptr(), b.as_ptr(), I, J); /* フィルタリング */
+    }
+    for n in 0 .. pcm1_length as usize {
+    	pcm1_s[n] += s[n];
+    	s[n] = 0.0;
+    }
+
+    unsafe{
+    	IIR_resonator(F2 / pcm0_fs as f64, F2 / B2, a.as_mut_ptr(), b.as_mut_ptr()); /* IIRフィルタの設計 */
+    	IIR_filtering(pcm0_s.as_ptr(), s.as_mut_ptr(), pcm0_length, a.as_ptr(), b.as_ptr(), I, J); /* フィルタリング */
+    }
+    for n in 0 .. pcm1_length as usize {
+    	pcm1_s[n] += s[n];
+    	s[n] = 0.0;
+    }
+
+    unsafe{
+    	IIR_resonator(F3 / pcm0_fs as f64, F3 / B3, a.as_mut_ptr(), b.as_mut_ptr()); /* IIRフィルタの設計 */
+    	IIR_filtering(pcm0_s.as_ptr(), s.as_mut_ptr(), pcm0_length, a.as_ptr(), b.as_ptr(), I, J); /* フィルタリング */
+    }
+    for n in 0 .. pcm1_length as usize {
+    	pcm1_s[n] += s[n];
+    	s[n] = 0.0;
+    }
+
+    unsafe{
+    	IIR_resonator(F4 / pcm0_fs as f64, F4 / B4, a.as_mut_ptr(), b.as_mut_ptr()); /* IIRフィルタの設計 */
+    	IIR_filtering(pcm0_s.as_ptr(), s.as_mut_ptr(), pcm0_length, a.as_ptr(), b.as_ptr(), I, J); /* フィルタリング */
+    }
+    for n in 0 .. pcm1_length as usize {
+    	pcm1_s[n] += s[n];
+    	s[n] = 0.0;
+    }
+
+    /* ディエンファシス処理 */
+  	s[0] = pcm1_s[0];
+  	for n in 1..pcm1_length as usize {
+  		s[n] = pcm1_s[n] + 0.98 * s[n - 1];
+  	}
+  	for n in 0..pcm1_length as usize {
+  		pcm1_s[n] = s[n];
+  	}
+  	wave_write_16bit_mono_safer2("ex7_3.wav", (&mut pcm1_s, pcm1_fs, pcm1_bits, pcm1_length)); 
+
 }
 
 #[allow(non_snake_case, unused_variables)]
