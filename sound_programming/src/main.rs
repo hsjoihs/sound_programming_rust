@@ -34,6 +34,7 @@ fn main() {
 	ex5_1();
 	ex5_2();
 	ex5_3();
+	ex5_4();
 	ex6_4();
 	ex10_4();
 	assert_eq!(sinc(2.1),2.1f64.sin()/2.1 );
@@ -468,7 +469,7 @@ fn ex5_2(){
 
 }
 
-#[allow(non_snake_case, unused_variables)]
+#[allow(non_snake_case)]
 fn ex5_3(){
     let pcm_fs = 44100; /* 標本化周波数 */
     let pcm_bits = 16; /* 量子化精度 */
@@ -492,6 +493,66 @@ fn ex5_3(){
 
 }
 
+#[allow(non_snake_case, unused_variables)]
+fn ex5_4(){
+	let pcm_fs = 44100; /* 標本化周波数 */
+    let pcm_bits = 16; /* 量子化精度 */
+    let pcm_length = pcm_fs * 4; /* 音データの長さ */
+    let mut pcm_s = vec![0.0; pcm_length]; /* 音データ */	
+
+    let a0 = vec![0.5; pcm_length];
+    let a1 = vec![1.0; pcm_length];
+    let a2 = vec![0.7; pcm_length];
+    let a3 = vec![0.5; pcm_length];
+    let a4 = vec![0.3; pcm_length];
+    let f0 = vec![440.0; pcm_length];
+    let f1 = vec![880.0; pcm_length];
+    let f2 = vec![1320.0; pcm_length];
+    let f3 = vec![1760.0; pcm_length];
+    let f4 = vec![2200.0; pcm_length];
+
+    /* 加算合成 */
+  	for n in 0..pcm_length {
+    	pcm_s[n] += a0[n] * (2.0 * PI * f0[n] * n as f64 / pcm_fs as f64).sin();
+    	pcm_s[n] += a1[n] * (2.0 * PI * f1[n] * n as f64 / pcm_fs as f64).sin();
+    	pcm_s[n] += a2[n] * (2.0 * PI * f2[n] * n as f64 / pcm_fs as f64).sin();
+    	pcm_s[n] += a3[n] * (2.0 * PI * f3[n] * n as f64 / pcm_fs as f64).sin();
+    	pcm_s[n] += a4[n] * (2.0 * PI * f4[n] * n as f64 / pcm_fs as f64).sin();
+  	}
+  	let gain = 0.1; /* ゲイン */
+  	for n in 0..pcm_length {
+  		pcm_s[n] *= gain;
+  	}
+
+  	/* フェード処理 */
+  	for n in 0..(pcm_fs as f64*0.01).ceil() as usize  {
+    	pcm_s[n] *= n as f64 / (pcm_fs as f64 * 0.01);
+    	pcm_s[pcm_length - n - 1] *= n as f64/ (pcm_fs as f64 * 0.01);
+  	}
+  
+  	wave_write_16bit_mono_safer2("ex5_4.wav", (&mut pcm_s, pcm_fs as i32, pcm_bits, pcm_length as i32));
+
+}
+/*
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+#include "wave.h"
+
+int main(void)
+{
+  
+  
+  
+  /* フェード処理 */
+  
+  
+
+}
+
+
+*/
 
 
 #[allow(non_snake_case)]
