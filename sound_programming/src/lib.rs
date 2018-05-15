@@ -1,4 +1,6 @@
 extern crate libc;
+use std::slice::from_raw_parts_mut;
+use std::f64::consts::PI;
 pub use libc::c_char;
 pub use libc::c_int;
 pub use libc::c_double;
@@ -80,8 +82,25 @@ extern {
 	pub fn wave_read_IMA_ADPCM_mono(pcm: *mut MONO_PCM, file_name: *const c_char);
 	pub fn wave_write_IMA_ADPCM_mono(pcm: *mut MONO_PCM, file_name: *const c_char);
 }
-
+/*
 #[link(name = "window_function")]
 extern {
 	pub fn Hanning_window(w: *mut c_double, N: c_int);
 }
+*/
+#[allow(non_snake_case)]
+pub unsafe fn Hanning_window(w: *mut c_double, N: c_int)
+{ 
+  let w_slice = from_raw_parts_mut(w, N as usize);
+  if N % 2 == 0 {/* Nが偶数のとき */
+    for n in 0..N as usize {
+      w_slice[n] = 0.5 - 0.5 * (2.0 * PI * (n as f64) / (N as f64)).cos();
+    }
+  } else { /* Nが奇数のとき */
+    for n in 0..N as usize {
+      w_slice[n] = 0.5 - 0.5 * (2.0 * PI * (n as f64 + 0.5) / (N as f64)).cos();
+    }
+  }
+}
+
+

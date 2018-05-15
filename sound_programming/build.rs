@@ -8,9 +8,6 @@ fn main() {
         .file("src/fft.c")
         .compile("libfft.a");
     cc::Build::new()
-        .file("src/window_function.c")
-        .compile("libwindow_function.a");
-    cc::Build::new()
         .file("src/fir_filter.c")
         .compile("libfir_filter.a");
     cc::Build::new()
