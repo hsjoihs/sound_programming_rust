@@ -100,13 +100,11 @@ pub unsafe fn Hanning_window(w: *mut c_double, N: c_int)
 pub fn safe_Hanning_window(w_slice: &mut [c_double])
 { 
 	let N = w_slice.len();
-  	if N % 2 == 0 {/* Nが偶数のとき */
-    	for n in 0..N as usize {
-      		w_slice[n] = 0.5 - 0.5 * (2.0 * PI * (n as f64) / (N as f64)).cos();
-    	}
-  	} else { /* Nが奇数のとき */
-    	for n in 0..N as usize {
-      		w_slice[n] = 0.5 - 0.5 * (2.0 * PI * (n as f64 + 0.5) / (N as f64)).cos();
-    	}
+    for n in 0..N as usize {
+	  	w_slice[n] = 0.5 - 0.5 * (
+	  		2.0 * PI * 
+	  		(n as f64 + if N % 2 == 0 { 0.0 } else { 0.5 })
+	  		/ (N as f64)
+	  	).cos();
   	}
 }
