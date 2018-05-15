@@ -22,6 +22,7 @@ fn main() {
 	ex2_2();
 	ex3_1();
 	ex3_2();
+	ex3_3();
     assert_eq!(sinc(2.1),2.1f64.sin()/2.1 );
 }
 
@@ -394,7 +395,6 @@ int main(void)
 }
 */
 
-#[allow(unused_variables, unused_mut, non_snake_case)]
 fn ex3_2(){
 	let f0 = 500.0; /* 基本周波数 */
 
@@ -427,50 +427,6 @@ fn ex3_2(){
 	unsafe{
 		wave_write_16bit_mono(&mut pcm, to_c_str("ex3_2.wav"));
 	}
-
-/*
-
-	#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
-#include "wave.h"
-
-int main(void)
-{
-  MONO_PCM pcm;
-  int n, i;
-  double f0, gain;
-  
-  pcm.fs = 44100; /* 標本化周波数 */
-  pcm.bits = 16; /* 量子化精度 */
-  pcm.length = pcm.fs * 1; /* 音データの長さ */
-  pcm.s = calloc(pcm.length, sizeof(double)); /* 音データ */
-  
-  f0 = 500.0; /* 基本周波数 */
-  
-  /* 矩形波 */
-  for (i = 1; i <= 44; i = i + 2)
-  {
-    for (n = 0; n < pcm.length; n++)
-    {
-      pcm.s[n] += 1.0 / i * sin(2.0 * M_PI * i * f0 * n / pcm.fs);
-    }
-  }
-  
-  gain = 0.1; /* ゲイン */
-  
-  for (n = 0; n < pcm.length; n++)
-  {
-    pcm.s[n] *= gain;
-  }
-  
-  wave_write_16bit_mono(&pcm, "ex3_2.wav");
-  
-  free(pcm.s);
-  
-  return 0;
-}
-*/
 }
 
 /*
@@ -515,5 +471,83 @@ int main(void)
   return 0;
 }
 
+
+*/
+
+#[allow(unused_variables, unused_mut, non_snake_case)]
+fn ex3_3(){
+	let f0 = 500.0; /* 基本周波数 */
+
+	let pcm_fs = 44100;
+	let pcm_length = pcm_fs * 1;
+	let mut pcm_s : Vec<c_double> = vec![0.0  ; pcm_length];
+
+	/* 三角波 */
+  	for j in 0..22 {
+		let i = (2*j+1) as f64;
+   		for n in 0..pcm_length {
+      		pcm_s[n] += 1.0 / i / i * (PI * i / 2.0).sin() * (2.0 * PI * i * f0 * (n as f64) / (pcm_fs as f64)).sin();
+  		}
+  	}
+  
+    let gain = 0.1; /* ゲイン */
+    
+    for n in 0..pcm_length{
+        pcm_s[n] *= gain;
+    }
+
+
+	let mut pcm : MONO_PCM = MONO_PCM{
+		fs : pcm_fs as i32,
+		bits : 16,
+		length : pcm_length as i32,
+		s : pcm_s.as_mut_ptr()
+	};
+
+	unsafe{
+		wave_write_16bit_mono(&mut pcm, to_c_str("ex3_3.wav"));
+	}
+}
+/*
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+#include "wave.h"
+
+int main(void)
+{
+  MONO_PCM pcm;
+  int n, i;
+  double f0, gain;
+  
+  pcm.fs = 44100; /* 標本化周波数 */
+  pcm.bits = 16; /* 量子化精度 */
+  pcm.length = pcm.fs * 1; /* 音データの長さ */
+  pcm.s = calloc(pcm.length, sizeof(double)); /* 音データ */
+  
+  f0 = 500.0; /* 基本周波数 */
+  
+  /* 三角波 */
+  for (i = 1; i <= 44; i = i + 2)
+  {
+    for (n = 0; n < pcm.length; n++)
+    {
+      pcm.s[n] += 1.0 / i / i * sin(M_PI * i / 2.0) * sin(2.0 * M_PI * i * f0 * n / pcm.fs);
+    }
+  }
+  
+  gain = 0.1; /* ゲイン */
+  
+  for (n = 0; n < pcm.length; n++)
+  {
+    pcm.s[n] *= gain;
+  }
+  
+  wave_write_16bit_mono(&pcm, "ex3_3.wav");
+  
+  free(pcm.s);
+  
+  return 0;
+}
 
 */
