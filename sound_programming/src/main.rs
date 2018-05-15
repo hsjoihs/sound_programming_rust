@@ -1,6 +1,7 @@
 extern crate sound_programming;
 extern crate rand;
 //use std::io::Write;
+use sound_programming::ADSR;
 use sound_programming::wave_write_16bit_stereo_safer2;
 use sound_programming::wave_write_16bit_mono_safer2;
 use sound_programming::wave_read_16bit_stereo_safer2;
@@ -30,6 +31,7 @@ fn main() {
 	ex4_2();
 	ex4_3();
 	ex6_4();
+	ex10_4();
 	assert_eq!(sinc(2.1),2.1f64.sin()/2.1 );
 }
 
@@ -428,3 +430,54 @@ fn ex6_4(){
 	wave_write_16bit_mono_safer2("ex6_4.wav", (&mut pcm1_s, pcm0_fs, pcm0_bits, pcm0_length));
 }
 
+
+#[allow(non_snake_case, unused_variables)]
+fn ex10_4(){
+	let pcm_fs = 44100; /* 標本化周波数 */
+	let pcm_bits = 16; /* 量子化精度 */
+	let pcm_length = pcm_fs * 4; /* 音データの長さ */
+	let mut pcm_s : Vec<c_double> = vec![0.0; pcm_length]; /* 音データ */
+	
+	let mut ac : Vec<c_double> = vec![0.0; pcm_length];
+	let mut am : Vec<c_double> = vec![0.0; pcm_length];
+
+	/* キャリア振幅 */
+	let gate = pcm_fs * 4;
+	let duration = pcm_fs * 4;
+	let A = 0;
+	let D = pcm_fs * 4;
+	let S = 0.0;
+	let R = pcm_fs * 4;
+unsafe{
+    ADSR(ac.as_mut_ptr(), A, D as i32, S, R as i32, gate as i32, duration as i32);
+}
+	let fc = 440.0; /* キャリア周波数 */
+  
+    /* モジュレータ振幅 */
+    let gate = pcm_fs * 4;
+    let duration = pcm_fs * 4;
+    let A = 0;
+    let D = pcm_fs * 2;
+    let S = 0.0;
+    let R = pcm_fs * 2;
+unsafe{
+    ADSR(am.as_mut_ptr(), A, D as i32, S, R as i32, gate as i32, duration as i32);
+}
+
+	let ratio = 3.5;
+	let fm = fc * ratio; /* モジュレータ周波数 */
+
+	/* FM音源 */
+    for n in 0..pcm_length {
+    	pcm_s[n] = ac[n] * (2.0 * PI * fc * n as f64 / pcm_fs as f64
+                 + am[n] * (2.0 * PI * fm * n as f64 / pcm_fs as f64).sin()).sin();
+  	}
+  
+  	let gain = 0.1; /* ゲイン */
+  
+  	for n in 0..pcm_length {
+    	pcm_s[n] *= gain;
+  	}
+  
+    wave_write_16bit_mono_safer2("ex10_4.wav", (&mut pcm_s, pcm_fs as i32, pcm_bits, pcm_length as i32));
+}
