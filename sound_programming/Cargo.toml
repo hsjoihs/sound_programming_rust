@@ -4,3 +4,7 @@ version = "0.1.0"
 authors = ["hsjoihs <hs.ioling.hs@gmail.com>"]
 
 [dependencies]
+libc = "0.2.0"
+
+[build-dependencies]
+cc = "1.0"
