@@ -1,7 +1,7 @@
 extern crate sound_programming;
 extern crate rand;
 //use std::io::Write;
-use sound_programming::fft::IFFT;
+use sound_programming::fft::safe_IFFT;
 use sound_programming::fft::safe_FFT;
 use sound_programming::safe_Hanning_window;
 use std::slice::from_raw_parts;
@@ -987,7 +987,7 @@ fn ex6_4(){
       			y_real[k] = x_real[k] * b_real[k] - x_imag[k] * b_imag[k];
       			y_imag[k] = x_imag[k] * b_real[k] + x_real[k] * b_imag[k];
     		}
-    		IFFT(y_real.as_mut_ptr(), y_imag.as_mut_ptr(), N as c_int);
+    		safe_IFFT(&mut y_real, &mut y_imag);
     
     		/* オーバーラップアド */
     		for n in 0..N {
@@ -1007,40 +1007,3 @@ fn ex6_4(){
 
 }
 
-/*
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
-#include "wave.h"
-#include "window_function.h"
-#include "fft.h"
-
-int main(void)
-{
-  MONO_PCM pcm0, pcm1;
-  int n, k, N, offset, frame, number_of_frame;
-  double *x_real, *x_imag, *y_real, *y_imag, *b_real, *b_imag;
-  double fe, *w;
-  
-
-  
-  
-  
-  
-  
-
-  free(pcm0.s);
-  free(pcm1.s);
-  free(x_real);
-  free(x_imag);
-  free(y_real);
-  free(y_imag);
-  free(b_real);
-  free(b_imag);
-  free(w);
-  
-  return 0;
-}
-
-
-*/
