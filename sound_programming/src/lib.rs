@@ -74,9 +74,9 @@ extern {
 	pub fn wave_write_8bit_stereo(pcm: *mut STEREO_PCM, file_name: *const c_char);
 
 	/*pub*/ fn wave_read_16bit_mono(pcm: *mut MONO_PCM, file_name: *const c_char);
-	pub fn wave_write_16bit_mono(pcm: *mut MONO_PCM, file_name: *const c_char);
+	/*pub*/ fn wave_write_16bit_mono(pcm: *mut MONO_PCM, file_name: *const c_char);
 	/*pub*/ fn wave_read_16bit_stereo(pcm: *mut STEREO_PCM, file_name: *const c_char);
-	pub fn wave_write_16bit_stereo(pcm: *mut STEREO_PCM, file_name: *const c_char);
+	/*pub*/ fn wave_write_16bit_stereo(pcm: *mut STEREO_PCM, file_name: *const c_char);
 	
 	pub fn wave_read_IMA_ADPCM_mono(pcm: *mut MONO_PCM, file_name: *const c_char);
 	pub fn wave_write_IMA_ADPCM_mono(pcm: *mut MONO_PCM, file_name: *const c_char);
@@ -143,5 +143,19 @@ pub fn wave_write_16bit_mono_safer2(path: &str, x : (&mut [f64], i32, i32, i32) 
 		};
 	unsafe{
   		wave_write_16bit_mono(&mut pcm1, to_c_str(path)); 
+	}
+}
+
+#[allow(non_snake_case)]
+pub fn wave_write_16bit_stereo_safer2(path: &str, x : (&mut [f64], &mut [f64], i32, i32, i32) ){
+	let mut pcm1 : STEREO_PCM = STEREO_PCM{
+			fs : x.2,
+			bits : x.3,
+			length : x.4,
+			sL : x.0.as_mut_ptr(),
+			sR : x.1.as_mut_ptr()
+		};
+	unsafe{
+  		wave_write_16bit_stereo(&mut pcm1, to_c_str(path)); 
 	}
 }
