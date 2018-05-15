@@ -33,6 +33,7 @@ fn main() {
 	ex4_4();
 	ex5_1();
 	ex5_2();
+	ex5_3();
 	ex6_4();
 	ex10_4();
 	assert_eq!(sinc(2.1),2.1f64.sin()/2.1 );
@@ -441,7 +442,7 @@ fn ex5_1(){
 
 }
 
-#[allow(non_snake_case, unused_variables)]
+#[allow(non_snake_case)]
 fn ex5_2(){
     let pcm_fs = 44100; /* 標本化周波数 */
     let pcm_bits = 16; /* 量子化精度 */
@@ -464,6 +465,30 @@ fn ex5_2(){
      .map(|n| a0 * (2.0 * PI * g0[n] / pcm_fs as f64).sin())
      .collect();
     wave_write_16bit_mono_safer2("ex5_2.wav", (&mut pcm_s, pcm_fs as i32, pcm_bits, pcm_length as i32));
+
+}
+
+#[allow(non_snake_case, unused_variables)]
+fn ex5_3(){
+    let pcm_fs = 44100; /* 標本化周波数 */
+    let pcm_bits = 16; /* 量子化精度 */
+    let pcm_length = (pcm_fs as f64 * 0.2) as usize; /* 音データの長さ */
+    let a0 = 0.5; /* 振幅 */
+    let mut f0 = vec![0.0; pcm_length];
+    let mut g0 = vec![0.0; pcm_length];
+    /* 周波数の時間エンベロープ */
+    f0[0] = 2500.0;
+    f0[pcm_length - 1] = 1500.0;
+    for n in 0..pcm_length {
+      f0[n] = f0[0] + (f0[pcm_length - 1] - f0[0]) * n as f64 / (pcm_length - 1)as f64;
+    }
+    for n in 0..pcm_length {
+      g0[n] = f0[0] * n as f64 + (f0[pcm_length - 1] - f0[0]) * n as f64 * n as f64 / (pcm_length - 1) as f64 / 2.0;
+    }
+    let mut pcm_s : Vec<c_double> = (0..pcm_length)
+     .map(|n| a0 * (2.0 * PI * g0[n] / pcm_fs as f64).sin())
+     .collect();
+    wave_write_16bit_mono_safer2("ex5_3.wav", (&mut pcm_s, pcm_fs as i32, pcm_bits, pcm_length as i32));
 
 }
 
