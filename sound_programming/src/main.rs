@@ -1,6 +1,7 @@
 extern crate sound_programming;
 extern crate rand;
 //use std::io::Write;
+use sound_programming::Hanning_window;
 use std::slice::from_raw_parts;
 use std::slice::from_raw_parts_mut;
 use std::f64::consts::PI;
@@ -28,6 +29,7 @@ fn main() {
 	ex3_4();
 	// ex3_5(); //slow
 	ex4_1();
+	ex4_2();
     assert_eq!(sinc(2.1),2.1f64.sin()/2.1 );
 }
 
@@ -713,24 +715,38 @@ int main(void)
 
 #[allow(non_snake_case)]
 fn ex4_1(){
+	let (X_real, X_imag) = foo(|_| 1.0);
 	let N = 64;
+	/* 周波数特性 */
+		for k in 0..N {
+			assert_close(X_real[k], 0.0);
+			assert_close(X_imag[k], match k {
+				4 => -16.0,
+				60 => 16.0,
+				_ => 0.0
+			});
+		}
+}
+
+#[allow(non_snake_case)]
+fn foo(func : fn(usize) -> f64) -> (Vec<c_double>, Vec<c_double>){
+	let N = 64;
+	let mut x_real : Vec<c_double> = vec![0.0; N];
+	let mut x_imag : Vec<c_double> = vec![0.0; N];
+	let mut X_real : Vec<c_double> = vec![0.0; N];
+	let mut X_imag : Vec<c_double> = vec![0.0; N];
+
 	unsafe{
 		let mut pcm : MONO_PCM = mem::uninitialized();
 		wave_read_16bit_mono(&mut pcm, to_c_str("sine_500hz.wav"));
-
-		let mut x_real : Vec<c_double> = vec![0.0; N];
-		let mut x_imag : Vec<c_double> = vec![0.0; N];
-		let mut X_real : Vec<c_double> = vec![0.0; N];
-		let mut X_imag : Vec<c_double> = vec![0.0; N];
-
 		let pcm_slice = from_raw_parts(pcm.s, pcm.length as usize);
 
 		/* 波形 */
 		for n in 0..N {
- 		   x_real[n] = pcm_slice[n]; /* x(n)の実数部 */
+ 		   x_real[n] = pcm_slice[n] * func(n); /* x(n)の実数部 */
  		   x_imag[n] = 0.0; /* x(n)の虚数部 */
 		}
-
+	}
 		/* DFT */
 		for k_ in 0..N {
 			let k = k_ as f64;
@@ -744,19 +760,82 @@ fn ex4_1(){
 			}
 		}
 
-		/* 周波数特性 */
-		for k in 0..N {
-			assert_close(X_real[k], 0.0);
-			assert_close(X_imag[k], match k {
-				4 => -16.0,
-				60 => 16.0,
-				_ => 0.0
-			});
-		}
-	}
+		
+		(X_real, X_imag)
+	
 }
 
 fn assert_close(a : f64, b: f64){
 	assert!((a-b).abs() < 1.75e-4);
 }
 
+#[allow(non_snake_case)]
+fn ex4_2(){
+	let N = 64;
+	let mut w : Vec<c_double> = vec![0.0; N];
+  	unsafe{
+  		Hanning_window(w.as_mut_ptr(), N as i32); /* ハニング窓 */
+  	}
+}
+/*
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+#include "wave.h"
+#include "window_function.h"
+
+int main(void)
+{
+  MONO_PCM pcm;
+  int n, k, N;
+  double *x_real, *x_imag, *X_real, *X_imag, *w, W_real, W_imag;
+  
+  wave_read_16bit_mono(&pcm, "sine_500hz.wav");
+  
+  N = 64; /* DFTのサイズ */
+  
+  x_real = calloc(N, sizeof(double));
+  x_imag = calloc(N, sizeof(double));
+  X_real = calloc(N, sizeof(double));
+  X_imag = calloc(N, sizeof(double));
+  w = calloc(N, sizeof(double));
+  
+  Hanning_window(w, N); /* ハニング窓 */
+  
+  /* 波形 */
+  for (n = 0; n < N; n++)
+  {
+    x_real[n] = pcm.s[n] * w[n]; /* x(n)の実数部 */
+    x_imag[n] = 0.0; /* x(n)の虚数部 */
+  }
+  
+  /* DFT */
+  for (k = 0; k < N; k++)
+  {
+    for (n = 0; n < N; n++)
+    {
+      W_real = cos(2.0 * M_PI * k * n / N);
+      W_imag = -sin(2.0 * M_PI * k * n / N);
+      X_real[k] += W_real * x_real[n] - W_imag * x_imag[n]; /* X(k)の実数部 */
+      X_imag[k] += W_real * x_imag[n] + W_imag * x_real[n]; /* X(k)の虚数部 */
+    }
+  }
+  
+  /* 周波数特性 */
+  for (k = 0; k < N; k++)
+  {
+    printf("X(%d) = %f+j%f¥n", k, X_real[k], X_imag[k]);
+  }
+  
+  free(pcm.s);
+  free(x_real);
+  free(x_imag);
+  free(X_real);
+  free(X_imag);
+  free(w);
+  
+  return 0;
+}
+
+
+*/
