@@ -37,10 +37,12 @@ extern {
 	;pub fn IIR_filtering(x: *mut c_double, y: *mut c_double, L: c_int, a: *mut c_double, b: *mut c_double, I: c_int, J: c_int);
 }
 
-
-#[link(name = "sinc")]
-extern {
-    pub fn sinc(x: c_double) -> c_double;
+pub fn sinc(x: c_double) -> c_double {  
+  if x == 0.0 {
+    1.0
+  } else {
+     x.sin() / x
+  }
 }
 
 #[repr(C)]

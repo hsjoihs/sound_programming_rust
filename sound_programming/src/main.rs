@@ -20,9 +20,7 @@ fn main() {
 	ex1_2();
 	ex2_1();
 	ex2_2();
-	unsafe{
-    	assert_eq!(sinc(2.1),2.1f64.sin()/2.1 );
-    }
+    assert_eq!(sinc(2.1),2.1f64.sin()/2.1 );
 }
 
 fn to_c_str(a: &str) -> *mut i8 {

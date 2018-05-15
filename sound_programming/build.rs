@@ -2,9 +2,6 @@ extern crate cc;
 
 fn main() {
     cc::Build::new()
-        .file("src/sinc.c")
-        .compile("libsinc.a");
-    cc::Build::new()
         .file("src/adsr.c")
         .compile("libadsr.a");
     cc::Build::new()
