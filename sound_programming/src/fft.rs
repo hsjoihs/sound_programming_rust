@@ -33,8 +33,6 @@ fn pow2(x : usize) -> usize  /* y = 2 ^ x */
 pub fn safe_FFT (x_real: &mut [c_double], x_imag: &mut [c_double]) {
   let N = x_real.len() ;
   assert_eq!(N, x_imag.len()); 
-  //int i, j, k, n, m, r, stage, number_of_stage, *index;
-  //double a_real, a_imag, b_real, b_imag, c_real, c_imag, real, imag;
   let number_of_stage = log2_(N); /* FFTの段数 */
   
   /* バタフライ計算 */
@@ -95,8 +93,6 @@ pub fn safe_FFT (x_real: &mut [c_double], x_imag: &mut [c_double]) {
 
 #[allow(unused_variables, non_snake_case)]
 pub fn safe_IFFT(x_real: &mut [c_double], x_imag: &mut [c_double]){
-  //int i, j, k, n, m, r, stage, number_of_stage, *index;
-  //double a_real, a_imag, b_real, b_imag, c_real, c_imag, real, imag;
   let N = x_real.len() ;
   assert_eq!(N, x_imag.len()); 
 
