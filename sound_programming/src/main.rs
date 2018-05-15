@@ -1,6 +1,7 @@
 extern crate sound_programming;
 extern crate rand;
 //use std::io::Write;
+use sound_programming::fft::IFFT;
 use sound_programming::fft::safe_FFT;
 use sound_programming::safe_Hanning_window;
 use std::slice::from_raw_parts;
@@ -32,6 +33,7 @@ fn main() {
 	ex4_1();
 	ex4_2();
 	ex4_3();
+	ex6_4();
     assert_eq!(sinc(2.1),2.1f64.sin()/2.1 );
 }
 
@@ -861,7 +863,7 @@ int main(void)
 
 */
 
-#[allow(non_snake_case, unused_mut, unused_variables)]
+#[allow(non_snake_case)]
 fn ex4_3(){
 	let N = 64;
 	let mut x_real : Vec<c_double> = vec![0.0; N];
@@ -921,6 +923,121 @@ int main(void)
   free(pcm.s);
   free(x_real);
   free(x_imag);
+  
+  return 0;
+}
+
+
+*/
+
+#[allow(non_snake_case, unused_mut, unused_variables)]
+fn ex6_4(){
+	unsafe{
+		let mut pcm0 : MONO_PCM = mem::uninitialized();
+		wave_read_16bit_mono(&mut pcm0, to_c_str("sine_500hz_3500hz.wav")); /* 音データの入力 */
+		
+
+		let N = 256; /* DFTのサイズ */
+
+		let mut pcm1_s : Vec<c_double> = vec![0.0; pcm0.length as usize];
+
+		
+		let mut x_real : Vec<c_double> = vec![0.0; N];
+    	let mut x_imag : Vec<c_double> = vec![0.0; N];
+    	let mut y_real : Vec<c_double> = vec![0.0; N];
+    	let mut y_imag : Vec<c_double> = vec![0.0; N];
+    	let mut b_real : Vec<c_double> = vec![0.0; N];
+    	let mut b_imag : Vec<c_double> = vec![0.0; N];
+
+    	let pcm0_s = from_raw_parts(pcm0.s, pcm0.length as usize);
+
+    	let mut w : Vec<c_double> = vec![0.0; N];
+    	safe_Hanning_window(&mut w); /* ハニング窓 */
+
+    	let number_of_frame = (pcm0.length as usize - N / 2) / (N / 2); /* フレームの数 */
+
+  		for frame  in 0..number_of_frame {
+    		let offset = N / 2 * frame;
+    
+    		/* X(n) */
+    		for n in 0..N {
+      			x_real[n] = pcm0_s[offset + n] * w[n];
+      			x_imag[n] = 0.0;
+    		}
+   			safe_FFT(&mut x_real, &mut x_imag);
+    
+    		/* B(k) */
+    		let fe = 1000.0 / pcm0.fs as f64; /* エッジ周波数 */
+    		let fe = (fe * N as f64) as usize;
+    		for k in 0..=fe {
+      			b_real[k] = 1.0;
+      			b_imag[k] = 0.0;
+    		}
+    		for k in (fe+1)..= N / 2 {
+      			b_real[k] = 0.0;
+      			b_imag[k] = 0.0;
+    		}
+    		for k in 1..N / 2   {
+      			b_real[N - k] = b_real[k];
+      			b_imag[N - k] = -b_imag[k];
+    		}
+    
+    		/* フィルタリング */
+    		for k in 0..N {
+      			y_real[k] = x_real[k] * b_real[k] - x_imag[k] * b_imag[k];
+      			y_imag[k] = x_imag[k] * b_real[k] + x_real[k] * b_imag[k];
+    		}
+    		IFFT(y_real.as_mut_ptr(), y_imag.as_mut_ptr(), N as c_int);
+    
+    		/* オーバーラップアド */
+    		for n in 0..N {
+      			pcm1_s[offset + n] += y_real[n];
+    		}
+  		}
+  
+  		let mut pcm1 : MONO_PCM = MONO_PCM{
+			fs : pcm0.fs,
+			bits : pcm0.bits,
+			length : pcm0.length,
+			s :pcm1_s.as_mut_ptr()
+		};
+  		wave_write_16bit_mono(&mut pcm1, to_c_str("ex6_4.wav")); 
+  
+	}
+
+}
+
+/*
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+#include "wave.h"
+#include "window_function.h"
+#include "fft.h"
+
+int main(void)
+{
+  MONO_PCM pcm0, pcm1;
+  int n, k, N, offset, frame, number_of_frame;
+  double *x_real, *x_imag, *y_real, *y_imag, *b_real, *b_imag;
+  double fe, *w;
+  
+
+  
+  
+  
+  
+  
+
+  free(pcm0.s);
+  free(pcm1.s);
+  free(x_real);
+  free(x_imag);
+  free(y_real);
+  free(y_imag);
+  free(b_real);
+  free(b_imag);
+  free(w);
   
   return 0;
 }
