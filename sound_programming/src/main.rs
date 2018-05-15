@@ -32,17 +32,13 @@ fn ex1_1(){
 	unsafe{
 		let mut pcm0 : MONO_PCM = mem::uninitialized();
 
-		wave_read_16bit_mono(&mut pcm0, to_c_str("ex1_1_a.wav"));  /* 音データの入力 */
-	
-
-		let mut pcm1_s : Vec<c_double> = vec![0.0  ; pcm0.length as usize];
-		
+		wave_read_16bit_mono(&mut pcm0, to_c_str("ex1_1_a.wav"));  /* 音データの入力 */	
 
 		let pcm0_slice = from_raw_parts(pcm0.s, pcm0.length as usize);
 
-		for n in 0..pcm0.length as usize {
-			pcm1_s[n] = pcm0_slice[n]; /* 音データのコピー */
-		}
+		let mut pcm1_s : Vec<c_double> = (0..pcm0.length)
+		  .map(|n| pcm0_slice[n as usize])/* 音データのコピー */
+		  .collect();
 
 		let mut pcm1 : MONO_PCM = MONO_PCM{
 			fs : pcm0.fs, /* 標本化周波数 */
@@ -154,16 +150,15 @@ fn ex2_1(){
 
 	let pcm_fs : usize = 44100; /* 標本化周波数 */
 	let pcm_length : usize = pcm_fs * 1; /* 音データの長さ */
-	let mut pcm_s : Vec<c_double> = vec![0.0  ; pcm_length];
 	
 	
 	let a = 0.1; /* 振幅 */
 	let f0 = 500.0; /* 周波数 */
 	
 	/* サイン波 */
-	for n in 0..pcm_length {
-		pcm_s[n] = a * (2.0 * PI * f0 * (n as f64) / (pcm_fs as f64)).sin();
-	}
+	let mut pcm_s : Vec<c_double> = (0..pcm_length)
+		.map(|n| a * (2.0 * PI * f0 * (n as f64) / (pcm_fs as f64)).sin())
+		.collect();
 
 	let mut pcm : MONO_PCM = MONO_PCM{ 
 		fs : pcm_fs as i32, /* 標本化周波数 */
@@ -209,12 +204,11 @@ int main(void)
 
 
 unsafe fn sine_wave(pcm : *mut MONO_PCM, f0: c_double, a: c_double, offset: c_int, duration: c_int) {
-	let mut s : Vec<c_double> = vec![0.0; duration as usize];
-
 	/* サイン波 */
-	for n in 0..duration {
-		s[n as usize] = a * (2.0 * PI * f0 * (n as f64) / ((*pcm).fs as f64)).sin();
-	}
+	let mut s : Vec<c_double> = (0..duration)
+	 .map(|n| (2.0 * PI * f0 * (n as f64) / ((*pcm).fs as f64)).sin() * a)
+	 .collect();
+
 
 	/* フェード処理 */
 	for n in 0..((*pcm).fs as f64*0.01).ceil() as usize {
