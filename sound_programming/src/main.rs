@@ -1,6 +1,7 @@
 extern crate sound_programming;
 extern crate rand;
 //use std::io::Write;
+use sound_programming::wave_write_16bit_mono_safer2;
 use sound_programming::wave_read_16bit_stereo_safer2;
 use sound_programming::to_c_str;
 use sound_programming::wave_read_16bit_mono_safer2;
@@ -48,18 +49,9 @@ fn ex1_1(){
 		  .map(|n| pcm0_slice[n as usize])/* 音データのコピー */
 		  .collect();
 
-		let mut pcm1 : MONO_PCM = MONO_PCM{
-			fs : pcm0_fs, /* 標本化周波数 */
-			bits : pcm0_bits, /* 量子化精度 */
-			length : pcm0_length, /* 音データの長さ */
-			s : pcm1_s.as_mut_ptr()  /* 音データ */
-		};
-	unsafe{
-		wave_write_16bit_mono(&mut pcm1, to_c_str("ex1_1_b.wav")); /* 音データの出力 */
-	}	
-
-	// pcm0.s possibly leaks? (may be handled nicely by drop of pcm0_slice)
-
+		
+		wave_write_16bit_mono_safer2("ex1_1_b.wav", (&mut pcm1_s, pcm0_fs, pcm0_bits, pcm0_length)); /* 音データの出力 */
+	
 }
 
 #[allow(non_snake_case)]
@@ -103,15 +95,8 @@ fn ex2_1(){
 		.map(|n| a * (2.0 * PI * f0 * (n as f64) / (pcm_fs as f64)).sin())
 		.collect();
 
-	let mut pcm : MONO_PCM = MONO_PCM{ 
-		fs : pcm_fs as i32, /* 標本化周波数 */
-		bits : 16, /* 量子化精度 */
-		length : pcm_length as i32, /* 音データの長さ */
-		s: pcm_s.as_mut_ptr()
-	};
-	unsafe {
-		wave_write_16bit_mono(&mut pcm, to_c_str("ex2_1.wav"));
-	} 	
+	wave_write_16bit_mono_safer2("ex2_1.wav", (&mut pcm_s, pcm_fs as i32, 16, pcm_length as i32));
+	
 }
 
 
@@ -156,10 +141,10 @@ unsafe{
   sine_wave(&mut pcm, 440.00, 0.1, itdyi(pcm.fs, 1.25), itdyi(pcm.fs, 0.25)); /* A4 */
   sine_wave(&mut pcm, 493.88, 0.1, itdyi(pcm.fs, 1.50), itdyi(pcm.fs, 0.25)); /* B4 */
   sine_wave(&mut pcm, 523.25, 0.1, itdyi(pcm.fs, 1.75), itdyi(pcm.fs, 0.25)); /* C5 */
-  
-  
-	wave_write_16bit_mono(&mut pcm, to_c_str("ex2_2.wav"));
   }
+  
+    wave_write_16bit_mono_safer2("ex2_2.wav", (&mut pcm_s, pcm.fs, pcm.bits, pcm.length));
+  
 
 }
 
@@ -191,16 +176,10 @@ fn ex3_1(){
     }
 
 
-	let mut pcm : MONO_PCM = MONO_PCM{
-		fs : pcm_fs as i32,
-		bits : 16,
-		length : pcm_length as i32,
-		s : pcm_s.as_mut_ptr()
-	};
+	
 
-	unsafe{
-		wave_write_16bit_mono(&mut pcm, to_c_str("ex3_1.wav"));
-	}
+	wave_write_16bit_mono_safer2("ex3_1.wav", (&mut pcm_s, pcm_fs as i32, 16, pcm_length as i32));
+	
 }
 
 fn ex3_2(){
@@ -224,17 +203,7 @@ fn ex3_2(){
         pcm_s[n] *= gain;
     }
 
-
-	let mut pcm : MONO_PCM = MONO_PCM{
-		fs : pcm_fs as i32,
-		bits : 16,
-		length : pcm_length as i32,
-		s : pcm_s.as_mut_ptr()
-	};
-
-	unsafe{
-		wave_write_16bit_mono(&mut pcm, to_c_str("ex3_2.wav"));
-	}
+	wave_write_16bit_mono_safer2("ex3_2.wav", (&mut pcm_s, pcm_fs as i32, 16, pcm_length as i32));
 }
 
 
@@ -260,16 +229,8 @@ fn ex3_3(){
     }
 
 
-	let mut pcm : MONO_PCM = MONO_PCM{
-		fs : pcm_fs as i32,
-		bits : 16,
-		length : pcm_length as i32,
-		s : pcm_s.as_mut_ptr()
-	};
-
-	unsafe{
-		wave_write_16bit_mono(&mut pcm, to_c_str("ex3_3.wav"));
-	}
+	wave_write_16bit_mono_safer2("ex3_3.wav", (&mut pcm_s, pcm_fs as i32, 16, pcm_length as i32));
+	
 }
 
 
@@ -295,16 +256,8 @@ fn ex3_4(){
     }
 
 
-	let mut pcm : MONO_PCM = MONO_PCM{
-		fs : pcm_fs as i32,
-		bits : 16,
-		length : pcm_length as i32,
-		s : pcm_s.as_mut_ptr()
-	};
-
-	unsafe{
-		wave_write_16bit_mono(&mut pcm, to_c_str("ex3_4.wav"));
-	}
+	wave_write_16bit_mono_safer2("ex3_4.wav", (&mut pcm_s, pcm_fs as i32, 16, pcm_length as i32));
+	
 }
 
 
@@ -336,17 +289,7 @@ fn ex3_5(){
         pcm_s[n] *= gain;
     }
 
-
-	let mut pcm : MONO_PCM = MONO_PCM{
-		fs : pcm_fs as i32,
-		bits : 16,
-		length : pcm_length as i32,
-		s : pcm_s.as_mut_ptr()
-	};
-
-	unsafe{
-		wave_write_16bit_mono(&mut pcm, to_c_str("ex3_5.wav"));
-	}
+	wave_write_16bit_mono_safer2("ex3_5.wav", (&mut pcm_s, pcm_fs as i32, 16, pcm_length as i32));
 }
 
 #[allow(non_snake_case)]
@@ -514,16 +457,6 @@ fn ex6_4(){
     		}
   		}
   	
-  		let mut pcm1 : MONO_PCM = MONO_PCM{
-			fs : pcm0_fs,
-			bits : pcm0_bits,
-			length : pcm0_length,
-			s :pcm1_s.as_mut_ptr()
-		};
-	unsafe{
-  		wave_write_16bit_mono(&mut pcm1, to_c_str("ex6_4.wav")); 
-  
-	}
-
+		wave_write_16bit_mono_safer2("ex6_4.wav", (&mut pcm1_s, pcm0_fs, pcm0_bits, pcm0_length));
 }
 

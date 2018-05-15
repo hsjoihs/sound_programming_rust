@@ -132,3 +132,16 @@ pub fn wave_read_16bit_stereo_safer2(path : &str) -> (&[f64], &[f64], i32, i32, 
 pub fn to_c_str(a: &str) -> *mut i8 {
 	CString::new(a).unwrap().into_raw()
 }
+
+#[allow(non_snake_case)]
+pub fn wave_write_16bit_mono_safer2(path: &str, x : (&mut [f64], i32, i32, i32) ){
+	let mut pcm1 : MONO_PCM = MONO_PCM{
+			fs : x.1,
+			bits : x.2,
+			length : x.3,
+			s : x.0.as_mut_ptr()
+		};
+	unsafe{
+  		wave_write_16bit_mono(&mut pcm1, to_c_str(path)); 
+	}
+}
