@@ -26,7 +26,8 @@ fn main() {
 	ex3_2();
 	ex3_3();
 	ex3_4();
-	ex3_5();
+	// ex3_5(); //slow
+	ex4_1();
     assert_eq!(sinc(2.1),2.1f64.sin()/2.1 );
 }
 
@@ -633,7 +634,6 @@ int main(void)
 
 */
 
-#[allow(unused_variables, unused_mut, non_snake_case)]
 fn ex3_5(){
 	let f0 = 1.0; /* 基本周波数 */
   
@@ -710,3 +710,53 @@ int main(void)
 }
 
 */
+
+#[allow(non_snake_case)]
+fn ex4_1(){
+	let N = 64;
+	unsafe{
+		let mut pcm : MONO_PCM = mem::uninitialized();
+		wave_read_16bit_mono(&mut pcm, to_c_str("sine_500hz.wav"));
+
+		let mut x_real : Vec<c_double> = vec![0.0; N];
+		let mut x_imag : Vec<c_double> = vec![0.0; N];
+		let mut X_real : Vec<c_double> = vec![0.0; N];
+		let mut X_imag : Vec<c_double> = vec![0.0; N];
+
+		let pcm_slice = from_raw_parts(pcm.s, pcm.length as usize);
+
+		/* 波形 */
+		for n in 0..N {
+ 		   x_real[n] = pcm_slice[n]; /* x(n)の実数部 */
+ 		   x_imag[n] = 0.0; /* x(n)の虚数部 */
+		}
+
+		/* DFT */
+		for k_ in 0..N {
+			let k = k_ as f64;
+			for n_ in 0..N {
+				let n = n_ as f64;
+				let N = N as f64;
+                let W_real = (2.0 * PI * k * n / N).cos();
+                let W_imag = -(2.0 * PI * k * n / N).sin();
+                X_real[k_] += W_real * x_real[n_] - W_imag * x_imag[n_]; /* X(k)の実数部 */
+                X_imag[k_] += W_real * x_imag[n_] + W_imag * x_real[n_]; /* X(k)の虚数部 */
+			}
+		}
+
+		/* 周波数特性 */
+		for k in 0..N {
+			assert_close(X_real[k], 0.0);
+			assert_close(X_imag[k], match k {
+				4 => -16.0,
+				60 => 16.0,
+				_ => 0.0
+			});
+		}
+	}
+}
+
+fn assert_close(a : f64, b: f64){
+	assert!((a-b).abs() < 1.75e-4);
+}
+
