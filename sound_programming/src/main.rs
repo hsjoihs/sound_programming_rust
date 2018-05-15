@@ -1,4 +1,5 @@
 extern crate sound_programming;
+extern crate rand;
 //use std::io::Write;
 use std::slice::from_raw_parts;
 use std::slice::from_raw_parts_mut;
@@ -14,6 +15,7 @@ use sound_programming::c_int;
 use sound_programming::c_double;
 use sound_programming::MONO_PCM;
 use sound_programming::sinc;
+use rand::Rng;
 //use std::io;
 fn main() {
 	ex1_1();
@@ -24,6 +26,7 @@ fn main() {
 	ex3_2();
 	ex3_3();
 	ex3_4();
+	ex3_5();
     assert_eq!(sinc(2.1),2.1f64.sin()/2.1 );
 }
 
@@ -552,7 +555,6 @@ int main(void)
 
 */
 
-#[allow(unused_variables, unused_mut, non_snake_case)]
 fn ex3_4(){
 	let f0 = 500.0; /* 基本周波数 */
 
@@ -627,6 +629,84 @@ int main(void)
   free(pcm.s);
   
   return 0;
+}
+
+*/
+
+#[allow(unused_variables, unused_mut, non_snake_case)]
+fn ex3_5(){
+	let f0 = 1.0; /* 基本周波数 */
+  
+  
+
+	let pcm_fs = 44100;
+	let pcm_length = pcm_fs * 1;
+	let mut pcm_s : Vec<c_double> = vec![0.0  ; pcm_length];
+
+	let mut rng = rand::thread_rng();
+	/* 白色雑音 */
+  for i in 1..=22050{
+  	let theta: f64 = rng.gen_range(0.0, 2.0 * PI); 
+  	if i % 441 == 0 {
+  		println!("{} / 22050", i);
+  	}
+  	let i = i as f64;   
+    for n in 0..pcm_length{
+      pcm_s[n] += (2.0 * PI * i * f0 * (n as f64) / (pcm_fs as f64) + theta).sin();
+    }
+  }
+  
+    let gain = 0.001; /* ゲイン */
+    
+    for n in 0..pcm_length{
+        pcm_s[n] *= gain;
+    }
+
+
+	let mut pcm : MONO_PCM = MONO_PCM{
+		fs : pcm_fs as i32,
+		bits : 16,
+		length : pcm_length as i32,
+		s : pcm_s.as_mut_ptr()
+	};
+
+	unsafe{
+		wave_write_16bit_mono(&mut pcm, to_c_str("ex3_5.wav"));
+	}
+}
+
+/*
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+#include "wave.h"
+
+int main(void)
+{
+  MONO_PCM pcm;
+  int n, i;
+  double f0, theta, gain;
+  
+  pcm.fs = 44100; /* 標本化周波数 */
+  pcm.bits = 16; /* 量子化精度 */
+  pcm.length = pcm.fs * 1; /* 音データの長さ */
+  pcm.s = calloc(pcm.length, sizeof(double)); /* 音データ */
+  
+  f0 = 1.0; /* 基本周波数 */
+  
+  /* 白色雑音 */
+  for (i = 1; i <= 22050; i++)
+  {
+    theta = (double)rand() / RAND_MAX * 2.0 * M_PI;
+    
+    for (n = 0; n < pcm.length; n++)
+    {
+      pcm.s[n] += sin(2.0 * M_PI * i * f0 * n / pcm.fs + theta);
+    }
+  }
+
+  
+
 }
 
 */
