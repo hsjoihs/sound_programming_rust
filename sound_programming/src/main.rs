@@ -30,6 +30,7 @@ fn main() {
 	ex4_1();
 	ex4_2();
 	ex4_3();
+	ex4_4();
 	ex6_4();
 	ex10_4();
 	assert_eq!(sinc(2.1),2.1f64.sin()/2.1 );
@@ -366,6 +367,51 @@ fn ex4_3(){
 	}
 
 	safe_FFT(&mut x_real, &mut x_imag);  /* FFTの計算結果はx_realとx_imagに上書きされる */
+}
+
+#[allow(unused_variables, non_snake_case)]
+fn ex4_4(){
+
+{
+	let pcm0_fs = 44100;
+	let pcm0_bits = 16;
+	let pcm0_length = pcm0_fs * 1; /* 音データの長さ */
+  	let mut pcm0_s : Vec<c_double> = vec![0.0; pcm0_length]; /* 音データ */
+
+  	let f0 = 500.0; /* 基本周波数 */
+
+  	/* 基本音を含む音 */
+  	for i in 1..=44 {
+  		for n in 0..pcm0_length {
+  			pcm0_s[n] += (2.0 * PI * i as f64 * f0 * n as f64 / pcm0_fs as f64).sin();
+  		}
+  	}
+
+  	let gain = 0.01; /* ゲイン */
+  	for n in 0..pcm0_length {
+    	pcm0_s[n] *= gain;
+  	}
+  	wave_write_16bit_mono_safer2("ex4_4a.wav", (&mut pcm0_s, pcm0_fs as i32, pcm0_bits, pcm0_length as i32));
+}
+{
+	let pcm1_fs = 44100;
+	let pcm1_bits = 16;
+	let pcm1_length = pcm1_fs * 1; /* 音データの長さ */
+  	let mut pcm1_s : Vec<c_double> = vec![0.0; pcm1_length]; /* 音データ */
+  	let f0 = 500.0; /* 基本周波数 */
+  	/* 基本音を含まない音 */
+  	for i in 2..=44 {
+  		for n in 0..pcm1_length {
+  			pcm1_s[n] += (2.0 * PI * i as f64 * f0 * n as f64 / pcm1_fs as f64).sin();
+  		}
+  	}
+  	let gain = 0.01; /* ゲイン */
+  	for n in 0..pcm1_length {
+  		pcm1_s[n] *= gain;
+  	}
+  	wave_write_16bit_mono_safer2("ex4_4b.wav", (&mut pcm1_s, pcm1_fs as i32, pcm1_bits, pcm1_length as i32));
+}
+
 }
 
 
