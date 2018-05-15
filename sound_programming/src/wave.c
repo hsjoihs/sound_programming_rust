@@ -2,6 +2,10 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
+
+#define long int32_t
+#define short int16_t
 
 typedef struct
 {

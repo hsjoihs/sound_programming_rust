@@ -1,4 +1,9 @@
 extern crate sound_programming;
+//use std::io::Write;
+use std::slice::from_raw_parts;
+use sound_programming::wave_write_16bit_stereo;
+use sound_programming::wave_read_16bit_stereo;
+use sound_programming::STEREO_PCM;
 use sound_programming::wave_read_16bit_mono;
 use std::slice::from_raw_parts_mut;
 use sound_programming::c_int;
@@ -9,8 +14,10 @@ use sound_programming::MONO_PCM;
 use sound_programming::sinc;
 use std::mem;
 use std::ffi::CString;
+//use std::io;
 fn main() {
 	ex1_1();
+	ex1_2();
 	ex2_1();
 	ex2_2();
 	unsafe{
@@ -22,7 +29,6 @@ fn to_c_str(a: &str) -> *mut i8 {
 	CString::new(a).unwrap().into_raw()
 }
 
-#[allow(unused_variables, unused_mut)]
 fn ex1_1(){
 
 	unsafe{
@@ -34,7 +40,7 @@ fn ex1_1(){
 		let mut pcm1_s : Vec<c_double> = vec![0.0  ; pcm0.length as usize];
 		
 
-		let mut pcm0_slice = from_raw_parts_mut(pcm0.s, pcm0.length as usize);
+		let pcm0_slice = from_raw_parts(pcm0.s, pcm0.length as usize);
 
 		for n in 0..pcm0.length as usize {
 			pcm1_s[n] = pcm0_slice[n]; /* 音データのコピー */
@@ -48,6 +54,8 @@ fn ex1_1(){
 		};
 		wave_write_16bit_mono(&mut pcm1, to_c_str("ex1_1_b.wav")); /* 音データの出力 */
 	}	
+
+	// pcm0.s possibly leaks? (may be handled nicely by drop of pcm0_slice)
 
 }
 // ex1_1.c:
@@ -77,6 +85,71 @@ int main(void)
   return 0;
 }
 
+*/
+#[allow(unused_variables, unused_mut, non_snake_case)]
+fn ex1_2(){
+	unsafe{
+		let mut pcm0 : STEREO_PCM = mem::uninitialized();
+		wave_read_16bit_stereo(&mut pcm0, to_c_str("ex1_2_a.wav")); /* 音データの入力 */
+
+
+		let mut pcm1_sL : Vec<c_double> = vec![0.0  ; pcm0.length as usize];
+		let mut pcm1_sR : Vec<c_double> = vec![0.0  ; pcm0.length as usize];
+
+		let pcm0_sliceL = from_raw_parts(pcm0.sL, pcm0.length as usize);
+		let pcm0_sliceR = from_raw_parts(pcm0.sR, pcm0.length as usize);
+		
+		for n in 0..pcm0.length as usize {
+		    pcm1_sL[n] = pcm0_sliceL[n]; /* 音データ（左） のコピー */
+		    pcm1_sR[n] = pcm0_sliceR[n]; /* 音データ（右）のコピー */
+		}
+		
+		let mut pcm1 : STEREO_PCM = STEREO_PCM {
+			fs: pcm0.fs,
+			bits: pcm0.bits,
+			length: pcm0.length,
+			sL : pcm1_sL.as_mut_ptr(),
+			sR : pcm1_sR.as_mut_ptr()
+		};
+
+		wave_write_16bit_stereo(&mut pcm1, to_c_str("ex1_2_b.wav")); /* 音データの出力 */
+	}
+	// pcm0.sL and pcm0.sR leaks
+}
+// ex1_2.c:
+/*
+#include <stdio.h>
+#include <stdlib.h>
+#include "wave.h"
+
+int main(void)
+{
+  STEREO_PCM pcm0, pcm1;
+  int n;
+  
+  wave_read_16bit_stereo(&pcm0, "a.wav"); /* 音データの入力 */
+  
+  pcm1.fs = pcm0.fs; /* 標本化周波数 */
+  pcm1.bits = pcm0.bits; /* 量子化精度 */
+  pcm1.length = pcm0.length; /* 音データの長さ */
+  pcm1.sL = calloc(pcm1.length, sizeof(double)); /* 音データ（左） */
+  pcm1.sR = calloc(pcm1.length, sizeof(double)); /* 音データ（右） */
+  
+  for (n = 0; n < pcm1.length; n++)
+  {
+    pcm1.sL[n] = pcm0.sL[n]; /* 音データ（左） のコピー */
+    pcm1.sR[n] = pcm0.sR[n]; /* 音データ（右）のコピー */
+  }
+  
+  wave_write_16bit_stereo(&pcm1, "b.wav"); /* 音データの出力 */
+  
+  free(pcm0.sL);
+  free(pcm0.sR);
+  free(pcm1.sL);
+  free(pcm1.sR);
+  
+  return 0;
+}
 */
 
 fn ex2_1(){
