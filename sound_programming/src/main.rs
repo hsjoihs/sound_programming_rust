@@ -1,19 +1,19 @@
 extern crate sound_programming;
 //use std::io::Write;
 use std::slice::from_raw_parts;
+use std::slice::from_raw_parts_mut;
+use std::f64::consts::PI;
+use std::mem;
+use std::ffi::CString;
+use sound_programming::wave_read_16bit_mono;
+use sound_programming::wave_write_16bit_mono;
 use sound_programming::wave_write_16bit_stereo;
 use sound_programming::wave_read_16bit_stereo;
 use sound_programming::STEREO_PCM;
-use sound_programming::wave_read_16bit_mono;
-use std::slice::from_raw_parts_mut;
 use sound_programming::c_int;
-use sound_programming::wave_write_16bit_mono;
-use std::f64::consts::PI;
 use sound_programming::c_double;
 use sound_programming::MONO_PCM;
 use sound_programming::sinc;
-use std::mem;
-use std::ffi::CString;
 //use std::io;
 fn main() {
 	ex1_1();
