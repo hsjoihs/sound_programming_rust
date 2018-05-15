@@ -1,0 +1,6 @@
+[package]
+name = "sound_programming"
+version = "0.1.0"
+authors = ["hsjoihs <hs.ioling.hs@gmail.com>"]
+
+[dependencies]
