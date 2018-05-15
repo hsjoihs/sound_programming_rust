@@ -130,7 +130,7 @@ void IIR_peaking(double fc, double Q, double g, double a[], double b[])
   a[0] = 1.0;
 }
 
-void IIR_filtering(double x[], double y[], int L, double a[], double b[], int I, int J)
+void IIR_filtering(const double x[], double y[], int L, const double a[], const double b[], int I, int J)
 {
   int n, m;
   

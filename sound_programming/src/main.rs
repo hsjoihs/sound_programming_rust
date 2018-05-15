@@ -1,6 +1,8 @@
 extern crate sound_programming;
 extern crate rand;
 //use std::io::Write;
+use sound_programming::IIR_filtering;
+use sound_programming::IIR_LPF;
 use sound_programming::FIR_filtering;
 use sound_programming::FIR_LPF;
 use sound_programming::safe_ADSR;
@@ -39,6 +41,7 @@ fn main() {
 	ex5_4();
 	ex5_5();
 	ex6_1();
+	ex6_2();
 	ex6_4();
 	ex10_4();
 	assert_eq!(sinc(2.1),2.1f64.sin()/2.1 );
@@ -538,7 +541,7 @@ fn ex5_4(){
 
 }
 
-#[allow(non_snake_case, unused_variables)]
+#[allow(non_snake_case)]
 fn ex5_5(){
 	let pcm_fs = 44100; /* 標本化周波数 */
     let pcm_bits = 16; /* 量子化精度 */
@@ -586,7 +589,7 @@ fn ex5_5(){
   	wave_write_16bit_mono_safer2("ex5_5.wav", (&mut pcm_s, pcm_fs as i32, pcm_bits, pcm_length as i32));
 }
 
-#[allow(non_snake_case, unused_variables)]
+#[allow(non_snake_case)]
 fn ex6_1(){
 	let (pcm0_s, pcm0_fs, pcm0_bits, pcm0_length) = wave_read_16bit_mono_safer2("sine_500hz_3500hz.wav");
     let pcm1_fs = pcm0_fs; /* 標本化周波数 */
@@ -611,6 +614,30 @@ unsafe{
 	FIR_filtering(pcm0_s.as_ptr(), pcm1_s.as_mut_ptr(), pcm1_length as i32, b.as_mut_ptr(), J as i32)
 }
   	wave_write_16bit_mono_safer2("ex6_1.wav", (&mut pcm1_s, pcm1_fs, pcm1_bits, pcm1_length));
+}
+
+#[allow(non_snake_case, unused_variables)]
+fn ex6_2(){
+	let (pcm0_s, pcm0_fs, pcm0_bits, pcm0_length) = wave_read_16bit_mono_safer2("sine_500hz_3500hz.wav");
+    let pcm1_fs = pcm0_fs; /* 標本化周波数 */
+    let pcm1_bits = pcm0_bits; /* 量子化精度 */
+    let pcm1_length = pcm0_length; /* 音データの長さ */
+    let mut pcm1_s = vec![0.0; pcm1_length as usize]; /* 音データ */	   
+    let fc = 1000.0 / pcm0_fs as f64; /* 遮断周波数 */
+    let Q = 1.0 / 2.0f64.sqrt(); /* クオリティファクタ */
+    let I = 2; /* 遅延器の数 */
+    let J = 2; /* 遅延器の数 */
+
+    let mut a = [0.0; 3];
+    let mut b = [0.0; 3];
+
+unsafe{
+	IIR_LPF(fc, Q, a.as_mut_ptr(), b.as_mut_ptr()); /* IIRフィルタの設計 */
+	IIR_filtering(pcm0_s.as_ptr(),pcm1_s.as_mut_ptr(),pcm1_length,a.as_ptr(),b.as_ptr(),I,J);
+}
+
+  	wave_write_16bit_mono_safer2("ex6_2.wav",(&mut pcm1_s, pcm1_fs, pcm1_bits, pcm1_length));
+	
 }
 
 #[allow(non_snake_case)]

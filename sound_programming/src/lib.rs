@@ -59,7 +59,7 @@ extern {
 	;pub fn IIR_low_shelving(fc: c_double, Q: c_double,g: c_double, a: *mut c_double, b: *mut c_double)
 	;pub fn IIR_high_shelving(fc: c_double, Q: c_double,g: c_double, a: *mut c_double, b: *mut c_double)
 	;pub fn IIR_peaking(fc: c_double, Q: c_double,g: c_double, a: *mut c_double, b: *mut c_double)
-	;pub fn IIR_filtering(x: *mut c_double, y: *mut c_double, L: c_int, a: *mut c_double, b: *mut c_double, I: c_int, J: c_int);
+	;pub fn IIR_filtering(x: *const c_double, y: *mut c_double, L: c_int, a: *const c_double, b: *const c_double, I: c_int, J: c_int);
 }
 
 pub fn sinc(x: c_double) -> c_double {  
