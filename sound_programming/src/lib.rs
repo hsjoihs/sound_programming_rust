@@ -9,17 +9,34 @@ pub use libc::c_double;
 use std::ffi::CString;
 pub mod fft;
 
-#[link(name = "adsr")]
-extern {
-    pub fn ADSR(e: *mut c_double, A: c_int, D: c_int, S: c_double, R: c_int, gate: c_int, duration: c_int);
-}
 
 #[allow(non_snake_case)]
 pub fn safe_ADSR(e: &mut [c_double], A: usize, D: usize, S: c_double, R: usize, gate: usize, duration: usize){
-	unsafe{
-		ADSR(e.as_mut_ptr(), A as i32, D as i32, S, R as i32, gate as i32, duration as i32);
+	if A != 0 {
+		for n in 0..A {
+			e[n] = 1.0 - (-5.0 * n as f64 / A as f64).exp();
+		}
 	}
+  
+    if D != 0 {
+        for n in A..gate {
+            e[n] = S + (1.0 - S) * (-5.0 * (n - A) as f64 / D as f64).exp();
+        }
+    } else {
+        for n in A..gate {
+           e[n] = S;
+        }
+  	}
+  
+    if R != 0
+    {
+        for n in gate..duration
+        {
+          e[n] = e[gate - 1] * (-5.0 * (n - gate + 1) as f64 / R as f64).exp();
+        }
+    }
 }
+
 
 
 #[link(name = "fir_filter")]

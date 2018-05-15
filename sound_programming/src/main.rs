@@ -2,7 +2,6 @@ extern crate sound_programming;
 extern crate rand;
 //use std::io::Write;
 use sound_programming::safe_ADSR;
-use sound_programming::ADSR;
 use sound_programming::wave_write_16bit_stereo_safer2;
 use sound_programming::wave_write_16bit_mono_safer2;
 use sound_programming::wave_read_16bit_stereo_safer2;
