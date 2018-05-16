@@ -1,5 +1,4 @@
 use std::slice::from_raw_parts;
-use std::fmt::Debug;
 use std::fs::File;
 use std::io::Read;
 use std::mem;

@@ -1,6 +1,4 @@
 extern crate libc;
-use std::slice::from_raw_parts;
-use std::mem;
 use std::slice::from_raw_parts_mut;
 use std::f64::consts::PI;
 pub use libc::c_char;
@@ -79,7 +77,7 @@ extern {
 
 	/*pub*/ //fn wave_read_16bit_mono(pcm: *mut MONO_PCM, file_name: *const c_char);
 	/*pub*/ fn wave_write_16bit_mono(pcm: *mut MONO_PCM, file_name: *const c_char);
-	/*pub*/ fn wave_read_16bit_stereo(pcm: *mut STEREO_PCM, file_name: *const c_char);
+	/*pub*/ //fn wave_read_16bit_stereo(pcm: *mut STEREO_PCM, file_name: *const c_char);
 	/*pub*/ fn wave_write_16bit_stereo(pcm: *mut STEREO_PCM, file_name: *const c_char);
 	
 	pub fn wave_read_IMA_ADPCM_mono(pcm: *mut MONO_PCM, file_name: *const c_char);
