@@ -14,6 +14,7 @@ extern {
 
 #[allow(non_snake_case)]
 pub fn safe_FIR_LPF(fe: c_double, J: usize, b: &mut [c_double], w: &mut [c_double]){
+	assert_eq!(J%2, 0);
 	assert_eq!(J+1, b.len());
 	assert_eq!(J+1, w.len());
 
@@ -23,8 +24,8 @@ pub fn safe_FIR_LPF(fe: c_double, J: usize, b: &mut [c_double], w: &mut [c_doubl
 		b[(offset + m) as usize] = 2.0 * fe * sinc(2.0 * PI * fe * m as f64);
 	}
 
-	for m in 0..(J+1) as usize {
-		b[m] *= w[m];
+	for (m, item) in b.iter_mut().enumerate(){
+		*item *= w[m];
 	}
 
 }
