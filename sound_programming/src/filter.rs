@@ -50,8 +50,8 @@ extern {
 	;pub fn IIR_HPF(fc  : c_double, Q:  c_double , a: *mut c_double, b: *mut c_double)
 	;pub fn IIR_BPF(fc1 : c_double, fc2: c_double, a: *mut c_double, b: *mut c_double)
 	;pub fn IIR_BEF(fc1 : c_double, fc2: c_double, a: *mut c_double, b: *mut c_double)
-	;/*pub*/ fn IIR_resonator(fc: c_double, Q: c_double, a: *mut c_double, b: *mut c_double)
-	;pub fn IIR_notch(fc: c_double, Q: c_double, a: *mut c_double, b: *mut c_double)
+	;/*pub*/ //fn IIR_resonator(fc: c_double, Q: c_double, a: *mut c_double, b: *mut c_double)
+	pub fn IIR_notch(fc: c_double, Q: c_double, a: *mut c_double, b: *mut c_double)
 	;pub fn IIR_low_shelving(fc: c_double, Q: c_double,g: c_double, a: *mut c_double, b: *mut c_double)
 	;pub fn IIR_high_shelving(fc: c_double, Q: c_double,g: c_double, a: *mut c_double, b: *mut c_double)
 	;pub fn IIR_peaking(fc: c_double, Q: c_double,g: c_double, a: *mut c_double, b: *mut c_double)
@@ -89,7 +89,16 @@ pub fn safe_IIR_filtering(x: &[c_double], y: &mut [c_double], L: usize, a: &[c_d
 
 #[allow(non_snake_case)]
 pub fn safe_IIR_resonator(fc: c_double, Q: c_double, a: &mut [c_double], b: &mut [c_double]){
-	unsafe{
-	IIR_resonator(fc, Q, a.as_mut_ptr(), b.as_mut_ptr()); /* IIRフィルタの設計 */
-    }	
+	assert_eq!(3, a.len());
+	assert_eq!(3, b.len());
+  	let fc = (PI * fc).tan() / (2.0 * PI);
+
+    a[0] = 1.0 + 2.0 * PI * fc / Q + 4.0 * PI * PI * fc * fc;
+    a[1] = (8.0 * PI * PI * fc * fc - 2.0) / a[0];
+    a[2] = (1.0 - 2.0 * PI * fc / Q + 4.0 * PI * PI * fc * fc) / a[0];
+    b[0] = 2.0 * PI * fc / Q / a[0];
+    b[1] = 0.0;
+    b[2] = -2.0 * PI * fc / Q / a[0];
+    
+    a[0] = 1.0;
 }
