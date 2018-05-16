@@ -4,8 +4,6 @@
 #include <stdlib.h>
 #include <stdint.h>
 
-#define long int32_t
-#define short int16_t
 
 typedef struct
 {
@@ -27,20 +25,20 @@ typedef struct
 void wave_read_8bit_mono(MONO_PCM *pcm, const char *file_name)
 {
   FILE *fp;
-  char riff_chunk_ID[4];
-  long riff_chunk_size;
-  char file_format_type[4];
-  char fmt_chunk_ID[4];
-  long fmt_chunk_size;
-  short wave_format_type;
-  short channel;
-  long samples_per_sec;
-  long bytes_per_sec;
-  short block_size;
-  short bits_per_sample;
-  char data_chunk_ID[4];
-  long data_chunk_size;
-  unsigned char data;
+  int8_t riff_chunk_ID[4];
+  int32_t riff_chunk_size;
+  int8_t  file_format_type[4];
+  int8_t  fmt_chunk_ID[4];
+  int32_t fmt_chunk_size;
+  int16_t wave_format_type;
+  int16_t channel;
+  int32_t samples_per_sec;
+  int32_t bytes_per_sec;
+  int16_t block_size;
+  int16_t bits_per_sample;
+  int8_t  data_chunk_ID[4];
+  int32_t data_chunk_size;
+  uint8_t data;
   int n;
   
   fp = fopen(file_name, "rb");
@@ -76,21 +74,21 @@ void wave_read_8bit_mono(MONO_PCM *pcm, const char *file_name)
 void wave_write_8bit_mono(MONO_PCM *pcm, const char *file_name)
 {
   FILE *fp;
-  char riff_chunk_ID[4];
-  long riff_chunk_size;
-  char file_format_type[4];
-  char fmt_chunk_ID[4];
-  long fmt_chunk_size;
-  short wave_format_type;
-  short channel;
-  long samples_per_sec;
-  long bytes_per_sec;
-  short block_size;
-  short bits_per_sample;
-  char data_chunk_ID[4];
-  long data_chunk_size;
+  int8_t  riff_chunk_ID[4];
+  int32_t riff_chunk_size;
+  int8_t  file_format_type[4];
+  int8_t fmt_chunk_ID[4];
+  int32_t fmt_chunk_size;
+  int16_t wave_format_type;
+  int16_t channel;
+  int32_t samples_per_sec;
+  int32_t bytes_per_sec;
+  int16_t block_size;
+  int16_t bits_per_sample;
+  int8_t  data_chunk_ID[4];
+  int32_t data_chunk_size;
   double s;
-  unsigned char data;
+  uint8_t data;
   int n;
   
   riff_chunk_ID[0] = 'R';
@@ -166,20 +164,20 @@ void wave_write_8bit_mono(MONO_PCM *pcm, const char *file_name)
 void wave_read_8bit_stereo(STEREO_PCM *pcm, const char *file_name)
 {
   FILE *fp;
-  char riff_chunk_ID[4];
-  long riff_chunk_size;
-  char file_format_type[4];
-  char fmt_chunk_ID[4];
-  long fmt_chunk_size;
-  short wave_format_type;
-  short channel;
-  long samples_per_sec;
-  long bytes_per_sec;
-  short block_size;
-  short bits_per_sample;
-  char data_chunk_ID[4];
-  long data_chunk_size;
-  unsigned char data;
+  int8_t  riff_chunk_ID[4];
+  int32_t riff_chunk_size;
+  int8_t  file_format_type[4];
+  int8_t  fmt_chunk_ID[4];
+  int32_t fmt_chunk_size;
+  int16_t wave_format_type;
+  int16_t channel;
+  int32_t samples_per_sec;
+  int32_t bytes_per_sec;
+  int16_t block_size;
+  int16_t bits_per_sample;
+  int8_t  data_chunk_ID[4];
+  int32_t data_chunk_size;
+  uint8_t  data;
   int n;
   
   fp = fopen(file_name, "rb");
@@ -219,22 +217,22 @@ void wave_read_8bit_stereo(STEREO_PCM *pcm, const char *file_name)
 void wave_write_8bit_stereo(STEREO_PCM *pcm, const char *file_name)
 {
   FILE *fp;
-  char riff_chunk_ID[4];
-  long riff_chunk_size;
-  char file_format_type[4];
-  char fmt_chunk_ID[4];
-  long fmt_chunk_size;
-  short wave_format_type;
-  short channel;
-  long samples_per_sec;
-  long bytes_per_sec;
-  short block_size;
-  short bits_per_sample;
-  char data_chunk_ID[4];
-  long data_chunk_size;
+  int8_t  riff_chunk_ID[4];
+  int32_t riff_chunk_size;
+  int8_t  file_format_type[4];
+  int8_t  fmt_chunk_ID[4];
+  int32_t fmt_chunk_size;
+  int16_t wave_format_type;
+  int16_t channel;
+  int32_t samples_per_sec;
+  int32_t bytes_per_sec;
+  int16_t block_size;
+  int16_t bits_per_sample;
+  int8_t  data_chunk_ID[4];
+  int32_t data_chunk_size;
   double sL;
   double sR;
-  unsigned char data;
+  uint8_t data;
   int n;
   
   riff_chunk_ID[0] = 'R';
@@ -318,20 +316,20 @@ void wave_write_8bit_stereo(STEREO_PCM *pcm, const char *file_name)
 void wave_read_16bit_mono(MONO_PCM *pcm, const char *file_name)
 {
   FILE *fp;
-  char riff_chunk_ID[4];
-  long riff_chunk_size;
-  char file_format_type[4];
-  char fmt_chunk_ID[4];
-  long fmt_chunk_size;
-  short wave_format_type;
-  short channel;
-  long samples_per_sec;
-  long bytes_per_sec;
-  short block_size;
-  short bits_per_sample;
-  char data_chunk_ID[4];
-  long data_chunk_size;
-  short data;
+  int8_t  riff_chunk_ID[4];
+  int32_t riff_chunk_size;
+  int8_t  file_format_type[4];
+  int8_t  fmt_chunk_ID[4];
+  int32_t fmt_chunk_size;
+  int16_t wave_format_type;
+  int16_t channel;
+  int32_t samples_per_sec;
+  int32_t bytes_per_sec;
+  int16_t block_size;
+  int16_t bits_per_sample;
+  int8_t  data_chunk_ID[4];
+  int32_t data_chunk_size;
+  int16_t data;
   int n;
   
   fp = fopen(file_name, "rb");
@@ -367,21 +365,21 @@ void wave_read_16bit_mono(MONO_PCM *pcm, const char *file_name)
 void wave_write_16bit_mono(MONO_PCM *pcm, const char *file_name)
 {
   FILE *fp;
-  char riff_chunk_ID[4];
-  long riff_chunk_size;
-  char file_format_type[4];
-  char fmt_chunk_ID[4];
-  long fmt_chunk_size;
-  short wave_format_type;
-  short channel;
-  long samples_per_sec;
-  long bytes_per_sec;
-  short block_size;
-  short bits_per_sample;
-  char data_chunk_ID[4];
-  long data_chunk_size;
+  int8_t  riff_chunk_ID[4];
+  int32_t riff_chunk_size;
+  int8_t  file_format_type[4];
+  int8_t  fmt_chunk_ID[4];
+  int32_t fmt_chunk_size;
+  int16_t wave_format_type;
+  int16_t channel;
+  int32_t samples_per_sec;
+  int32_t bytes_per_sec;
+  int16_t block_size;
+  int16_t bits_per_sample;
+  int8_t  data_chunk_ID[4];
+  int32_t data_chunk_size;
   double s;
-  short data;
+  int16_t data;
   int n;
   
   riff_chunk_ID[0] = 'R';
@@ -441,7 +439,7 @@ void wave_write_16bit_mono(MONO_PCM *pcm, const char *file_name)
       s = 0.0; /* クリッピング */
     }
     
-    data = (short)((int)(s + 0.5) - 32768); /* 四捨五入とオフセットの調節 */
+    data = (int16_t)((int)(s + 0.5) - 32768); /* 四捨五入とオフセットの調節 */
     fwrite(&data, 2, 1, fp); /* 音データの書き出し */
   }
   
@@ -451,20 +449,20 @@ void wave_write_16bit_mono(MONO_PCM *pcm, const char *file_name)
 void wave_read_16bit_stereo(STEREO_PCM *pcm, const char *file_name)
 {
   FILE *fp;
-  char riff_chunk_ID[4];
-  long riff_chunk_size;
-  char file_format_type[4];
-  char fmt_chunk_ID[4];
-  long fmt_chunk_size;
-  short wave_format_type;
-  short channel;
-  long samples_per_sec;
-  long bytes_per_sec;
-  short block_size;
-  short bits_per_sample;
-  char data_chunk_ID[4];
-  long data_chunk_size;
-  short data;
+  int8_t  riff_chunk_ID[4];
+  int32_t riff_chunk_size;
+  int8_t  file_format_type[4];
+  int8_t  fmt_chunk_ID[4];
+  int32_t fmt_chunk_size;
+  int16_t wave_format_type;
+  int16_t channel;
+  int32_t samples_per_sec;
+  int32_t bytes_per_sec;
+  int16_t block_size;
+  int16_t bits_per_sample;
+  int8_t  data_chunk_ID[4];
+  int32_t data_chunk_size;
+  int16_t data;
   int n;
   
   fp = fopen(file_name, "rb");
@@ -504,22 +502,22 @@ void wave_read_16bit_stereo(STEREO_PCM *pcm, const char *file_name)
 void wave_write_16bit_stereo(STEREO_PCM *pcm, const char *file_name)
 {
   FILE *fp;
-  char riff_chunk_ID[4];
-  long riff_chunk_size;
-  char file_format_type[4];
-  char fmt_chunk_ID[4];
-  long fmt_chunk_size;
-  short wave_format_type;
-  short channel;
-  long samples_per_sec;
-  long bytes_per_sec;
-  short block_size;
-  short bits_per_sample;
-  char data_chunk_ID[4];
-  long data_chunk_size;
+  int8_t  riff_chunk_ID[4];
+  int32_t riff_chunk_size;
+  int8_t  file_format_type[4];
+  int8_t  fmt_chunk_ID[4];
+  int32_t fmt_chunk_size;
+  int16_t wave_format_type;
+  int16_t channel;
+  int32_t samples_per_sec;
+  int32_t bytes_per_sec;
+  int16_t block_size;
+  int16_t bits_per_sample;
+  int8_t  data_chunk_ID[4];
+  int32_t data_chunk_size;
   double sL;
   double sR;
-  short data;
+  int16_t data;
   int n;
   
   riff_chunk_ID[0] = 'R';
@@ -579,7 +577,7 @@ void wave_write_16bit_stereo(STEREO_PCM *pcm, const char *file_name)
       sL = 0.0; /* クリッピング */
     }
     
-    data = (short)((int)(sL + 0.5) - 32768); /* 四捨五入とオフセットの調節 */
+    data = (int16_t)((int)(sL + 0.5) - 32768); /* 四捨五入とオフセットの調節 */
     fwrite(&data, 2, 1, fp); /* 音データ（Lチャンネル）の書き出し */
     
     sR = (pcm->sR[n] + 1.0) / 2.0 * 65536.0;
@@ -593,7 +591,7 @@ void wave_write_16bit_stereo(STEREO_PCM *pcm, const char *file_name)
       sR = 0.0; /* クリッピング */
     }
     
-    data = (short)((int)(sR + 0.5) - 32768); /* 四捨五入とオフセットの調節 */
+    data = (int16_t)((int)(sR + 0.5) - 32768); /* 四捨五入とオフセットの調節 */
     fwrite(&data, 2, 1, fp); /* 音データ（Rチャンネル）の書き出し */
   }
   
@@ -603,25 +601,25 @@ void wave_write_16bit_stereo(STEREO_PCM *pcm, const char *file_name)
 void wave_read_PCMU_mono(MONO_PCM *pcm, const char *file_name)
 {
   FILE *fp;
-  char riff_chunk_ID[4];
-  long riff_chunk_size;
-  char file_format_type[4];
-  char fmt_chunk_ID[4];
-  long fmt_chunk_size;
-  short wave_format_type;
-  short channel;
-  long samples_per_sec;
-  long bytes_per_sec;
-  short block_size;
-  short bits_per_sample;
-  short extra_size;
-  char fact_chunk_ID[4];
-  long fact_chunk_size;
-  long sample_length;
-  char data_chunk_ID[4];
-  long data_chunk_size;
+  int8_t  riff_chunk_ID[4];
+  int32_t riff_chunk_size;
+  int8_t  file_format_type[4];
+  int8_t  fmt_chunk_ID[4];
+  int32_t fmt_chunk_size;
+  int16_t wave_format_type;
+  int16_t channel;
+  int32_t samples_per_sec;
+  int32_t bytes_per_sec;
+  int16_t block_size;
+  int16_t bits_per_sample;
+  int16_t extra_size;
+  int8_t  fact_chunk_ID[4];
+  int32_t fact_chunk_size;
+  int32_t sample_length;
+  int8_t  data_chunk_ID[4];
+  int32_t data_chunk_size;
   
-  short s; /* 16bitの音データ */
+  int16_t s; /* 16bitの音データ */
   unsigned char c; /* 8bitの圧縮データ */
   unsigned char sign, exponent, mantissa;
   int n, magnitude;
@@ -665,11 +663,11 @@ void wave_read_PCMU_mono(MONO_PCM *pcm, const char *file_name)
     
     if (sign == 0x80)
     {
-      s = -(short)magnitude;
+      s = -(int16_t)magnitude;
     }
     else
     {
-      s = (short)magnitude;
+      s = (int16_t)magnitude;
     }
     
     pcm->s[n] = (double)s / 32768.0; /* 音データを-1以上1未満の範囲に正規化する */
@@ -681,31 +679,31 @@ void wave_read_PCMU_mono(MONO_PCM *pcm, const char *file_name)
 void wave_write_PCMU_mono(MONO_PCM *pcm, const char *file_name)
 {
   FILE *fp;
-  char riff_chunk_ID[4];
-  long riff_chunk_size;
-  char file_format_type[4];
-  char fmt_chunk_ID[4];
-  long fmt_chunk_size;
-  short wave_format_type;
-  short channel;
-  long samples_per_sec;
-  long bytes_per_sec;
-  short block_size;
-  short bits_per_sample;
-  short extra_size;
-  char fact_chunk_ID[4];
-  long fact_chunk_size;
-  long sample_length;
-  char data_chunk_ID[4];
-  long data_chunk_size;
+  int8_t  riff_chunk_ID[4];
+  int32_t riff_chunk_size;
+  int8_t  file_format_type[4];
+  int8_t  fmt_chunk_ID[4];
+  int32_t fmt_chunk_size;
+  int16_t wave_format_type;
+  int16_t channel;
+  int32_t samples_per_sec;
+  int32_t bytes_per_sec;
+  int16_t block_size;
+  int16_t bits_per_sample;
+  int16_t extra_size;
+  int8_t  fact_chunk_ID[4];
+  int32_t fact_chunk_size;
+  int32_t sample_length;
+  int8_t  data_chunk_ID[4];
+  int32_t data_chunk_size;
   
   double x;
-  short s; /* 16bitの音データ */
+  int16_t s; /* 16bitの音データ */
   unsigned char c; /* 8bitの圧縮データ */
   unsigned char sign, exponent, mantissa;
   int n, magnitude;
   
-  static short level[8] =
+  static int16_t level[8] =
   {
     0x00FF, 0x01FF, 0x03FF, 0x07FF, 0x0FFF, 0x1FFF, 0x3FFF, 0x7FFF
   };
@@ -779,7 +777,7 @@ void wave_write_PCMU_mono(MONO_PCM *pcm, const char *file_name)
       x = 0.0; /* クリッピング */
     }
     
-    s = (short)((int)(x + 0.5) - 32768); /* 四捨五入とオフセットの調節 */
+    s = (int16_t)((int)(x + 0.5) - 32768); /* 四捨五入とオフセットの調節 */
     
     if (s < 0)
     {
@@ -825,25 +823,25 @@ void wave_write_PCMU_mono(MONO_PCM *pcm, const char *file_name)
 void wave_read_PCMA_mono(MONO_PCM *pcm, const char *file_name)
 {
   FILE *fp;
-  char riff_chunk_ID[4];
-  long riff_chunk_size;
-  char file_format_type[4];
-  char fmt_chunk_ID[4];
-  long fmt_chunk_size;
-  short wave_format_type;
-  short channel;
-  long samples_per_sec;
-  long bytes_per_sec;
-  short block_size;
-  short bits_per_sample;
-  short extra_size;
-  char fact_chunk_ID[4];
-  long fact_chunk_size;
-  long sample_length;
-  char data_chunk_ID[4];
-  long data_chunk_size;
+  int8_t  riff_chunk_ID[4];
+  int32_t riff_chunk_size;
+  int8_t  file_format_type[4];
+  int8_t  fmt_chunk_ID[4];
+  int32_t fmt_chunk_size;
+  int16_t wave_format_type;
+  int16_t channel;
+  int32_t samples_per_sec;
+  int32_t bytes_per_sec;
+  int16_t block_size;
+  int16_t bits_per_sample;
+  int16_t extra_size;
+  int8_t  fact_chunk_ID[4];
+  int32_t fact_chunk_size;
+  int32_t sample_length;
+  int8_t  data_chunk_ID[4];
+  int32_t data_chunk_size;
   
-  short s; /* 16bitの音データ */
+  int16_t s; /* 16bitの音データ */
   unsigned char c; /* 8bitの圧縮データ */
   unsigned char sign, exponent, mantissa;
   int n, magnitude;
@@ -894,11 +892,11 @@ void wave_read_PCMA_mono(MONO_PCM *pcm, const char *file_name)
     
     if (sign == 0x80)
     {
-      s = -(short)magnitude;
+      s = -(int16_t)magnitude;
     }
     else
     {
-      s = (short)magnitude;
+      s = (int16_t)magnitude;
     }
     
     pcm->s[n] = (double)s / 32768.0; /* 音データを-1以上1未満の範囲に正規化する */
@@ -910,26 +908,26 @@ void wave_read_PCMA_mono(MONO_PCM *pcm, const char *file_name)
 void wave_write_PCMA_mono(MONO_PCM *pcm, const char *file_name)
 {
   FILE *fp;
-  char riff_chunk_ID[4];
-  long riff_chunk_size;
-  char file_format_type[4];
-  char fmt_chunk_ID[4];
-  long fmt_chunk_size;
-  short wave_format_type;
-  short channel;
-  long samples_per_sec;
-  long bytes_per_sec;
-  short block_size;
-  short bits_per_sample;
-  short extra_size;
-  char fact_chunk_ID[4];
-  long fact_chunk_size;
-  long sample_length;
-  char data_chunk_ID[4];
-  long data_chunk_size;
+  int8_t  riff_chunk_ID[4];
+  int32_t riff_chunk_size;
+  int8_t  file_format_type[4];
+  int8_t  fmt_chunk_ID[4];
+  int32_t fmt_chunk_size;
+  int16_t wave_format_type;
+  int16_t channel;
+  int32_t samples_per_sec;
+  int32_t bytes_per_sec;
+  int16_t block_size;
+  int16_t bits_per_sample;
+  int16_t extra_size;
+  int8_t  fact_chunk_ID[4];
+  int32_t fact_chunk_size;
+  int32_t sample_length;
+  int8_t  data_chunk_ID[4];
+  int32_t data_chunk_size;
   
   double x;
-  short s; /* 16bitの音データ */
+  int16_t s; /* 16bitの音データ */
   unsigned char c; /* 8bitの圧縮データ */
   unsigned char sign, exponent, mantissa;
   int n, magnitude;
@@ -1008,7 +1006,7 @@ void wave_write_PCMA_mono(MONO_PCM *pcm, const char *file_name)
       x = 0.0; /* クリッピング */
     }
     
-    s = (short)((int)(x + 0.5) - 32768); /* 四捨五入とオフセットの調節 */
+    s = (int16_t)((int)(x + 0.5) - 32768); /* 四捨五入とオフセットの調節 */
     
     if (s < 0)
     {
@@ -1060,26 +1058,26 @@ void wave_write_PCMA_mono(MONO_PCM *pcm, const char *file_name)
 void wave_read_IMA_ADPCM_mono(MONO_PCM *pcm, const char *file_name)
 {
   FILE *fp;
-  char riff_chunk_ID[4];
-  long riff_chunk_size;
-  char file_format_type[4];
-  char fmt_chunk_ID[4];
-  long fmt_chunk_size;
-  short wave_format_type;
-  short channel;
-  long samples_per_sec;
-  long bytes_per_sec;
-  short block_size;
-  short bits_per_sample;
-  short extra_size;
-  short samples_per_block;
+  int8_t  riff_chunk_ID[4];
+  int32_t riff_chunk_size;
+  int8_t  file_format_type[4];
+  int8_t  fmt_chunk_ID[4];
+  int32_t fmt_chunk_size;
+  int16_t wave_format_type;
+  int16_t channel;
+  int32_t samples_per_sec;
+  int32_t bytes_per_sec;
+  int16_t block_size;
+  int16_t bits_per_sample;
+  int16_t extra_size;
+  int16_t samples_per_block;
   char fact_chunk_ID[4];
-  long fact_chunk_size;
-  long sample_length;
+  int32_t fact_chunk_size;
+  int32_t sample_length;
   char data_chunk_ID[4];
-  long data_chunk_size;
+  int32_t data_chunk_size;
   
-  short s; /* 16bitの音データ */
+  int16_t s; /* 16bitの音データ */
   unsigned char c; /* 4bitの圧縮データ */
   unsigned char header[4];
   unsigned char data;
@@ -1145,7 +1143,7 @@ void wave_read_IMA_ADPCM_mono(MONO_PCM *pcm, const char *file_name)
       {
         fread(header, 1, 4, fp); /* ヘッダの読み取り */
         
-        sp = ((short)(char)header[1] << 8) + header[0];
+        sp = ((int16_t)(char)header[1] << 8) + header[0];
         index = header[2];
         
         s = sp;
@@ -1221,27 +1219,27 @@ void wave_read_IMA_ADPCM_mono(MONO_PCM *pcm, const char *file_name)
 void wave_write_IMA_ADPCM_mono(MONO_PCM *pcm, const char *file_name)
 {
   FILE *fp;
-  char riff_chunk_ID[4];
-  long riff_chunk_size;
-  char file_format_type[4];
-  char fmt_chunk_ID[4];
-  long fmt_chunk_size;
-  short wave_format_type;
-  short channel;
-  long samples_per_sec;
-  long bytes_per_sec;
-  short block_size;
-  short bits_per_sample;
-  short extra_size;
-  short samples_per_block;
-  char fact_chunk_ID[4];
-  long fact_chunk_size;
-  long sample_length;
-  char data_chunk_ID[4];
-  long data_chunk_size;
+  int8_t  riff_chunk_ID[4];
+  int32_t riff_chunk_size;
+  int8_t  file_format_type[4];
+  int8_t  fmt_chunk_ID[4];
+  int32_t fmt_chunk_size;
+  int16_t wave_format_type;
+  int16_t channel;
+  int32_t samples_per_sec;
+  int32_t bytes_per_sec;
+  int16_t block_size;
+  int16_t bits_per_sample;
+  int16_t extra_size;
+  int16_t samples_per_block;
+  int8_t  fact_chunk_ID[4];
+  int32_t fact_chunk_size;
+  int32_t sample_length;
+  int8_t  data_chunk_ID[4];
+  int32_t data_chunk_size;
   
   double x;
-  short s; /* 16bitの音データ */
+  int16_t s; /* 16bitの音データ */
   unsigned char c; /* 4bitの圧縮データ */
   unsigned char header[4];
   unsigned char data;
@@ -1291,7 +1289,7 @@ void wave_write_IMA_ADPCM_mono(MONO_PCM *pcm, const char *file_name)
   wave_format_type = 17;
   channel = 1;
   samples_per_sec = pcm->fs; /* 標本化周波数 */
-  bytes_per_sec = (long)(block_size * samples_per_sec / samples_per_block);
+  bytes_per_sec = (int32_t)(block_size * samples_per_sec / samples_per_block);
   bits_per_sample = 4; /* 量子化精度 */
   extra_size = 2;
   
@@ -1346,7 +1344,7 @@ void wave_write_IMA_ADPCM_mono(MONO_PCM *pcm, const char *file_name)
         x = 0.0; /* クリッピング */
       }
       
-      s = (short)((int)(x + 0.5) - 32768); /* 四捨五入とオフセットの調節 */
+      s = (int16_t)((int)(x + 0.5) - 32768); /* 四捨五入とオフセットの調節 */
       
       if (block == 0 && n == 0)
       {
