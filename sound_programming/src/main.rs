@@ -51,6 +51,7 @@ fn main() {
 	ex8_2();
 	ex8_3();
 	// ex8_4(); // random
+	ex8_5();
 	ex10_4();
 }
 
@@ -1085,7 +1086,7 @@ fn ex8_3(){
   	wave_write_16bit_mono_safer2("ex8_3.wav", (&mut pcm_s, pcm_fs, pcm_bits, pcm_length));
 }
 
-#[allow(non_snake_case, unused_variables)]
+#[allow(non_snake_case)]
 fn ex8_4(){
 	let pcm_fs = 44100; /* 標本化周波数 */
     let pcm_bits = 16; /* 量子化精度 */
@@ -1103,32 +1104,50 @@ fn ex8_4(){
   	}
   	wave_write_16bit_mono_safer2("ex8_4.wav", (&mut pcm_s, pcm_fs, pcm_bits, pcm_length));
 }
-/*
-#include <stdio.h>
-#include <stdlib.h>
-#include "wave.h"
 
-int main(void)
-{
-  
-  
-  
-  gain = 0.1; /* ゲイン */
-  
-  for (n = 0; n < pcm.length; n++)
-  {
-    pcm.s[n] *= gain;
-  }
-  
-  wave_write_16bit_mono(&pcm, "ex8_4.wav");
-  
-  free(pcm.s);
-  
-  return 0;
+#[allow(non_snake_case, unused_variables)]
+fn ex8_5(){
+	let pcm_fs = 44100; /* 標本化周波数 */
+    let pcm_bits = 16; /* 量子化精度 */
+    let pcm_length = pcm_fs * 8; /* 音データの長さ */
+    let mut pcm_s = vec![0.0; pcm_length]; /* 音データ */	
+
+    let mut rng = rand::thread_rng();
+
+    /* 白色雑音 */
+    for n in 0..pcm_length {
+    	pcm_s[n] = rng.gen_range(-1.0, 1.0);
+    }
+
+    let mut e = vec![0.0; pcm_length];
+    let te = pcm_fs * 2; /* 単調増加または単調減少にかかる時間 */
+
+    /* 時間エンベロープ */
+    let mut m = 0;
+    for n in 0..pcm_length {
+      e[n] = if m < te
+      {
+        m as f64 / te as f64
+      }
+      else
+      {
+        1.0 - (m as f64 - te as f64) / te as f64
+      };
+      
+      m+=1;
+      if m >= te * 2
+      {
+        m = 0;
+      }
+    }
+    let gain = 0.1; /* ゲイン */
+  	for n in 0..pcm_length {
+  		pcm_s[n] *= gain;
+  	}
+  	wave_write_16bit_mono_safer2("ex8_5.wav", (&mut pcm_s, pcm_fs, pcm_bits, pcm_length));
+
 }
 
-
-*/
 
 #[allow(non_snake_case)]
 fn ex10_4(){
