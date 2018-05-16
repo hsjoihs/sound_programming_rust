@@ -56,6 +56,7 @@ fn main() {
     ex8_7();
     ex8_8();
     ex8_9();
+    ex8_10();
     ex10_4();
 }
 
@@ -1434,6 +1435,65 @@ fn ex8_9() {
     }
 
     wave_write_16bit_mono_safer2("ex8_9.wav", (&mut pcm_s, pcm_fs, pcm_bits, pcm_length));
+}
+
+#[allow(non_snake_case, unused_variables)]
+fn ex8_10() {
+    let pcm0_fs = 192000; /* 標本化周波数 */
+    let pcm0_bits = 16; /* 量子化精度 */
+    let pcm0_length = pcm0_fs * 2; /* 音データの長さ */
+    let mut pcm0_s = vec![0.0; pcm0_length];
+    let mut f0 = vec![0.0; pcm0_length];
+    /* 基本周波数 */
+    f0[0] = 500.0;
+    f0[pcm0_length - 1] = 3500.0;
+    for n in 0..pcm0_length {
+        f0[n] = f0[0] + (f0[pcm0_length - 1] - f0[0]) * n as f64 / (pcm0_length - 1) as f64;
+    }
+
+    /* ノコギリ波 */
+    let mut t0 = (pcm0_fs as f64 / f0[0]) as usize; /* 基本周期 */
+    let mut m = 0;
+    for n in 0..pcm0_length {
+        pcm0_s[n] = 1.0 - 2.0 * m as f64 / t0 as f64;
+
+        m += 1;
+        if m >= t0 {
+            t0 = (pcm0_fs as f64 / f0[n]) as usize; /* 基本周期 */
+            m = 0;
+        }
+    }
+
+    let pcm1_fs = 8000; /* 標本化周波数 */
+    let pcm1_bits = 16; /* 量子化精度 */
+    let pcm1_length = pcm1_fs * 2; /* 音データの長さ */
+    let mut pcm1_s = vec![0.0; pcm1_length];
+    let ratio = pcm0_fs / pcm1_fs; /* ダウンサンプリングのレシオ */
+    let fe = 0.45 / ratio as f64; /* エッジ周波数 */
+    let delta = 0.1 / ratio as f64; /* 遷移帯域幅 */
+    let mut J = (3.1 / delta + 0.5) as usize - 1; /* 遅延器の数 */
+    if J % 2 == 1 {
+        J += 1; /* J+1が奇数になるように調整する */
+    }
+    let mut b = vec![0.0; J + 1];
+    let mut w = vec![0.0; J + 1];
+
+    safe_Hanning_window(&mut w); /* ハニング窓 */
+    safe_FIR_LPF(fe, J, &mut b, &mut w); /* FIRフィルタの設計 */
+
+    /* フィルタリング */
+    for n in 0..pcm1_length {
+        for m in 0..=J {
+            if n * ratio + J / 2 >= m && n * ratio + J / 2 < pcm0_length + m {
+                pcm1_s[n] += b[m] * pcm0_s[n * ratio + J / 2 - m];
+            }
+        }
+    }
+    let gain = 0.1; /* ゲイン */
+    for n in 0..pcm1_length {
+        pcm1_s[n] *= gain;
+    }
+    wave_write_16bit_mono_safer2("ex8_10.wav", (&mut pcm1_s, pcm1_fs, pcm1_bits, pcm1_length));
 }
 
 #[allow(non_snake_case)]
