@@ -292,7 +292,7 @@ void wave_write_8bit_stereo(STEREO_PCM *pcm, const char *file_name)
       sL = 0.0; /* クリッピング */
     }
     
-    data = (unsigned char)((int)(sL + 0.5)); /* 四捨五入 */
+    data = (uint8_t)((int)(sL + 0.5)); /* 四捨五入 */
     fwrite(&data, 1, 1, fp); /* 音データ（Lチャンネル）の書き出し */
     
     sR = (pcm->sR[n] + 1.0) / 2.0 * 256.0;
@@ -306,7 +306,7 @@ void wave_write_8bit_stereo(STEREO_PCM *pcm, const char *file_name)
       sR = 0.0; /* クリッピング */
     }
     
-    data = (unsigned char)((int)(sR + 0.5)); /* 四捨五入 */
+    data = (uint8_t)((int)(sR + 0.5)); /* 四捨五入 */
     fwrite(&data, 1, 1, fp); /* 音データ（Rチャンネル）の書き出し */
   }
   
@@ -1143,7 +1143,7 @@ void wave_read_IMA_ADPCM_mono(MONO_PCM *pcm, const char *file_name)
       {
         fread(header, 1, 4, fp); /* ヘッダの読み取り */
         
-        sp = ((int16_t)(char)header[1] << 8) + header[0];
+        sp = ((int16_t)(int8_t)header[1] << 8) + header[0];
         index = header[2];
         
         s = sp;
@@ -1154,11 +1154,11 @@ void wave_read_IMA_ADPCM_mono(MONO_PCM *pcm, const char *file_name)
         {
           fread(&data, 1, 1, fp); /* 圧縮データの読み取り */
           
-          c = (unsigned char)(data & 0x0F); /* dataの下位4bit */
+          c = (uint8_t)(data & 0x0F); /* dataの下位4bit */
         }
         else
         {
-          c = (unsigned char)((data >> 4) & 0x0F); /* dataの上位4bit */
+          c = (uint8_t)((data >> 4) & 0x0F); /* dataの上位4bit */
         }
         
         step_size = step_size_table[index];
@@ -1353,9 +1353,9 @@ void wave_write_IMA_ADPCM_mono(MONO_PCM *pcm, const char *file_name)
       
       if (n == 0)
       {
-        header[0] = (unsigned char)(s & 0x00FF); /* sの下位バイト */
-        header[1] = (unsigned char)((s >> 8) & 0x00FF); /* sの上位バイト */
-        header[2] = (unsigned char)index; /* インデックス */
+        header[0] = (uint8_t)(s & 0x00FF); /* sの下位バイト */
+        header[1] = (uint8_t)((s >> 8) & 0x00FF); /* sの上位バイト */
+        header[2] = (uint8_t)index; /* インデックス */
         header[3] = 0;
         
         fwrite(header, 1, 4, fp); /* ヘッダの書き出し */
