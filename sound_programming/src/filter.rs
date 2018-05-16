@@ -20,8 +20,10 @@ pub fn safe_FIR_LPF(fe: c_double, J: usize, b: &mut [c_double], w: &mut [c_doubl
 
 	let J = J as i32;
 	let offset = J/2;
-	for m in (-J/2)..=(J/2) {
-		b[(offset + m) as usize] = 2.0 * fe * sinc(2.0 * PI * fe * m as f64);
+	
+	// k = m + J/2
+	for (k, item) in b.iter_mut().enumerate() {
+		*item = 2.0 * fe * sinc(2.0 * PI * fe * (k as i32 - offset) as f64);
 	}
 
 	for (m, item) in b.iter_mut().enumerate(){
