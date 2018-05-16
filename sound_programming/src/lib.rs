@@ -112,23 +112,23 @@ pub fn safe_Hanning_window(w_slice: &mut [c_double])
   	}
 }
 
-pub fn wave_read_16bit_mono_safer2(path : &str) -> (&[f64], i32, i32, usize){
+pub fn wave_read_16bit_mono_safer2(path : &str) -> (&[f64], usize, i32, usize){
 	unsafe{
 		let mut pcm : MONO_PCM = mem::uninitialized();
 		wave_read_16bit_mono(&mut pcm, to_c_str(path));
 		let pcm_slice = from_raw_parts(pcm.s, pcm.length as usize);
-		return (pcm_slice, pcm.fs, pcm.bits, pcm.length as usize);
+		return (pcm_slice, pcm.fs as usize, pcm.bits, pcm.length as usize);
 	}
 }
 
 #[allow(non_snake_case)]
-pub fn wave_read_16bit_stereo_safer2(path : &str) -> (&[f64], &[f64], i32, i32, usize){
+pub fn wave_read_16bit_stereo_safer2(path : &str) -> (&[f64], &[f64], usize, i32, usize){
 	unsafe{
 		let mut pcm : STEREO_PCM = mem::uninitialized();
 		wave_read_16bit_stereo(&mut pcm, to_c_str(path));
 		let pcm_sliceL = from_raw_parts(pcm.sL, pcm.length as usize);
 		let pcm_sliceR = from_raw_parts(pcm.sR, pcm.length as usize);
-		return (pcm_sliceL, pcm_sliceR, pcm.fs, pcm.bits, pcm.length as usize);
+		return (pcm_sliceL, pcm_sliceR, pcm.fs as usize, pcm.bits, pcm.length as usize);
 	}
 }
 
@@ -138,9 +138,9 @@ pub fn to_c_str(a: &str) -> *mut i8 {
 }
 
 #[allow(non_snake_case)]
-pub fn wave_write_16bit_mono_safer2(path: &str, x : (&mut [f64], i32, i32, usize) ){
+pub fn wave_write_16bit_mono_safer2(path: &str, x : (&mut [f64], usize, i32, usize) ){
 	let mut pcm1 : MONO_PCM = MONO_PCM{
-			fs : x.1,
+			fs : x.1 as i32,
 			bits : x.2,
 			length : x.3 as i32,
 			s : x.0.as_mut_ptr()
@@ -151,9 +151,9 @@ pub fn wave_write_16bit_mono_safer2(path: &str, x : (&mut [f64], i32, i32, usize
 }
 
 #[allow(non_snake_case)]
-pub fn wave_write_16bit_stereo_safer2(path: &str, x : (&mut [f64], &mut [f64], i32, i32, usize) ){
+pub fn wave_write_16bit_stereo_safer2(path: &str, x : (&mut [f64], &mut [f64], usize, i32, usize) ){
 	let mut pcm1 : STEREO_PCM = STEREO_PCM{
-			fs : x.2,
+			fs : x.2 as i32,
 			bits : x.3,
 			length : x.4 as i32,
 			sL : x.0.as_mut_ptr(),
