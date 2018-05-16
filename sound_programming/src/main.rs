@@ -10,7 +10,7 @@ use sound_programming::safe_ADSR;
 use sound_programming::wave_write_16bit_stereo_safer2;
 use sound_programming::wave_write_16bit_mono_safer2;
 use sound_programming::wave_read_16bit_stereo_safer2;
-use sound_programming::wave_read_16bit_mono_safer2;
+use sound_programming::wave::wave_read_16bit_mono_safer2;
 use sound_programming::fft::safe_IFFT;
 use sound_programming::fft::safe_FFT;
 use sound_programming::safe_Hanning_window;

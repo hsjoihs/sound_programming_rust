@@ -26,44 +26,30 @@ typedef struct
 #define READ_ARR(name, bit, length) int ## bit ## _t name[length]; fread((name), (bit)/8, (length), fp)
 #define READ(name, bit) int ## bit ## _t name; fread(&(name), (bit)/8, 1, fp)
 
+#define READING_HEADER   FILE *fp;\
+  fp = fopen(file_name, "rb");\
+\
+  READ_ARR(riff_chunk_ID, 8, 4);\
+  READ(riff_chunk_size, 32);\
+  READ_ARR(file_format_type, 8, 4);\
+  READ_ARR(fmt_chunk_ID, 8, 4);\
+  READ(fmt_chunk_size, 32);\
+  READ(wave_format_type,16);\
+  READ(channel,16);\
+  READ(samples_per_sec,32);\
+  READ(bytes_per_sec,32);\
+  READ(block_size,16);\
+  READ(bits_per_sample,16);\
+  READ_ARR(data_chunk_ID, 8, 4);\
+  READ(data_chunk_size, 32);\
+\
+  pcm->fs = samples_per_sec; /* 標本化周波数 */\
+  pcm->bits = bits_per_sample /* 量子化精度 */
+
 void wave_read_8bit_mono(MONO_PCM *pcm, const char *file_name)
 {
-  FILE *fp;
-  fp = fopen(file_name, "rb");
-
-  int8_t riff_chunk_ID[4];
-  int32_t riff_chunk_size;
-  int8_t  file_format_type[4];
-  int8_t  fmt_chunk_ID[4];
-  int32_t fmt_chunk_size;
-  int16_t wave_format_type;
-  int16_t channel;
-  int32_t samples_per_sec;
-  int32_t bytes_per_sec;
-  int16_t block_size;
-  int16_t bits_per_sample;
-  int8_t  data_chunk_ID[4];
-  int32_t data_chunk_size;
-  
-  
-  
-  fread(riff_chunk_ID, 1, 4, fp);
-  fread(&riff_chunk_size, 4, 1, fp);
-  fread(file_format_type, 1, 4, fp);
-  fread(fmt_chunk_ID, 1, 4, fp);
-  fread(&fmt_chunk_size, 4, 1, fp);
-  fread(&wave_format_type, 2, 1, fp);
-  fread(&channel, 2, 1, fp);
-  fread(&samples_per_sec, 4, 1, fp);
-  fread(&bytes_per_sec, 4, 1, fp);
-  fread(&block_size, 2, 1, fp);
-  fread(&bits_per_sample, 2, 1, fp);
-  fread(data_chunk_ID, 1, 4, fp);
-  fread(&data_chunk_size, 4, 1, fp);
-  
-  pcm->fs = samples_per_sec; /* 標本化周波数 */
-  pcm->bits = bits_per_sample; /* 量子化精度 */
-  pcm->length = data_chunk_size; /* 音データの長さ */
+  READING_HEADER;
+  pcm->length = data_chunk_size / 1; /* 音データの長さ */
   pcm->s = calloc(pcm->length, sizeof(double)); /* メモリの確保 */
   
   for (int n = 0; n < pcm->length; n++)
@@ -79,27 +65,7 @@ void wave_read_8bit_mono(MONO_PCM *pcm, const char *file_name)
 
 void wave_read_8bit_stereo(STEREO_PCM *pcm, const char *file_name)
 {
-  FILE *fp;
-  fp = fopen(file_name, "rb");
-  READ_ARR(riff_chunk_ID, 8, 4);
-  READ(riff_chunk_size, 32);
-  READ_ARR(file_format_type, 8, 4);
-  READ_ARR(fmt_chunk_ID, 8, 4);
-  READ(fmt_chunk_size, 32);
-  READ(wave_format_type,16);
-  READ(channel,16);
-  READ(samples_per_sec,32);
-  READ(bytes_per_sec,32);
-  READ(block_size,16);
-  READ(bits_per_sample,16);
-  READ_ARR(data_chunk_ID, 8, 4);
-  READ(data_chunk_size, 32);
-
-  
-  
-  
-  pcm->fs = samples_per_sec; /* 標本化周波数 */
-  pcm->bits = bits_per_sample; /* 量子化精度 */
+  READING_HEADER;
   pcm->length = data_chunk_size / 2; /* 音データの長さ */
   pcm->sL = calloc(pcm->length, sizeof(double)); /* メモリの確保 */
   pcm->sR = calloc(pcm->length, sizeof(double)); /* メモリの確保 */
@@ -110,8 +76,9 @@ void wave_read_8bit_stereo(STEREO_PCM *pcm, const char *file_name)
     fread(&data, 1, 1, fp); /* 音データ（Lチャンネル）の読み取り */
     pcm->sL[n] = ((double)data - 128.0) / 128.0; /* 音データを-1以上1未満の範囲に正規化する */
     
-    fread(&data, 1, 1, fp); /* 音データ（Rチャンネル）の読み取り */
-    pcm->sR[n] = ((double)data - 128.0) / 128.0; /* 音データを-1以上1未満の範囲に正規化する */
+    uint8_t  data2;
+    fread(&data2, 1, 1, fp); /* 音データ（Rチャンネル）の読み取り */
+    pcm->sR[n] = ((double)data2 - 128.0) / 128.0; /* 音データを-1以上1未満の範囲に正規化する */
   }
   
   fclose(fp);
@@ -120,24 +87,7 @@ void wave_read_8bit_stereo(STEREO_PCM *pcm, const char *file_name)
 
 void wave_read_16bit_mono(MONO_PCM *pcm, const char *file_name)
 {
-  FILE *fp;
-  fp = fopen(file_name, "rb");
-  READ_ARR(riff_chunk_ID, 8, 4);
-  READ(riff_chunk_size, 32);
-  READ_ARR(file_format_type, 8, 4);
-  READ_ARR(fmt_chunk_ID, 8, 4);
-  READ(fmt_chunk_size, 32);
-  READ(wave_format_type, 16);
-  READ(channel, 16);
-  READ(samples_per_sec, 32);
-  READ(bytes_per_sec, 32);
-  READ(block_size, 16);
-  READ(bits_per_sample, 16);
-  READ_ARR(data_chunk_ID, 8, 4);
-  READ(data_chunk_size, 32);
-  
-  pcm->fs = samples_per_sec; /* 標本化周波数 */
-  pcm->bits = bits_per_sample; /* 量子化精度 */
+  READING_HEADER;
   pcm->length = data_chunk_size / 2; /* 音データの長さ */
   pcm->s = calloc(pcm->length, sizeof(double)); /* メモリの確保 */
   
@@ -153,52 +103,18 @@ void wave_read_16bit_mono(MONO_PCM *pcm, const char *file_name)
 
 void wave_read_16bit_stereo(STEREO_PCM *pcm, const char *file_name)
 {
-  FILE *fp;
-  int8_t  riff_chunk_ID[4];
-  int32_t riff_chunk_size;
-  int8_t  file_format_type[4];
-  int8_t  fmt_chunk_ID[4];
-  int32_t fmt_chunk_size;
-  int16_t wave_format_type;
-  int16_t channel;
-  int32_t samples_per_sec;
-  int32_t bytes_per_sec;
-  int16_t block_size;
-  int16_t bits_per_sample;
-  int8_t  data_chunk_ID[4];
-  int32_t data_chunk_size;
-  int16_t data;
-  int n;
-  
-  fp = fopen(file_name, "rb");
-  
-  fread(riff_chunk_ID, 1, 4, fp);
-  fread(&riff_chunk_size, 4, 1, fp);
-  fread(file_format_type, 1, 4, fp);
-  fread(fmt_chunk_ID, 1, 4, fp);
-  fread(&fmt_chunk_size, 4, 1, fp);
-  fread(&wave_format_type, 2, 1, fp);
-  fread(&channel, 2, 1, fp);
-  fread(&samples_per_sec, 4, 1, fp);
-  fread(&bytes_per_sec, 4, 1, fp);
-  fread(&block_size, 2, 1, fp);
-  fread(&bits_per_sample, 2, 1, fp);
-  fread(data_chunk_ID, 1, 4, fp);
-  fread(&data_chunk_size, 4, 1, fp);
-  
-  pcm->fs = samples_per_sec; /* 標本化周波数 */
-  pcm->bits = bits_per_sample; /* 量子化精度 */
+  READING_HEADER;
   pcm->length = data_chunk_size / 4; /* 音データの長さ */
   pcm->sL = calloc(pcm->length, sizeof(double)); /* メモリの確保 */
   pcm->sR = calloc(pcm->length, sizeof(double)); /* メモリの確保 */
   
-  for (n = 0; n < pcm->length; n++)
+  for (int n = 0; n < pcm->length; n++)
   {
-    fread(&data, 2, 1, fp); /* 音データ（Lチャンネル）の読み取り */
+    READ(data, 16); /* 音データ（Lチャンネル）の読み取り */
     pcm->sL[n] = (double)data / 32768.0; /* 音データを-1以上1未満の範囲に正規化する */
     
-    fread(&data, 2, 1, fp); /* 音データ（Rチャンネル）の読み取り */
-    pcm->sR[n] = (double)data / 32768.0; /* 音データを-1以上1未満の範囲に正規化する */
+    READ(data2, 16); /* 音データ（Rチャンネル）の読み取り */
+    pcm->sR[n] = (double)data2 / 32768.0; /* 音データを-1以上1未満の範囲に正規化する */
   }
   
   fclose(fp);

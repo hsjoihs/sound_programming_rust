@@ -9,7 +9,7 @@ pub use libc::c_double;
 use std::ffi::CString;
 pub mod fft;
 pub mod filter;
-
+pub mod wave;
 
 #[allow(non_snake_case)]
 pub fn safe_ADSR(e: &mut [c_double], A: usize, D: usize, S: c_double, R: usize, gate: usize, duration: usize){
@@ -77,7 +77,7 @@ extern {
 	pub fn wave_read_8bit_stereo(pcm: *mut STEREO_PCM, file_name: *const c_char);
 	pub fn wave_write_8bit_stereo(pcm: *mut STEREO_PCM, file_name: *const c_char);
 
-	/*pub*/ fn wave_read_16bit_mono(pcm: *mut MONO_PCM, file_name: *const c_char);
+	/*pub*/ //fn wave_read_16bit_mono(pcm: *mut MONO_PCM, file_name: *const c_char);
 	/*pub*/ fn wave_write_16bit_mono(pcm: *mut MONO_PCM, file_name: *const c_char);
 	/*pub*/ fn wave_read_16bit_stereo(pcm: *mut STEREO_PCM, file_name: *const c_char);
 	/*pub*/ fn wave_write_16bit_stereo(pcm: *mut STEREO_PCM, file_name: *const c_char);
@@ -85,12 +85,9 @@ extern {
 	pub fn wave_read_IMA_ADPCM_mono(pcm: *mut MONO_PCM, file_name: *const c_char);
 	pub fn wave_write_IMA_ADPCM_mono(pcm: *mut MONO_PCM, file_name: *const c_char);
 }
-/*
-#[link(name = "window_function")]
-extern {
-	pub fn Hanning_window(w: *mut c_double, N: c_int);
-}
-*/
+
+
+
 #[allow(non_snake_case)]
 pub unsafe fn Hanning_window(w: *mut c_double, N: c_int)
 { 
@@ -112,14 +109,9 @@ pub fn safe_Hanning_window(w_slice: &mut [c_double])
   	}
 }
 
-pub fn wave_read_16bit_mono_safer2(path : &str) -> (&[f64], usize, i32, usize){
-	unsafe{
-		let mut pcm : MONO_PCM = mem::uninitialized();
-		wave_read_16bit_mono(&mut pcm, to_c_str(path));
-		let pcm_slice = from_raw_parts(pcm.s, pcm.length as usize);
-		return (pcm_slice, pcm.fs as usize, pcm.bits, pcm.length as usize);
-	}
-}
+
+
+
 
 #[allow(non_snake_case)]
 pub fn wave_read_16bit_stereo_safer2(path : &str) -> (&[f64], &[f64], usize, i32, usize){
