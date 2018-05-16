@@ -9,7 +9,7 @@ extern {
 	pub fn FIR_HPF(fe: c_double, J: c_int, b: *mut c_double, w: *mut c_double);
 	pub fn FIR_BPF(fe1: c_double, fe2: c_double, J: c_int, b: *mut c_double, w: *mut c_double);
 	pub fn FIR_BEF(fe1: c_double, fe2: c_double, J: c_int, b: *mut c_double, w: *mut c_double);
-	/*pub*/ fn FIR_filtering(x: *const c_double, y: *mut c_double, L: c_int, b: *mut c_double, J: c_int);
+	//*pub*/ fn FIR_filtering(x: *const c_double, y: *mut c_double, L: c_int, b: *mut c_double, J: c_int);
 }
 
 #[allow(non_snake_case)]
@@ -32,8 +32,14 @@ pub fn safe_FIR_LPF(fe: c_double, J: usize, b: &mut [c_double], w: &mut [c_doubl
 #[allow(non_snake_case)]
 pub fn safe_FIR_filtering(x: &[c_double], y: &mut [c_double], L: usize, b: &mut [c_double], J: usize){
 	// check index here
-	unsafe{
-		FIR_filtering(x.as_ptr(), y.as_mut_ptr(), L as i32, b.as_mut_ptr(), J as i32)
+	assert_eq!(J+1, b.len());
+	
+	for n in 0..L {
+		for m in 0..=J {
+			if n >= m {
+				y[n] += b[m] * x[n-m];
+			}
+		}
 	}
 }
 
