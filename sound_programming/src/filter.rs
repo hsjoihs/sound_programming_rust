@@ -43,7 +43,63 @@ pub fn safe_FIR_filtering(x: &[c_double], y: &mut [c_double], L: usize, b: &mut 
 	}
 }
 
+// not tested
+#[allow(non_snake_case)]
+pub fn safe_FIR_HPF(fe: c_double, J: usize, b: &mut [c_double], w: 	&mut [c_double]){
+	assert_eq!(J%2, 0);
+	assert_eq!(J+1, b.len());
+	assert_eq!(J+1, w.len());
+	let J = J as i32;
+	let offset = J / 2;
+    for m in -(J / 2).. J / 2 {
+      b[(offset + m) as usize] = sinc(PI * m as f64) - 2.0 * fe * sinc(2.0 * PI * fe * m as f64);
+    }
+  
+    for m in 0..(J+1) as usize {
+      b[m] *= w[m];
+    }
 
+}
+
+// not tested
+#[allow(non_snake_case)]
+pub fn safe_FIR_BPF(fe1: c_double, fe2: c_double, J: usize, b: &mut [c_double], w: &mut [c_double]){
+	assert_eq!(J%2, 0);
+	assert_eq!(J+1, b.len());
+	assert_eq!(J+1, w.len());
+	let J = J as i32;
+	let offset = J / 2;
+    for m in -(J / 2).. J / 2 {
+        b[(offset + m) as usize] = 2.0 * fe2 * sinc(2.0 * PI * fe2 * m as f64)
+                  - 2.0 * fe1 * sinc(2.0 * PI * fe1 * m as f64);
+    }
+  
+    for m in 0..(J+1) as usize {
+      b[m] *= w[m];
+    }
+
+}
+
+// not tested
+#[allow(non_snake_case)]
+pub fn safe_FIR_BEF(fe1: c_double, fe2: c_double, J: usize, b: &mut [c_double], w: &mut [c_double]){
+	assert_eq!(J%2, 0);
+	assert_eq!(J+1, b.len());
+	assert_eq!(J+1, w.len());
+	let J = J as i32;
+	let offset = J / 2;
+    for m in -(J / 2).. J / 2 {
+    	b[(offset + m) as usize] = sinc(PI * m as f64)
+                  - 2.0 * fe2 * sinc(2.0 * PI * fe2 * m as f64)
+                  + 2.0 * fe1 * sinc(2.0 * PI * fe1 * m as f64);
+    }
+  
+    for m in 0..(J+1) as usize {
+      b[m] *= w[m];
+    }
+
+}
+	
 
 //not tested
 #[allow(non_snake_case)]
