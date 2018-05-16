@@ -19,22 +19,7 @@ static double sinc(double x)
 }
 
 
-void FIR_LPF(double fe, int J, double b[], double w[])
-{
-  int m;
-  int offset;
-  
-  offset = J / 2;
-  for (m = -J / 2; m <= J / 2; m++)
-  {
-    b[offset + m] = 2.0 * fe * sinc(2.0 * M_PI * fe * m);
-  }
-  
-  for (m = 0; m < J + 1; m++)
-  {
-    b[m] *= w[m];
-  }
-}
+
 
 void FIR_HPF(double fe, int J, double b[], double w[])
 {

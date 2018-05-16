@@ -45,7 +45,7 @@ pub fn safe_FIR_filtering(x: &[c_double], y: &mut [c_double], L: usize, b: &mut 
 
 
 
-
+//not tested
 #[allow(non_snake_case)]
 pub fn safe_IIR_HPF(fc  : c_double, Q:  c_double , a: &mut [c_double], b: &mut [c_double]){
 	assert_eq!(3, a.len());
@@ -60,6 +60,8 @@ pub fn safe_IIR_HPF(fc  : c_double, Q:  c_double , a: &mut [c_double], b: &mut [
     
     a[0] = 1.0;
 }
+
+//not tested
 #[allow(non_snake_case)]
 pub fn safe_IIR_BPF(fc1 : c_double, fc2: c_double, a: &mut [c_double], b: &mut [c_double]){
 	assert_eq!(3, a.len());
@@ -76,6 +78,7 @@ pub fn safe_IIR_BPF(fc1 : c_double, fc2: c_double, a: &mut [c_double], b: &mut [
     a[0] = 1.0;
 }
 
+//not tested
 #[allow(non_snake_case)]
 pub fn safe_IIR_BEF(fc1 : c_double, fc2: c_double, a: &mut [c_double], b: &mut [c_double]){
 	assert_eq!(3, a.len());
@@ -93,6 +96,7 @@ pub fn safe_IIR_BEF(fc1 : c_double, fc2: c_double, a: &mut [c_double], b: &mut [
     a[0] = 1.0;
 }
 
+//not tested
 #[allow(non_snake_case)]
 pub fn safe_IIR_notch(fc: c_double, Q: c_double, a: &mut [c_double], b: &mut [c_double]){
 	assert_eq!(3, a.len());
@@ -108,6 +112,7 @@ pub fn safe_IIR_notch(fc: c_double, Q: c_double, a: &mut [c_double], b: &mut [c_
     a[0] = 1.0;	
 }
 
+//not tested
 #[allow(non_snake_case)]
 pub fn safe_IIR_low_shelving(fc: c_double, Q: c_double,g: c_double, a: &mut [c_double], b: &mut [c_double]){
 	assert_eq!(3, a.len());
@@ -123,6 +128,7 @@ pub fn safe_IIR_low_shelving(fc: c_double, Q: c_double,g: c_double, a: &mut [c_d
     a[0] = 1.0;	
 }
 
+//not tested
 #[allow(non_snake_case)]
 pub fn safe_IIR_high_shelving(fc: c_double, Q: c_double,g: c_double, a: &mut [c_double], b: &mut [c_double]){
 	assert_eq!(3, a.len());
@@ -138,7 +144,7 @@ pub fn safe_IIR_high_shelving(fc: c_double, Q: c_double,g: c_double, a: &mut [c_
     a[0] = 1.0;
 }
 
-
+//not tested
 #[allow(non_snake_case)]
 pub fn safe_IIR_peaking(fc: c_double, Q: c_double,g: c_double, a: &mut [c_double], b: &mut [c_double]){
 	assert_eq!(3, a.len());
