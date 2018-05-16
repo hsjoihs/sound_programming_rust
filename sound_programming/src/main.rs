@@ -93,7 +93,7 @@ fn ex2_1(){
 		.map(|n| a * (2.0 * PI * f0 * (n as f64) / (pcm_fs as f64)).sin())
 		.collect();
 
-	wave_write_16bit_mono_safer2("ex2_1.wav", (&mut pcm_s, pcm_fs as i32, 16, pcm_length as i32));
+	wave_write_16bit_mono_safer2("ex2_1.wav", (&mut pcm_s, pcm_fs as i32, 16, pcm_length));
 	
 }
 
@@ -141,7 +141,7 @@ unsafe{
   sine_wave(&mut pcm, 523.25, 0.1, itdyi(pcm.fs, 1.75), itdyi(pcm.fs, 0.25)); /* C5 */
   }
   
-	wave_write_16bit_mono_safer2("ex2_2.wav", (&mut pcm_s, pcm.fs, pcm.bits, pcm.length));
+	wave_write_16bit_mono_safer2("ex2_2.wav", (&mut pcm_s, pcm.fs, pcm.bits, pcm.length as usize));
   
 
 }
@@ -173,7 +173,7 @@ fn ex3_1(){
 		pcm_s[n] *= gain;
 	}
 
-	wave_write_16bit_mono_safer2("ex3_1.wav", (&mut pcm_s, pcm_fs as i32, 16, pcm_length as i32));
+	wave_write_16bit_mono_safer2("ex3_1.wav", (&mut pcm_s, pcm_fs as i32, 16, pcm_length));
 	
 }
 
@@ -198,7 +198,7 @@ fn ex3_2(){
 		pcm_s[n] *= gain;
 	}
 
-	wave_write_16bit_mono_safer2("ex3_2.wav", (&mut pcm_s, pcm_fs as i32, 16, pcm_length as i32));
+	wave_write_16bit_mono_safer2("ex3_2.wav", (&mut pcm_s, pcm_fs as i32, 16, pcm_length));
 }
 
 
@@ -224,7 +224,7 @@ fn ex3_3(){
 	}
 
 
-	wave_write_16bit_mono_safer2("ex3_3.wav", (&mut pcm_s, pcm_fs as i32, 16, pcm_length as i32));
+	wave_write_16bit_mono_safer2("ex3_3.wav", (&mut pcm_s, pcm_fs as i32, 16, pcm_length ));
 	
 }
 
@@ -251,7 +251,7 @@ fn ex3_4(){
 	}
 
 
-	wave_write_16bit_mono_safer2("ex3_4.wav", (&mut pcm_s, pcm_fs as i32, 16, pcm_length as i32));
+	wave_write_16bit_mono_safer2("ex3_4.wav", (&mut pcm_s, pcm_fs as i32, 16, pcm_length));
 	
 }
 
@@ -282,7 +282,7 @@ fn ex3_5(){
 		pcm_s[n] *= gain;
 	}
 
-	wave_write_16bit_mono_safer2("ex3_5.wav", (&mut pcm_s, pcm_fs as i32, 16, pcm_length as i32));
+	wave_write_16bit_mono_safer2("ex3_5.wav", (&mut pcm_s, pcm_fs as i32, 16, pcm_length));
 }
 
 #[allow(non_snake_case)]
@@ -408,7 +408,7 @@ fn ex4_4(){
   	for n in 0..pcm0_length {
     	pcm0_s[n] *= gain;
   	}
-  	wave_write_16bit_mono_safer2("ex4_4a.wav", (&mut pcm0_s, pcm0_fs as i32, pcm0_bits, pcm0_length as i32));
+  	wave_write_16bit_mono_safer2("ex4_4a.wav", (&mut pcm0_s, pcm0_fs as i32, pcm0_bits, pcm0_length));
 }
 {
 	let pcm1_fs = 44100;
@@ -426,7 +426,7 @@ fn ex4_4(){
   	for n in 0..pcm1_length {
   		pcm1_s[n] *= gain;
   	}
-  	wave_write_16bit_mono_safer2("ex4_4b.wav", (&mut pcm1_s, pcm1_fs as i32, pcm1_bits, pcm1_length as i32));
+  	wave_write_16bit_mono_safer2("ex4_4b.wav", (&mut pcm1_s, pcm1_fs as i32, pcm1_bits, pcm1_length));
 }
 
 }
@@ -452,7 +452,7 @@ fn ex5_1(){
     	pcm_s[n] = a0[n] * (2.0 * PI * f0 * n as f64 / pcm_fs as f64).sin();
   	}
   
-  	wave_write_16bit_mono_safer2("ex5_1.wav", (&mut pcm_s, pcm_fs as i32, pcm_bits, pcm_length as i32));
+  	wave_write_16bit_mono_safer2("ex5_1.wav", (&mut pcm_s, pcm_fs as i32, pcm_bits, pcm_length));
 
 }
 
@@ -478,7 +478,7 @@ fn ex5_2(){
     let mut pcm_s : Vec<c_double> = (0..pcm_length)
      .map(|n| a0 * (2.0 * PI * g0[n] / pcm_fs as f64).sin())
      .collect();
-    wave_write_16bit_mono_safer2("ex5_2.wav", (&mut pcm_s, pcm_fs as i32, pcm_bits, pcm_length as i32));
+    wave_write_16bit_mono_safer2("ex5_2.wav", (&mut pcm_s, pcm_fs as i32, pcm_bits, pcm_length));
 
 }
 
@@ -502,7 +502,7 @@ fn ex5_3(){
     let mut pcm_s : Vec<c_double> = (0..pcm_length)
      .map(|n| a0 * (2.0 * PI * g0[n] / pcm_fs as f64).sin())
      .collect();
-    wave_write_16bit_mono_safer2("ex5_3.wav", (&mut pcm_s, pcm_fs as i32, pcm_bits, pcm_length as i32));
+    wave_write_16bit_mono_safer2("ex5_3.wav", (&mut pcm_s, pcm_fs as i32, pcm_bits, pcm_length));
 
 }
 
@@ -543,7 +543,7 @@ fn ex5_4(){
     	pcm_s[pcm_length - n - 1] *= n as f64/ (pcm_fs as f64 * 0.01);
   	}
   
-  	wave_write_16bit_mono_safer2("ex5_4.wav", (&mut pcm_s, pcm_fs as i32, pcm_bits, pcm_length as i32));
+  	wave_write_16bit_mono_safer2("ex5_4.wav", (&mut pcm_s, pcm_fs as i32, pcm_bits, pcm_length ));
 
 }
 
@@ -592,7 +592,7 @@ fn ex5_5(){
     	pcm_s[pcm_length - n - 1] *= n as f64 / (pcm_fs as f64 * 0.01);
   	}
 
-  	wave_write_16bit_mono_safer2("ex5_5.wav", (&mut pcm_s, pcm_fs as i32, pcm_bits, pcm_length as i32));
+  	wave_write_16bit_mono_safer2("ex5_5.wav", (&mut pcm_s, pcm_fs as i32, pcm_bits, pcm_length));
 }
 
 #[allow(non_snake_case)]
@@ -639,7 +639,7 @@ fn ex6_2(){
 
 unsafe{
 	IIR_LPF(fc, Q, a.as_mut_ptr(), b.as_mut_ptr()); /* IIRフィルタの設計 */
-	IIR_filtering(pcm0_s.as_ptr(),pcm1_s.as_mut_ptr(),pcm1_length,a.as_ptr(),b.as_ptr(),I,J);
+	IIR_filtering(pcm0_s.as_ptr(),pcm1_s.as_mut_ptr(),pcm1_length as i32,a.as_ptr(),b.as_ptr(),I,J);
 }
 
   	wave_write_16bit_mono_safer2("ex6_2.wav",(&mut pcm1_s, pcm1_fs, pcm1_bits, pcm1_length));
@@ -904,7 +904,7 @@ fn ex7_3(){
     let J = 2; /* 遅延器の数 */
     unsafe{
     	IIR_resonator(F1 / pcm0_fs as f64, F1 / B1, a.as_mut_ptr(), b.as_mut_ptr()); /* IIRフィルタの設計 */
-    	IIR_filtering(pcm0_s.as_ptr(), s.as_mut_ptr(), pcm0_length, a.as_ptr(), b.as_ptr(), I, J); /* フィルタリング */
+    	IIR_filtering(pcm0_s.as_ptr(), s.as_mut_ptr(), pcm0_length as i32, a.as_ptr(), b.as_ptr(), I, J); /* フィルタリング */
     }
     for n in 0 .. pcm1_length as usize {
     	pcm1_s[n] += s[n];
@@ -913,7 +913,7 @@ fn ex7_3(){
 
     unsafe{
     	IIR_resonator(F2 / pcm0_fs as f64, F2 / B2, a.as_mut_ptr(), b.as_mut_ptr()); /* IIRフィルタの設計 */
-    	IIR_filtering(pcm0_s.as_ptr(), s.as_mut_ptr(), pcm0_length, a.as_ptr(), b.as_ptr(), I, J); /* フィルタリング */
+    	IIR_filtering(pcm0_s.as_ptr(), s.as_mut_ptr(), pcm0_length as i32, a.as_ptr(), b.as_ptr(), I, J); /* フィルタリング */
     }
     for n in 0 .. pcm1_length as usize {
     	pcm1_s[n] += s[n];
@@ -922,7 +922,7 @@ fn ex7_3(){
 
     unsafe{
     	IIR_resonator(F3 / pcm0_fs as f64, F3 / B3, a.as_mut_ptr(), b.as_mut_ptr()); /* IIRフィルタの設計 */
-    	IIR_filtering(pcm0_s.as_ptr(), s.as_mut_ptr(), pcm0_length, a.as_ptr(), b.as_ptr(), I, J); /* フィルタリング */
+    	IIR_filtering(pcm0_s.as_ptr(), s.as_mut_ptr(), pcm0_length as i32, a.as_ptr(), b.as_ptr(), I, J); /* フィルタリング */
     }
     for n in 0 .. pcm1_length as usize {
     	pcm1_s[n] += s[n];
@@ -931,7 +931,7 @@ fn ex7_3(){
 
     unsafe{
     	IIR_resonator(F4 / pcm0_fs as f64, F4 / B4, a.as_mut_ptr(), b.as_mut_ptr()); /* IIRフィルタの設計 */
-    	IIR_filtering(pcm0_s.as_ptr(), s.as_mut_ptr(), pcm0_length, a.as_ptr(), b.as_ptr(), I, J); /* フィルタリング */
+    	IIR_filtering(pcm0_s.as_ptr(), s.as_mut_ptr(), pcm0_length as i32, a.as_ptr(), b.as_ptr(), I, J); /* フィルタリング */
     }
     for n in 0 .. pcm1_length as usize {
     	pcm1_s[n] += s[n];
@@ -995,5 +995,5 @@ fn ex10_4(){
     	pcm_s[n] *= gain;
   	}
   
-    wave_write_16bit_mono_safer2("ex10_4.wav", (&mut pcm_s, pcm_fs as i32, pcm_bits, pcm_length as i32));
+    wave_write_16bit_mono_safer2("ex10_4.wav", (&mut pcm_s, pcm_fs as i32, pcm_bits, pcm_length));
 }
