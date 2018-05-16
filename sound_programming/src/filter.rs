@@ -46,8 +46,8 @@ pub fn safe_FIR_filtering(x: &[c_double], y: &mut [c_double], L: usize, b: &mut 
 
 #[link(name = "iir_filter")]
 extern {
-	 /*pub*/ fn IIR_LPF(fc  : c_double, Q:  c_double , a: *mut c_double, b: *mut c_double)
-	;pub fn IIR_HPF(fc  : c_double, Q:  c_double , a: *mut c_double, b: *mut c_double)
+	 /*pub*/ //fn IIR_LPF(fc  : c_double, Q:  c_double , a: *mut c_double, b: *mut c_double)
+	pub fn IIR_HPF(fc  : c_double, Q:  c_double , a: *mut c_double, b: *mut c_double)
 	;pub fn IIR_BPF(fc1 : c_double, fc2: c_double, a: *mut c_double, b: *mut c_double)
 	;pub fn IIR_BEF(fc1 : c_double, fc2: c_double, a: *mut c_double, b: *mut c_double)
 	;/*pub*/ //fn IIR_resonator(fc: c_double, Q: c_double, a: *mut c_double, b: *mut c_double)
@@ -58,11 +58,19 @@ extern {
 	;//*pub*/ fn IIR_filtering(x: *const c_double, y: *mut c_double, L: c_int, a: *const c_double, b: *const c_double, I: c_int, J: c_int);
 }
 
+
 #[allow(non_snake_case)]
 pub fn safe_IIR_LPF(fc  : c_double, Q:  c_double , a: &mut [c_double], b: &mut [c_double]){
-	unsafe{
-		IIR_LPF(fc, Q, a.as_mut_ptr(), b.as_mut_ptr()); /* IIRフィルタの設計 */
-	}
+  	let fc = (PI * fc).tan() / (2.0 * PI);
+
+    a[0] = 1.0 + 2.0 * PI * fc / Q + 4.0 * PI * PI * fc * fc;
+    a[1] = (8.0 * PI * PI * fc * fc - 2.0) / a[0];
+    a[2] = (1.0 - 2.0 * PI * fc / Q + 4.0 * PI * PI * fc * fc) / a[0];
+    b[0] = 4.0 * PI * PI * fc * fc / a[0];
+    b[1] = 8.0 * PI * PI * fc * fc / a[0];
+    b[2] = 4.0 * PI * PI * fc * fc / a[0];
+    
+    a[0] = 1.0;
 }
 
 #[allow(non_snake_case)]
