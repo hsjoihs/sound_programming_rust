@@ -22,9 +22,15 @@ typedef struct
   double *sR; /* 音データ（Rチャンネル） */
 } STEREO_PCM;
 
+
+#define READ_ARR(name, bit, length) int ## bit ## _t name[length]; fread((name), (bit)/8, (length), fp)
+#define READ(name, bit) int ## bit ## _t name; fread(&(name), (bit)/8, 1, fp)
+
 void wave_read_8bit_mono(MONO_PCM *pcm, const char *file_name)
 {
   FILE *fp;
+  fp = fopen(file_name, "rb");
+
   int8_t riff_chunk_ID[4];
   int32_t riff_chunk_size;
   int8_t  file_format_type[4];
@@ -41,7 +47,6 @@ void wave_read_8bit_mono(MONO_PCM *pcm, const char *file_name)
   uint8_t data;
   int n;
   
-  fp = fopen(file_name, "rb");
   
   fread(riff_chunk_ID, 1, 4, fp);
   fread(&riff_chunk_size, 4, 1, fp);
@@ -316,37 +321,25 @@ void wave_write_8bit_stereo(STEREO_PCM *pcm, const char *file_name)
 void wave_read_16bit_mono(MONO_PCM *pcm, const char *file_name)
 {
   FILE *fp;
-  int8_t  riff_chunk_ID[4];
-  int32_t riff_chunk_size;
-  int8_t  file_format_type[4];
-  int8_t  fmt_chunk_ID[4];
-  int32_t fmt_chunk_size;
-  int16_t wave_format_type;
-  int16_t channel;
-  int32_t samples_per_sec;
-  int32_t bytes_per_sec;
-  int16_t block_size;
-  int16_t bits_per_sample;
-  int8_t  data_chunk_ID[4];
-  int32_t data_chunk_size;
+  fp = fopen(file_name, "rb");
+  READ_ARR(riff_chunk_ID, 8, 4);
+  READ(riff_chunk_size, 32);
+  READ_ARR(file_format_type, 8, 4);
+  READ_ARR(fmt_chunk_ID, 8, 4);
+  READ(fmt_chunk_size, 32);
+  READ(wave_format_type, 16);
+  READ(channel, 16);
+  READ(samples_per_sec, 32);
+  READ(bytes_per_sec, 32);
+  READ(block_size, 16);
+  READ(bits_per_sample, 16);
+  READ_ARR(data_chunk_ID, 8, 4);
+  READ(data_chunk_size, 32);
+
   int16_t data;
   int n;
   
-  fp = fopen(file_name, "rb");
   
-  fread(riff_chunk_ID, 1, 4, fp);
-  fread(&riff_chunk_size, 4, 1, fp);
-  fread(file_format_type, 1, 4, fp);
-  fread(fmt_chunk_ID, 1, 4, fp);
-  fread(&fmt_chunk_size, 4, 1, fp);
-  fread(&wave_format_type, 2, 1, fp);
-  fread(&channel, 2, 1, fp);
-  fread(&samples_per_sec, 4, 1, fp);
-  fread(&bytes_per_sec, 4, 1, fp);
-  fread(&block_size, 2, 1, fp);
-  fread(&bits_per_sample, 2, 1, fp);
-  fread(data_chunk_ID, 1, 4, fp);
-  fread(&data_chunk_size, 4, 1, fp);
   
   pcm->fs = samples_per_sec; /* 標本化周波数 */
   pcm->bits = bits_per_sample; /* 量子化精度 */
