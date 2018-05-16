@@ -1,9 +1,11 @@
+use sinc;
+use std::f64::consts::PI;
 use libc::c_double;
 use libc::c_int;
 
 #[link(name = "fir_filter")]
 extern {
-	/*pub*/ fn FIR_LPF(fe: c_double, J: c_int, b: *mut c_double, w: *mut c_double);
+	//pub fn FIR_LPF(fe: c_double, J: c_int, b: *mut c_double, w: *mut c_double);
 	pub fn FIR_HPF(fe: c_double, J: c_int, b: *mut c_double, w: *mut c_double);
 	pub fn FIR_BPF(fe1: c_double, fe2: c_double, J: c_int, b: *mut c_double, w: *mut c_double);
 	pub fn FIR_BEF(fe1: c_double, fe2: c_double, J: c_int, b: *mut c_double, w: *mut c_double);
@@ -14,9 +16,17 @@ extern {
 pub fn safe_FIR_LPF(fe: c_double, J: usize, b: &mut [c_double], w: &mut [c_double]){
 	assert_eq!(J+1, b.len());
 	assert_eq!(J+1, w.len());
-	unsafe{
-		FIR_LPF(fe, J as i32, b.as_mut_ptr(), w.as_mut_ptr()); /* FIRフィルタの設計 */
+
+	let J = J as i32;
+	let offset = J/2;
+	for m in (-J/2)..=(J/2) {
+		b[(offset + m) as usize] = 2.0 * fe * sinc(2.0 * PI * fe * m as f64);
 	}
+
+	for m in 0..(J+1) as usize {
+		b[m] *= w[m];
+	}
+
 }
 
 #[allow(non_snake_case)]
