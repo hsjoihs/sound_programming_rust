@@ -1,10 +1,10 @@
 extern crate sound_programming;
 extern crate rand;
 //use std::io::Write;
+use sound_programming::filter::safe_IIR_filtering;
 use sound_programming::filter::safe_IIR_LPF;
 use sound_programming::filter::safe_FIR_filtering;
 use sound_programming::filter::IIR_resonator;
-use sound_programming::filter::IIR_filtering;
 use sound_programming::filter::safe_FIR_LPF;
 use sound_programming::safe_ADSR;
 use sound_programming::wave_write_16bit_stereo_safer2;
@@ -636,9 +636,7 @@ fn ex6_2(){
     let mut b = [0.0; 3];
 
 	safe_IIR_LPF(fc, Q, &mut a, &mut b); /* IIRフィルタの設計 */
-unsafe{
-	IIR_filtering(pcm0_s.as_ptr(),pcm1_s.as_mut_ptr(),pcm1_length as i32,a.as_ptr(),b.as_ptr(),I,J);
-}
+	safe_IIR_filtering(&pcm0_s, &mut pcm1_s, pcm1_length, &a, &b, I, J);
 
   	wave_write_16bit_mono_safer2("ex6_2.wav",(&mut pcm1_s, pcm1_fs, pcm1_bits, pcm1_length));
 	
@@ -899,8 +897,8 @@ fn ex7_3(){
     let J = 2; /* 遅延器の数 */
     unsafe{
     	IIR_resonator(F1 / pcm0_fs as f64, F1 / B1, a.as_mut_ptr(), b.as_mut_ptr()); /* IIRフィルタの設計 */
-    	IIR_filtering(pcm0_s.as_ptr(), s.as_mut_ptr(), pcm0_length as i32, a.as_ptr(), b.as_ptr(), I, J); /* フィルタリング */
     }
+    safe_IIR_filtering(&pcm0_s, &mut s, pcm0_length, &a, &b, I, J); /* フィルタリング */
     for n in 0 .. pcm1_length as usize {
     	pcm1_s[n] += s[n];
     	s[n] = 0.0;
@@ -908,8 +906,8 @@ fn ex7_3(){
 
     unsafe{
     	IIR_resonator(F2 / pcm0_fs as f64, F2 / B2, a.as_mut_ptr(), b.as_mut_ptr()); /* IIRフィルタの設計 */
-    	IIR_filtering(pcm0_s.as_ptr(), s.as_mut_ptr(), pcm0_length as i32, a.as_ptr(), b.as_ptr(), I, J); /* フィルタリング */
     }
+    safe_IIR_filtering(&pcm0_s, &mut s, pcm0_length, &a, &b, I, J); /* フィルタリング */
     for n in 0 .. pcm1_length as usize {
     	pcm1_s[n] += s[n];
     	s[n] = 0.0;
@@ -917,8 +915,8 @@ fn ex7_3(){
 
     unsafe{
     	IIR_resonator(F3 / pcm0_fs as f64, F3 / B3, a.as_mut_ptr(), b.as_mut_ptr()); /* IIRフィルタの設計 */
-    	IIR_filtering(pcm0_s.as_ptr(), s.as_mut_ptr(), pcm0_length as i32, a.as_ptr(), b.as_ptr(), I, J); /* フィルタリング */
     }
+    safe_IIR_filtering(&pcm0_s, &mut s, pcm0_length, &a, &b, I, J); /* フィルタリング */
     for n in 0 .. pcm1_length as usize {
     	pcm1_s[n] += s[n];
     	s[n] = 0.0;
@@ -926,8 +924,8 @@ fn ex7_3(){
 
     unsafe{
     	IIR_resonator(F4 / pcm0_fs as f64, F4 / B4, a.as_mut_ptr(), b.as_mut_ptr()); /* IIRフィルタの設計 */
-    	IIR_filtering(pcm0_s.as_ptr(), s.as_mut_ptr(), pcm0_length as i32, a.as_ptr(), b.as_ptr(), I, J); /* フィルタリング */
     }
+    safe_IIR_filtering(&pcm0_s, &mut s, pcm0_length, &a, &b, I, J); /* フィルタリング */
     for n in 0 .. pcm1_length as usize {
     	pcm1_s[n] += s[n];
     	s[n] = 0.0;

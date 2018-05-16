@@ -33,7 +33,7 @@ pub fn safe_FIR_LPF(fe: c_double, J: usize, b: &mut [c_double], w: &mut [c_doubl
 pub fn safe_FIR_filtering(x: &[c_double], y: &mut [c_double], L: usize, b: &mut [c_double], J: usize){
 	// check index here
 	assert_eq!(J+1, b.len());
-	
+
 	for n in 0..L {
 		for m in 0..=J {
 			if n >= m {
@@ -55,12 +55,19 @@ extern {
 	;pub fn IIR_low_shelving(fc: c_double, Q: c_double,g: c_double, a: *mut c_double, b: *mut c_double)
 	;pub fn IIR_high_shelving(fc: c_double, Q: c_double,g: c_double, a: *mut c_double, b: *mut c_double)
 	;pub fn IIR_peaking(fc: c_double, Q: c_double,g: c_double, a: *mut c_double, b: *mut c_double)
-	;pub fn IIR_filtering(x: *const c_double, y: *mut c_double, L: c_int, a: *const c_double, b: *const c_double, I: c_int, J: c_int);
+	;/*pub*/ fn IIR_filtering(x: *const c_double, y: *mut c_double, L: c_int, a: *const c_double, b: *const c_double, I: c_int, J: c_int);
 }
 
 #[allow(non_snake_case)]
 pub fn safe_IIR_LPF(fc  : c_double, Q:  c_double , a: &mut [c_double], b: &mut [c_double]){
 	unsafe{
 		IIR_LPF(fc, Q, a.as_mut_ptr(), b.as_mut_ptr()); /* IIRフィルタの設計 */
+	}
+}
+
+#[allow(non_snake_case)]
+pub fn safe_IIR_filtering(x: &[c_double], y: &mut [c_double], L: usize, a: &[c_double], b: &[c_double], I: c_int, J: c_int){
+	unsafe{
+		IIR_filtering(x.as_ptr(),y.as_mut_ptr(), L as i32,a.as_ptr(),b.as_ptr(),I,J);
 	}
 }
