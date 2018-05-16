@@ -1,10 +1,10 @@
 extern crate sound_programming;
 extern crate rand;
 //use std::io::Write;
+use sound_programming::filter::safe_FIR_filtering;
 use sound_programming::filter::IIR_resonator;
 use sound_programming::filter::IIR_filtering;
 use sound_programming::filter::IIR_LPF;
-use sound_programming::filter::FIR_filtering;
 use sound_programming::filter::safe_FIR_LPF;
 use sound_programming::safe_ADSR;
 use sound_programming::wave_write_16bit_stereo_safer2;
@@ -616,9 +616,7 @@ fn ex6_1(){
 	safe_Hanning_window(&mut w); /* ハニング窓 */
 
 	safe_FIR_LPF(fe, J, &mut b, &mut w); /* FIRフィルタの設計 */
-unsafe{
-	FIR_filtering(pcm0_s.as_ptr(), pcm1_s.as_mut_ptr(), pcm1_length as i32, b.as_mut_ptr(), J as i32)
-}
+	safe_FIR_filtering(&pcm0_s, &mut pcm1_s, pcm1_length, &mut b, J);
   	wave_write_16bit_mono_safer2("ex6_1.wav", (&mut pcm1_s, pcm1_fs, pcm1_bits, pcm1_length));
 }
 
