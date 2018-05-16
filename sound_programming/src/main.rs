@@ -52,7 +52,8 @@ fn main() {
 	ex8_3();
 	// ex8_4(); // random
 	// ex8_5(); // random
-	ex8_6();
+	// ex8_6();// random
+	ex8_7();
 	ex10_4();
 }
 
@@ -1106,7 +1107,6 @@ fn ex8_4(){
   	wave_write_16bit_mono_safer2("ex8_4.wav", (&mut pcm_s, pcm_fs, pcm_bits, pcm_length));
 }
 
-#[allow(non_snake_case, unused_variables)]
 fn ex8_5(){
 	let pcm_fs = 44100; /* 標本化周波数 */
     let pcm_bits = 16; /* 量子化精度 */
@@ -1221,7 +1221,6 @@ fn white_noise(pcm_s: &mut[c_double], gain: c_double, offset: usize, duration: u
 	}
 }
 
-#[allow(non_snake_case, unused_variables)]
 fn ex8_6(){
 	let pcm_fs = 44100; /* 標本化周波数 */
     let pcm_bits = 16; /* 量子化精度 */
@@ -1261,6 +1260,56 @@ fn ex8_6(){
     wave_write_16bit_mono_safer2("ex8_6.wav", (&mut pcm_s, pcm_fs, pcm_bits, pcm_length));
 }
 
+#[allow(non_snake_case, unused_variables)]
+fn ex8_7(){
+	let pcm_fs = 44100; /* 標本化周波数 */
+    let pcm_bits = 16; /* 量子化精度 */
+    let pcm_length = (pcm_fs as f64 * 0.6) as usize - 1; /* 音データの長さ */
+    // -1 is here to match the file with the original data
+    let mut pcm_s = vec![0.0; pcm_length]; /* 音データ */	
+  	let mut f0 = vec![0.0; pcm_length];
+  	/* 基本周波数 */
+  	for n in 0..itdyi(pcm_fs, 0.1) as usize {
+  		f0[n] = 987.77; /* B5 */
+  	}
+  	for n in itdyi(pcm_fs, 0.1) as usize .. pcm_length {
+	    f0[n] = 1318.51; /* E6 */
+	}
+
+  	/* 矩形波 */
+  	let mut t0 = (pcm_fs as f64 / f0[0]) as usize; /* 矩形波の基本周期 */
+  	let mut m=0;
+  	for n in 0..pcm_length {
+  		pcm_s[n] = if (m as f64) < t0 as f64 / 2.0
+    	{
+    	  1.0
+    	}
+    	else
+    	{
+    	  -1.0
+    	};
+
+    	m+=1;
+    	if m >= t0 {
+    		t0 = (pcm_fs as f64 / f0[n]) as usize; /* 矩形波の基本周期 */
+    		m=0;
+    	}
+  	}
+  	let mut e = vec![0.0; pcm_length];
+  	let pe = pcm_length; /* 単調減少にかかる時間 */
+
+  	/* 時間エンベロープ */
+  	for n in 0..pcm_length {
+  		e[n] = 1.0 - n as f64 / pe as f64;
+  	}
+  	let gain = 0.1; /* ゲイン */
+
+  	for n in 0..pcm_length {
+  		pcm_s[n] *= e[n] * gain;
+  	}
+
+  	wave_write_16bit_mono_safer2("ex8_7.wav", (&mut pcm_s, pcm_fs, pcm_bits, pcm_length));
+}
 
 #[allow(non_snake_case)]
 fn ex10_4(){
