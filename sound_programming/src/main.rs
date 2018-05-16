@@ -49,6 +49,8 @@ fn main() {
 	//ex7_4(); // slow
 	ex8_1();
 	ex8_2();
+	ex8_3();
+	// ex8_4(); // random
 	ex10_4();
 }
 
@@ -1033,7 +1035,7 @@ fn ex8_2(){
     let mut pcm_s = vec![0.0; pcm_length]; /* 音データ */	
    	let f0 = 500.0; /* 基本周波数 */ 	
    	/* 矩形波 */
-  	let t0 = pcm_fs / f0 as usize; /* 基本周期 */
+  	let t0 = (pcm_fs as f64 / f0) as usize; /* 基本周期 */
   	let mut m = 0;
   	for n in 0..pcm_length {
     	pcm_s[n] = if (m  as f64) < t0 as f64 / 2.0 {
@@ -1053,6 +1055,80 @@ fn ex8_2(){
   	}
   	wave_write_16bit_mono_safer2("ex8_2.wav", (&mut pcm_s, pcm_fs, pcm_bits, pcm_length));
 }
+
+#[allow(non_snake_case, unused_variables)]
+fn ex8_3(){
+	let pcm_fs = 44100; /* 標本化周波数 */
+    let pcm_bits = 16; /* 量子化精度 */
+    let pcm_length = pcm_fs * 1; /* 音データの長さ */
+    let mut pcm_s = vec![0.0; pcm_length]; /* 音データ */	
+    let f0 = 500.0; /* 基本周波数 */
+    /* 三角波 */
+    let t0 = (pcm_fs as f64 / f0) as usize; /* 基本周期 */
+    let mut m = 0; 	
+    for n in 0..pcm_length {
+        pcm_s[n] =  if (m as f64) < t0 as f64 / 2.0 {
+          -1.0 + 4.0 * m as f64 / t0 as f64
+        } else {
+          3.0 - 4.0 * m as f64 / t0 as f64
+        };
+        
+        m+=1;
+        if m >= t0{
+          m = 0;
+        }
+    }
+  	let gain = 0.1; /* ゲイン */
+  	for n in 0..pcm_length {
+  		pcm_s[n] *= gain;
+  	}
+  	wave_write_16bit_mono_safer2("ex8_3.wav", (&mut pcm_s, pcm_fs, pcm_bits, pcm_length));
+}
+
+#[allow(non_snake_case, unused_variables)]
+fn ex8_4(){
+	let pcm_fs = 44100; /* 標本化周波数 */
+    let pcm_bits = 16; /* 量子化精度 */
+    let pcm_length = pcm_fs * 1; /* 音データの長さ */
+    let mut pcm_s = vec![0.0; pcm_length]; /* 音データ */	
+
+    let mut rng = rand::thread_rng();
+    /* 白色雑音 */
+  	for n in 0..pcm_length {
+    	pcm_s[n] = rng.gen_range(-1.0, 1.0);
+  	}
+  	let gain = 0.1; /* ゲイン */
+  	for n in 0..pcm_length {
+  		pcm_s[n] *= gain;
+  	}
+  	wave_write_16bit_mono_safer2("ex8_4.wav", (&mut pcm_s, pcm_fs, pcm_bits, pcm_length));
+}
+/*
+#include <stdio.h>
+#include <stdlib.h>
+#include "wave.h"
+
+int main(void)
+{
+  
+  
+  
+  gain = 0.1; /* ゲイン */
+  
+  for (n = 0; n < pcm.length; n++)
+  {
+    pcm.s[n] *= gain;
+  }
+  
+  wave_write_16bit_mono(&pcm, "ex8_4.wav");
+  
+  free(pcm.s);
+  
+  return 0;
+}
+
+
+*/
 
 #[allow(non_snake_case)]
 fn ex10_4(){
