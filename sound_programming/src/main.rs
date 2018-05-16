@@ -1,10 +1,10 @@
 extern crate sound_programming;
 extern crate rand;
 //use std::io::Write;
+use sound_programming::filter::safe_IIR_resonator;
 use sound_programming::filter::safe_IIR_filtering;
 use sound_programming::filter::safe_IIR_LPF;
 use sound_programming::filter::safe_FIR_filtering;
-use sound_programming::filter::IIR_resonator;
 use sound_programming::filter::safe_FIR_LPF;
 use sound_programming::safe_ADSR;
 use sound_programming::wave_write_16bit_stereo_safer2;
@@ -897,9 +897,7 @@ fn ex7_3(){
     let J = 2; /* 遅延器の数 */
 
     for num in 0..4{
-    	unsafe{
-    		IIR_resonator(F[num] / pcm0_fs as f64, F[num] / B[num], a.as_mut_ptr(), b.as_mut_ptr()); /* IIRフィルタの設計 */
-    	}
+    	safe_IIR_resonator(F[num] / pcm0_fs as f64, F[num] / B[num], &mut a, &mut b); /* IIRフィルタの設計 */
     	safe_IIR_filtering(&pcm0_s, &mut s, pcm0_length, &a, &b, I, J); /* フィルタリング */
    		for n in 0 .. pcm1_length as usize {
     		pcm1_s[n] += s[n];
