@@ -1,10 +1,10 @@
 extern crate sound_programming;
 extern crate rand;
 //use std::io::Write;
+use sound_programming::filter::safe_IIR_LPF;
 use sound_programming::filter::safe_FIR_filtering;
 use sound_programming::filter::IIR_resonator;
 use sound_programming::filter::IIR_filtering;
-use sound_programming::filter::IIR_LPF;
 use sound_programming::filter::safe_FIR_LPF;
 use sound_programming::safe_ADSR;
 use sound_programming::wave_write_16bit_stereo_safer2;
@@ -635,8 +635,8 @@ fn ex6_2(){
     let mut a = [0.0; 3];
     let mut b = [0.0; 3];
 
+	safe_IIR_LPF(fc, Q, &mut a, &mut b); /* IIRフィルタの設計 */
 unsafe{
-	IIR_LPF(fc, Q, a.as_mut_ptr(), b.as_mut_ptr()); /* IIRフィルタの設計 */
 	IIR_filtering(pcm0_s.as_ptr(),pcm1_s.as_mut_ptr(),pcm1_length as i32,a.as_ptr(),b.as_ptr(),I,J);
 }
 
@@ -825,9 +825,8 @@ fn ex7_1(){
     let mut b = [0.0; 3];
 
     for n in 0..pcm1_length as usize {
-    	unsafe{
-    		IIR_LPF(fc[n]/ pcm1_fs as f64, Q, a.as_mut_ptr(), b.as_mut_ptr()); /* IIRフィルタの設計 */
-    	}
+    	safe_IIR_LPF(fc[n]/ pcm1_fs as f64, Q, &mut a, &mut b); /* IIRフィルタの設計 */
+    	
     	for m in 0..=J {
     		if n >= m {
     			pcm1_s[n] += b[m] * pcm0_s[n - m];
@@ -861,9 +860,7 @@ fn ex7_2(){
     let pcm1_length = pcm0_length; /* 音データの長さ */
     let mut pcm1_s = vec![0.0; pcm1_length as usize]; /* 音データ */	   
     for n in 0..pcm1_length as usize {
-    	unsafe{
-    		IIR_LPF(fc[n] / pcm1_fs as f64, Q, a.as_mut_ptr(), b.as_mut_ptr()); /* IIRフィルタの設計 */
-    	}
+    	safe_IIR_LPF(fc[n] / pcm1_fs as f64, Q, &mut a, &mut b); /* IIRフィルタの設計 */
     	for m in 0..= J {
     		if n >= m {
     			pcm1_s[n] += b[m] * pcm0_s[n-m];
