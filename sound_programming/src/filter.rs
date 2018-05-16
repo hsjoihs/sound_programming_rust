@@ -67,6 +67,11 @@ pub fn safe_IIR_LPF(fc  : c_double, Q:  c_double , a: &mut [c_double], b: &mut [
 
 #[allow(non_snake_case)]
 pub fn safe_IIR_filtering(x: &[c_double], y: &mut [c_double], L: usize, a: &[c_double], b: &[c_double], I: usize, J: usize){
+	assert_eq!(J+1, b.len());
+	assert_eq!(I+1, a.len());
+	assert_eq!(L, x.len());
+	assert_eq!(L, y.len());
+
 	for n in 0..L {
 		for m in 0..=J {
 			if n >= m {
