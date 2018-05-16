@@ -101,22 +101,23 @@ fn ex2_1(){
 
 
 
-unsafe fn sine_wave(pcm : *mut MONO_PCM, f0: c_double, a: c_double, offset: c_int, duration: c_int) {
+fn sine_wave(x : (&mut [f64], usize), f0: c_double, a: c_double, offset: c_int, duration: c_int) {
+
+	let (pcm_s, pcm_fs) = x;
 	/* サイン波 */
 	let mut s : Vec<c_double> = (0..duration)
-	 .map(|n| (2.0 * PI * f0 * (n as f64) / ((*pcm).fs as f64)).sin() * a)
+	 .map(|n| (2.0 * PI * f0 * (n as f64) / (pcm_fs as f64)).sin() * a)
 	 .collect();
 
 
 	/* フェード処理 */
-	for n in 0..((*pcm).fs as f64*0.01).ceil() as usize {
-		s[n] *= n as c_double / ((*pcm).fs as f64 * 0.01);
-		s[duration as usize - n - 1] *= n as c_double / ((*pcm).fs as f64 * 0.01);
+	for n in 0..(pcm_fs as f64*0.01).ceil() as usize {
+		s[n] *= n as c_double / (pcm_fs as f64 * 0.01);
+		s[duration as usize - n - 1] *= n as c_double / (pcm_fs as f64 * 0.01);
 	}
 
 	for n in 0..duration as usize {
-		let mut slice = from_raw_parts_mut((*pcm).s, (*pcm).length as usize);
-		slice[offset as usize + n] += s[n];
+		pcm_s[offset as usize + n] += s[n];
 	}
 }
 fn ex2_2(){
@@ -124,30 +125,22 @@ fn ex2_2(){
 	let pcm_length : usize = pcm_fs * 2; /* 音データの長さ */
 	let mut pcm_s : Vec<c_double> = vec![0.0  ; pcm_length];
 
-	let mut pcm : MONO_PCM = MONO_PCM{ 
-		fs : pcm_fs as i32, /* 標本化周波数 */
-		bits : 16, /* 量子化精度 */
-		length : pcm_length as i32, /* 音データの長さ */
-		s: pcm_s.as_mut_ptr()
-	};
-unsafe{
-  sine_wave(&mut pcm, 261.63, 0.1, itdyi(pcm.fs, 0.00), itdyi(pcm.fs, 0.25)); /* C4 */
-  sine_wave(&mut pcm, 293.66, 0.1, itdyi(pcm.fs, 0.25), itdyi(pcm.fs, 0.25)); /* D4 */
-  sine_wave(&mut pcm, 329.63, 0.1, itdyi(pcm.fs, 0.50), itdyi(pcm.fs, 0.25)); /* E4 */
-  sine_wave(&mut pcm, 349.23, 0.1, itdyi(pcm.fs, 0.75), itdyi(pcm.fs, 0.25)); /* F4 */
-  sine_wave(&mut pcm, 392.00, 0.1, itdyi(pcm.fs, 1.00), itdyi(pcm.fs, 0.25)); /* G4 */
-  sine_wave(&mut pcm, 440.00, 0.1, itdyi(pcm.fs, 1.25), itdyi(pcm.fs, 0.25)); /* A4 */
-  sine_wave(&mut pcm, 493.88, 0.1, itdyi(pcm.fs, 1.50), itdyi(pcm.fs, 0.25)); /* B4 */
-  sine_wave(&mut pcm, 523.25, 0.1, itdyi(pcm.fs, 1.75), itdyi(pcm.fs, 0.25)); /* C5 */
-  }
+    sine_wave((&mut pcm_s, pcm_fs), 261.63, 0.1, itdyi(pcm_fs, 0.00), itdyi(pcm_fs, 0.25)); /* C4 */
+    sine_wave((&mut pcm_s, pcm_fs), 293.66, 0.1, itdyi(pcm_fs, 0.25), itdyi(pcm_fs, 0.25)); /* D4 */
+    sine_wave((&mut pcm_s, pcm_fs), 329.63, 0.1, itdyi(pcm_fs, 0.50), itdyi(pcm_fs, 0.25)); /* E4 */
+    sine_wave((&mut pcm_s, pcm_fs), 349.23, 0.1, itdyi(pcm_fs, 0.75), itdyi(pcm_fs, 0.25)); /* F4 */
+    sine_wave((&mut pcm_s, pcm_fs), 392.00, 0.1, itdyi(pcm_fs, 1.00), itdyi(pcm_fs, 0.25)); /* G4 */
+    sine_wave((&mut pcm_s, pcm_fs), 440.00, 0.1, itdyi(pcm_fs, 1.25), itdyi(pcm_fs, 0.25)); /* A4 */
+    sine_wave((&mut pcm_s, pcm_fs), 493.88, 0.1, itdyi(pcm_fs, 1.50), itdyi(pcm_fs, 0.25)); /* B4 */
+    sine_wave((&mut pcm_s, pcm_fs), 523.25, 0.1, itdyi(pcm_fs, 1.75), itdyi(pcm_fs, 0.25)); /* C5 */
   
-	wave_write_16bit_mono_safer2("ex2_2.wav", (&mut pcm_s, pcm_fs, pcm.bits, pcm_length));
+	wave_write_16bit_mono_safer2("ex2_2.wav", (&mut pcm_s, pcm_fs, 16, pcm_length));
   
 
 }
 
 // int_times_double_yielding_int
-fn itdyi (i : c_int, d: c_double) -> c_int {
+fn itdyi (i : usize, d: c_double) -> c_int {
 	((i as c_double) * d) as c_int
 }
 
