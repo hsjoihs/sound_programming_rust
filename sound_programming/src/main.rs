@@ -49,7 +49,8 @@ fn main() {
 	ex7_1();
 	ex7_2();
 	ex7_3();
-	ex7_4();
+	//ex7_4(); // slow
+	ex8_1();
 	ex10_4();
 	assert_eq!(sinc(2.1),2.1f64.sin()/2.1 );
 }
@@ -1002,6 +1003,32 @@ fn ex7_4(){
 }
 
 #[allow(non_snake_case, unused_variables)]
+fn ex8_1(){
+    let pcm_fs = 44100; /* 標本化周波数 */
+    let pcm_bits = 16; /* 量子化精度 */
+    let pcm_length = pcm_fs * 1; /* 音データの長さ */
+    let mut pcm_s = vec![0.0; pcm_length]; /* 音データ */	
+  	let f0 = 500.0; /* 基本周波数 */
+  	/* ノコギリ波 */
+    let t0 = pcm_fs / f0 as usize; /* 基本周期 */
+    let mut m = 0;
+    for n in 0..pcm_length 
+    {
+        pcm_s[n] = 1.0 - 2.0 * (m as f64) / (t0 as f64);
+        
+        m += 1;
+        if m >= t0 {
+        	m = 0;
+        }
+    }
+    let gain = 0.1; /* ゲイン */
+  	for n in 0..pcm_length {
+  		pcm_s[n] *= gain;
+  	}
+  	wave_write_16bit_mono_safer2("ex8_1.wav", (&mut pcm_s, pcm_fs, pcm_bits, pcm_length));
+}
+
+#[allow(non_snake_case)]
 fn ex10_4(){
 	let pcm_fs = 44100; /* 標本化周波数 */
 	let pcm_bits = 16; /* 量子化精度 */
