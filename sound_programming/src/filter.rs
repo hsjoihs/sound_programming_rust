@@ -55,7 +55,7 @@ extern {
 	;pub fn IIR_low_shelving(fc: c_double, Q: c_double,g: c_double, a: *mut c_double, b: *mut c_double)
 	;pub fn IIR_high_shelving(fc: c_double, Q: c_double,g: c_double, a: *mut c_double, b: *mut c_double)
 	;pub fn IIR_peaking(fc: c_double, Q: c_double,g: c_double, a: *mut c_double, b: *mut c_double)
-	;/*pub*/ fn IIR_filtering(x: *const c_double, y: *mut c_double, L: c_int, a: *const c_double, b: *const c_double, I: c_int, J: c_int);
+	;//*pub*/ fn IIR_filtering(x: *const c_double, y: *mut c_double, L: c_int, a: *const c_double, b: *const c_double, I: c_int, J: c_int);
 }
 
 #[allow(non_snake_case)]
@@ -66,8 +66,18 @@ pub fn safe_IIR_LPF(fc  : c_double, Q:  c_double , a: &mut [c_double], b: &mut [
 }
 
 #[allow(non_snake_case)]
-pub fn safe_IIR_filtering(x: &[c_double], y: &mut [c_double], L: usize, a: &[c_double], b: &[c_double], I: c_int, J: c_int){
-	unsafe{
-		IIR_filtering(x.as_ptr(),y.as_mut_ptr(), L as i32,a.as_ptr(),b.as_ptr(),I,J);
+pub fn safe_IIR_filtering(x: &[c_double], y: &mut [c_double], L: usize, a: &[c_double], b: &[c_double], I: usize, J: usize){
+	for n in 0..L {
+		for m in 0..=J {
+			if n >= m {
+				y[n] += b[m] * x[n-m];
+			}
+		}
+		for m in 1..=I {
+			if n >= m {
+				y[n] += -a[m] * y[n-m];
+			}
+		}
 	}
+
 }
