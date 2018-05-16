@@ -49,6 +49,7 @@ fn main() {
 	ex7_1();
 	ex7_2();
 	ex7_3();
+	ex7_4();
 	ex10_4();
 	assert_eq!(sinc(2.1),2.1f64.sin()/2.1 );
 }
@@ -866,7 +867,7 @@ fn ex7_2(){
  	wave_write_16bit_mono_safer2("ex7_2.wav", (&mut pcm1_s, pcm1_fs, pcm1_bits, pcm1_length)); 
 }
 
-#[allow(non_snake_case, unused_variables)]
+#[allow(non_snake_case)]
 fn ex7_3(){
 	let mut a = [0.0; 3];
     let mut b = [0.0; 3];
@@ -908,6 +909,96 @@ fn ex7_3(){
   	}
   	wave_write_16bit_mono_safer2("ex7_3.wav", (&mut pcm1_s, pcm1_fs, pcm1_bits, pcm1_length)); 
 
+}
+
+#[allow(non_snake_case, unused_variables)]
+fn ex7_4(){
+	let (pcm0_s, pcm0_fs, pcm0_bits, pcm0_length) = wave_read_16bit_mono_safer2("synth.wav");
+	let (mut pcm1_s, pcm1_fs, pcm1_bits, pcm1_length) = wave_read_16bit_mono_safer2("vocal.wav");
+	let pcm2_fs = pcm0_fs; /* 標本化周波数 */
+    let pcm2_bits = pcm0_bits; /* 量子化精度 */
+    let pcm2_length = pcm0_length; /* 音データの長さ */
+    let mut pcm2_s = vec![0.0; pcm2_length]; /* 音データ */
+
+
+    let mut s = vec![0.0; pcm0_length]; /* 音データ */
+    /* プリエンファシス処理 */
+  	s[0] = 0.0;
+  	for n in 1..pcm1_length {
+    	s[n] = pcm1_s[n] - 0.98 * pcm1_s[n - 1];
+  	}
+  	for n in 0..pcm1_length {
+    	pcm1_s[n] = s[n];
+  	}
+
+  	let N = 1024; /* DFTのサイズ */
+  
+    let mut x_real = vec![0.0; N];
+    let mut x_imag = vec![0.0; N];
+    let mut y_real = vec![0.0; N];
+    let mut y_imag = vec![0.0; N];
+    let mut b_real = vec![0.0; N];
+    let mut b_imag = vec![0.0; N];
+    let mut w = vec![0.0; N];
+    safe_Hanning_window(&mut w); /* ハニング窓 */
+    let number_of_frame = (pcm0_length - N / 2) / (N / 2); /* フレームの数 */
+    let band_width = 8;
+  	let number_of_band = N / 2 / band_width;
+
+  	for frame in 0..number_of_frame {
+		let offset = N / 2 * frame;
+    	/* X(n) */
+    	for n in 0..N {
+      		x_real[n] = pcm0_s[offset + n] * w[n];
+      		x_imag[n] = 0.0;
+    	}
+    	safe_FFT(&mut x_real, &mut x_imag);
+    
+    	/* B(k) */
+    	for n in 0..N {
+    		b_real[n] = pcm1_s[offset + n] * w[n];
+      		b_imag[n] = 0.0;
+    	}
+    	safe_FFT(&mut b_real, &mut b_imag);
+
+    	for k in 0..N {
+    		b_real[k] = (b_real[k] * b_real[k] + b_imag[k] * b_imag[k]).sqrt();
+      		b_imag[k] = 0.0;	
+    	}
+
+    	for band in 0..number_of_band {
+    		let offset = band_width * band;
+    		let mut a = 0.0;
+    		for k in 0..band_width {
+    			a += b_real[offset + k];
+    		}
+    		a /= band_width as f64;
+    		for k in 0..band_width {
+    			b_real[offset + k] = a;
+    		}
+    	}
+    	b_real[0] = 0.0;
+    	b_real[N / 2] = 0.0;
+    	for k in 1..N/2 {
+    		b_real[N-k] = b_real[k];
+    	}
+
+    	/* フィルタリング */
+    	
+    	for k in 0..N {
+      		y_real[k] = x_real[k] * b_real[k] - x_imag[k] * b_imag[k];
+      		y_imag[k] = x_imag[k] * b_real[k] + x_real[k] * b_imag[k];
+    	}
+    	safe_IFFT(&mut y_real, &mut y_imag);
+
+    	let offset = N/2*frame;
+    	/* オーバーラップアド */
+    	for n in 0..N{
+    		pcm2_s[offset+n] += y_real[n];
+    	}
+  		
+  	}
+  	wave_write_16bit_mono_safer2("ex7_4.wav", (&mut pcm2_s, pcm2_fs, pcm2_bits, pcm2_length));
 }
 
 #[allow(non_snake_case, unused_variables)]
