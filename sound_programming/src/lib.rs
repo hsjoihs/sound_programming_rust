@@ -113,17 +113,6 @@ pub fn safe_Hanning_window(w_slice: &mut [c_double])
 
 
 
-#[allow(non_snake_case)]
-pub fn wave_read_16bit_stereo_safer2(path : &str) -> (&[f64], &[f64], usize, i32, usize){
-	unsafe{
-		let mut pcm : STEREO_PCM = mem::uninitialized();
-		wave_read_16bit_stereo(&mut pcm, to_c_str(path));
-		let pcm_sliceL = from_raw_parts(pcm.sL, pcm.length as usize);
-		let pcm_sliceR = from_raw_parts(pcm.sR, pcm.length as usize);
-		return (pcm_sliceL, pcm_sliceR, pcm.fs as usize, pcm.bits, pcm.length as usize);
-	}
-}
-
 
 pub fn to_c_str(a: &str) -> *mut i8 {
 	CString::new(a).unwrap().into_raw()

@@ -56,21 +56,21 @@ pub fn wave_read_16bit_mono_safer2(path : &str) -> (Vec<f64>, usize, i32, usize)
 }
 
 
-/*
 
-void wave_read_16bit_mono(MONO_PCM *pcm, const char *file_name)
-{
-  READING_HEADER;
-  pcm->length = data_chunk_size / 2; /* 音データの長さ */
-  pcm->s = calloc(pcm->length, sizeof(double)); /* メモリの確保 */
-  
-  for (int n = 0; n < pcm->length; n++)
-  {
-    READ(data, 16); /* 音データの読み取り */
-    pcm->s[n] = (double)data / 32768.0; /* 音データを-1以上1未満の範囲に正規化する */
-  }
-  
-  fclose(fp);
+#[allow(non_snake_case)]
+pub fn wave_read_16bit_stereo_safer2(path : &str) -> (Vec<f64>, Vec<f64>, usize, i32, usize){
+    let (mut fp, pcm_fs, pcm_bits, data_chunk_size) = foo(path);
+    let pcm_length = (data_chunk_size / 4) as usize; /* 音データの長さ */
+
+    let mut pcm_sL = vec![0.0; pcm_length];
+    let mut pcm_sR = vec![0.0; pcm_length];
+    for n in 0..pcm_length {
+        let mut data = [0;1]; READ_ARR!(fp, data, i16; 1);
+        pcm_sL[n] = data[0] as f64 / 32768.0; /* 音データを-1以上1未満の範囲に正規化する */
+        let mut data = [0;1]; READ_ARR!(fp, data, i16; 1);
+        pcm_sR[n] = data[0] as f64 / 32768.0; /* 音データを-1以上1未満の範囲に正規化する */
+    }
+    
+    return (pcm_sL, pcm_sR, pcm_fs as usize, pcm_bits as i32, pcm_length as usize);
 }
 
-*/
