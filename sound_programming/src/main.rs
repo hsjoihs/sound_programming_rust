@@ -55,6 +55,7 @@ fn main() {
 	// ex8_6();// random
 	ex8_7();
 	ex8_8();
+	ex8_9();
 	ex10_4();
 }
 
@@ -1312,7 +1313,6 @@ fn ex8_7(){
   	wave_write_16bit_mono_safer2("ex8_7.wav", (&mut pcm_s, pcm_fs, pcm_bits, pcm_length));
 }
 
-#[allow(non_snake_case, unused_variables)]
 fn ex8_8(){
 	let pcm_fs = 44100; /* 標本化周波数 */
     let pcm_bits = 16; /* 量子化精度 */
@@ -1359,6 +1359,43 @@ fn ex8_8(){
   	}
   	wave_write_16bit_mono_safer2("ex8_8.wav", (&mut pcm_s, pcm_fs, pcm_bits, pcm_length));
 }
+
+#[allow(non_snake_case, unused_variables)]
+fn ex8_9(){
+	let pcm_fs = 8000; /* 標本化周波数 */
+    let pcm_bits = 16; /* 量子化精度 */
+    let pcm_length = pcm_fs * 2; /* 音データの長さ */
+    let mut pcm_s = vec![0.0; pcm_length];
+
+    let mut f0 = vec![0.0; pcm_length];
+
+    /* 基本周波数 */
+    f0[0] = 500.0;
+    f0[pcm_length - 1] = 3500.0;
+    for n in 0..pcm_length {
+      	f0[n] = f0[0] + (f0[pcm_length - 1] - f0[0]) * n as f64 / (pcm_length - 1) as f64;
+    }
+
+    /* ノコギリ波 */
+    let mut t0 = (pcm_fs as f64 / f0[0]) as usize; /* 基本周期 */
+    let mut m = 0;
+    for n in 0..pcm_length {
+      	pcm_s[n] = 1.0 - 2.0 * m as f64 / t0 as f64;
+      
+      	m+=1;
+      	if m >= t0 {
+        	t0 = (pcm_fs as f64 / f0[n]) as usize;  /* 基本周期 */
+        	m = 0;
+      	}
+    }
+    let gain = 0.1; /* ゲイン */
+    for n in 0..pcm_length {
+    	pcm_s[n] *= gain;
+    }
+
+    wave_write_16bit_mono_safer2("ex8_9.wav", (&mut pcm_s, pcm_fs, pcm_bits, pcm_length));
+}
+
 
 #[allow(non_snake_case)]
 fn ex10_4(){
