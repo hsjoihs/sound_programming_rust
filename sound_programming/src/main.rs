@@ -14,12 +14,9 @@ use sound_programming::wave::wave_read_16bit_mono_safer2;
 use sound_programming::fft::safe_IFFT;
 use sound_programming::fft::safe_FFT;
 use sound_programming::safe_Hanning_window;
-use std::slice::from_raw_parts_mut;
 use std::f64::consts::PI;
 use sound_programming::c_int;
 use sound_programming::c_double;
-use sound_programming::MONO_PCM;
-use sound_programming::sinc;
 use rand::Rng;
 //use std::io;
 fn main() {
@@ -51,8 +48,8 @@ fn main() {
 	ex7_3();
 	//ex7_4(); // slow
 	ex8_1();
+	ex8_2();
 	ex10_4();
-	assert_eq!(sinc(2.1),2.1f64.sin()/2.1 );
 }
 
 
@@ -1002,7 +999,7 @@ fn ex7_4(){
   	wave_write_16bit_mono_safer2("ex7_4.wav", (&mut pcm2_s, pcm2_fs, pcm2_bits, pcm2_length));
 }
 
-#[allow(non_snake_case, unused_variables)]
+#[allow(non_snake_case)]
 fn ex8_1(){
     let pcm_fs = 44100; /* 標本化周波数 */
     let pcm_bits = 16; /* 量子化精度 */
@@ -1026,6 +1023,35 @@ fn ex8_1(){
   		pcm_s[n] *= gain;
   	}
   	wave_write_16bit_mono_safer2("ex8_1.wav", (&mut pcm_s, pcm_fs, pcm_bits, pcm_length));
+}
+
+#[allow(non_snake_case, unused_variables)]
+fn ex8_2(){
+	let pcm_fs = 44100; /* 標本化周波数 */
+    let pcm_bits = 16; /* 量子化精度 */
+    let pcm_length = pcm_fs * 1; /* 音データの長さ */
+    let mut pcm_s = vec![0.0; pcm_length]; /* 音データ */	
+   	let f0 = 500.0; /* 基本周波数 */ 	
+   	/* 矩形波 */
+  	let t0 = pcm_fs / f0 as usize; /* 基本周期 */
+  	let mut m = 0;
+  	for n in 0..pcm_length {
+    	pcm_s[n] = if (m  as f64) < t0 as f64 / 2.0 {
+      		 1.0
+    	} else {
+    		-1.0
+    	};
+    
+    	m+=1;
+    	if m >= t0 {
+      		m = 0;
+    	}
+  	}
+  	let gain = 0.1; /* ゲイン */
+  	for n in 0..pcm_length {
+  		pcm_s[n] *= gain;
+  	}
+  	wave_write_16bit_mono_safer2("ex8_2.wav", (&mut pcm_s, pcm_fs, pcm_bits, pcm_length));
 }
 
 #[allow(non_snake_case)]
