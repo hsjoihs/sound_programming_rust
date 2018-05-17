@@ -1,6 +1,8 @@
 extern crate rand;
 extern crate sound_programming;
 //use std::io::Write;
+use sound_programming::wave_read_PCMU_mono_safer3;
+use sound_programming::wave_write_PCMU_mono_safer3;
 use rand::Rng;
 use sound_programming::MonoPcm;
 use sound_programming::StereoPcm;
@@ -70,6 +72,7 @@ fn main() {
     ex8_11();
     ex8_12();
     ex10_4();
+    ex11_7();
 }
 
 fn ex1_1() {
@@ -1640,3 +1643,12 @@ fn ex10_4() {
 
     wave_write_16bit_mono_safer3("ex10_4.wav", &pcm);
 }
+
+#[allow(non_snake_case)]
+fn ex11_7() {
+	let pcm0 = wave_read_16bit_mono_safer3("vocal.wav");
+	wave_write_PCMU_mono_safer3("pcmu.wav", &pcm0);
+	let pcm1 = wave_read_PCMU_mono_safer3("pcmu.wav");
+	wave_write_16bit_mono_safer3("pcm.wav", &pcm1);
+}
+
