@@ -1,3 +1,5 @@
+use MonoPcm;
+use StereoPcm;
 use std::fs::File;
 use std::io::Read;
 use std::mem;
@@ -55,7 +57,7 @@ fn foo(file_name: &str) -> (File, i32, i16, i32) {
 }
 
 //not tested
-pub fn wave_read_8bit_mono_safer2(path: &str) -> (Vec<f64>, usize, i32, usize) {
+pub fn wave_read_8bit_mono_safer3(path: &str) -> MonoPcm {
     let (mut fp, pcm_fs, pcm_bits, data_chunk_size) = foo(path);
     let pcm_length = data_chunk_size as usize;
     let mut pcm_s = vec![0.0; pcm_length];
@@ -66,12 +68,17 @@ pub fn wave_read_8bit_mono_safer2(path: &str) -> (Vec<f64>, usize, i32, usize) {
         pcm_s[n] = (data[0] as f64 - 128.0) / 128.0; /* 音データを-1以上1未満の範囲に正規化する */
     }
 
-    return (pcm_s, pcm_fs as usize, pcm_bits as i32, pcm_length as usize);
+    return MonoPcm {
+        s: pcm_s,
+        fs: pcm_fs as usize,
+        bits: pcm_bits as i32,
+        length: pcm_length as usize,
+    };
 }
 
 // not tested
 #[allow(non_snake_case)]
-pub fn wave_read_8bit_stereo_safer2(path: &str) -> (Vec<f64>, Vec<f64>, usize, i32, usize) {
+pub fn wave_read_8bit_stereo_safer3(path: &str) -> StereoPcm {
     let (mut fp, pcm_fs, pcm_bits, data_chunk_size) = foo(path);
     let pcm_length = (data_chunk_size / 2) as usize; /* 音データの長さ */
 
@@ -85,16 +92,16 @@ pub fn wave_read_8bit_stereo_safer2(path: &str) -> (Vec<f64>, Vec<f64>, usize, i
         READ_ARR!(fp, data, i16; 1);
         pcm_sR[n] = (data[0] as f64 - 128.0) / 128.0; /* 音データを-1以上1未満の範囲に正規化する */
     }
-    return (
-        pcm_sL,
-        pcm_sR,
-        pcm_fs as usize,
-        pcm_bits as i32,
-        pcm_length as usize,
-    );
+    return StereoPcm {
+        s_l: pcm_sL,
+        s_r: pcm_sR,
+        fs: pcm_fs as usize,
+        bits: pcm_bits as i32,
+        length: pcm_length as usize,
+    };
 }
 
-pub fn wave_read_16bit_mono_safer2(path: &str) -> (Vec<f64>, usize, i32, usize) {
+pub fn wave_read_16bit_mono_safer3(path: &str) -> MonoPcm {
     let (mut fp, pcm_fs, pcm_bits, data_chunk_size) = foo(path);
     let pcm_length = (data_chunk_size / 2) as usize;
     let mut pcm_s = vec![0.0; pcm_length];
@@ -105,11 +112,16 @@ pub fn wave_read_16bit_mono_safer2(path: &str) -> (Vec<f64>, usize, i32, usize) 
         pcm_s[n] = (data[0] as f64) / 32768.0; /* 音データを-1以上1未満の範囲に正規化する */
     }
 
-    return (pcm_s, pcm_fs as usize, pcm_bits as i32, pcm_length as usize);
+    return MonoPcm {
+        s: pcm_s,
+        fs: pcm_fs as usize,
+        bits: pcm_bits as i32,
+        length: pcm_length as usize,
+    };
 }
 
 #[allow(non_snake_case)]
-pub fn wave_read_16bit_stereo_safer2(path: &str) -> (Vec<f64>, Vec<f64>, usize, i32, usize) {
+pub fn wave_read_16bit_stereo_safer3(path: &str) -> StereoPcm {
     let (mut fp, pcm_fs, pcm_bits, data_chunk_size) = foo(path);
     let pcm_length = (data_chunk_size / 4) as usize; /* 音データの長さ */
 
@@ -124,11 +136,11 @@ pub fn wave_read_16bit_stereo_safer2(path: &str) -> (Vec<f64>, Vec<f64>, usize, 
         pcm_sR[n] = data[0] as f64 / 32768.0; /* 音データを-1以上1未満の範囲に正規化する */
     }
 
-    return (
-        pcm_sL,
-        pcm_sR,
-        pcm_fs as usize,
-        pcm_bits as i32,
-        pcm_length as usize,
-    );
+    return StereoPcm {
+        s_l: pcm_sL,
+        s_r: pcm_sR,
+        fs: pcm_fs as usize,
+        bits: pcm_bits as i32,
+        length: pcm_length as usize,
+    };
 }
