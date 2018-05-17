@@ -70,16 +70,16 @@ pub struct STEREO_PCM {
 
 #[link(name = "wave")]
 extern "C" {
-    pub fn wave_write_8bit_mono(pcm: *mut MONO_PCM, file_name: *const c_char);
-    pub fn wave_write_8bit_stereo(pcm: *mut STEREO_PCM, file_name: *const c_char);
+    pub fn wave_write_8bit_mono(pcm: *const MONO_PCM, file_name: *const c_char);
+    pub fn wave_write_8bit_stereo(pcm: *const STEREO_PCM, file_name: *const c_char);
 
     /*pub*/
-    fn wave_write_16bit_mono(pcm: *mut MONO_PCM, file_name: *const c_char);
+    fn wave_write_16bit_mono(pcm: *const MONO_PCM, file_name: *const c_char);
     /*pub*/
-    fn wave_write_16bit_stereo(pcm: *mut STEREO_PCM, file_name: *const c_char);
+    fn wave_write_16bit_stereo(pcm: *const STEREO_PCM, file_name: *const c_char);
 
     pub fn wave_read_IMA_ADPCM_mono(pcm: *mut MONO_PCM, file_name: *const c_char);
-    pub fn wave_write_IMA_ADPCM_mono(pcm: *mut MONO_PCM, file_name: *const c_char);
+    pub fn wave_write_IMA_ADPCM_mono(pcm: *const MONO_PCM, file_name: *const c_char);
 }
 
 #[allow(non_snake_case)]

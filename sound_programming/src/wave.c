@@ -48,7 +48,7 @@ typedef struct
 
 
 
-void wave_write_8bit_mono(MONO_PCM *pcm, const char *file_name)
+void wave_write_8bit_mono(const MONO_PCM *pcm, const char *file_name)
 {
   FILE *fp;
   int8_t  riff_chunk_ID[4];
@@ -139,7 +139,7 @@ void wave_write_8bit_mono(MONO_PCM *pcm, const char *file_name)
 }
 
 
-void wave_write_8bit_stereo(STEREO_PCM *pcm, const char *file_name)
+void wave_write_8bit_stereo(const STEREO_PCM *pcm, const char *file_name)
 {
   FILE *fp;
   int8_t  riff_chunk_ID[4];
@@ -238,7 +238,7 @@ void wave_write_8bit_stereo(STEREO_PCM *pcm, const char *file_name)
   fclose(fp);
 }
 
-void wave_write_16bit_mono(MONO_PCM *pcm, const char *file_name)
+void wave_write_16bit_mono(const MONO_PCM *pcm, const char *file_name)
 {
   FILE *fp;
   int8_t  riff_chunk_ID[4];
@@ -323,7 +323,7 @@ void wave_write_16bit_mono(MONO_PCM *pcm, const char *file_name)
 }
 
 
-void wave_write_16bit_stereo(STEREO_PCM *pcm, const char *file_name)
+void wave_write_16bit_stereo(const STEREO_PCM *pcm, const char *file_name)
 {
   FILE *fp;
   int8_t  riff_chunk_ID[4];
@@ -500,7 +500,7 @@ void wave_read_PCMU_mono(MONO_PCM *pcm, const char *file_name)
   fclose(fp);
 }
 
-void wave_write_PCMU_mono(MONO_PCM *pcm, const char *file_name)
+void wave_write_PCMU_mono(const MONO_PCM *pcm, const char *file_name)
 {
   FILE *fp;
   int8_t  riff_chunk_ID[4];
@@ -729,7 +729,7 @@ void wave_read_PCMA_mono(MONO_PCM *pcm, const char *file_name)
   fclose(fp);
 }
 
-void wave_write_PCMA_mono(MONO_PCM *pcm, const char *file_name)
+void wave_write_PCMA_mono(const MONO_PCM *pcm, const char *file_name)
 {
   FILE *fp;
   int8_t  riff_chunk_ID[4];
@@ -1040,7 +1040,7 @@ void wave_read_IMA_ADPCM_mono(MONO_PCM *pcm, const char *file_name)
   fclose(fp);
 }
 
-void wave_write_IMA_ADPCM_mono(MONO_PCM *pcm, const char *file_name)
+void wave_write_IMA_ADPCM_mono(const MONO_PCM *pcm, const char *file_name)
 {
   FILE *fp;
   int8_t  riff_chunk_ID[4];
