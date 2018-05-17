@@ -50,6 +50,13 @@ pub fn sinc(x: c_double) -> c_double {
     }
 }
 
+pub struct MonoPcm {
+    pub fs: usize,
+    pub bits: i32,
+    pub length: usize,
+    pub s: Vec<f64>,
+}
+
 #[repr(C)]
 pub struct MONO_PCM {
     pub fs: c_int,        /* 標本化周波数 */
