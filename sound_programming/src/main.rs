@@ -1,10 +1,6 @@
 extern crate rand;
 extern crate sound_programming;
 //use std::io::Write;
-use sound_programming::wave_write_PCMA_mono_safer3;
-use sound_programming::wave_read_PCMA_mono_safer3;
-use sound_programming::wave_read_PCMU_mono_safer3;
-use sound_programming::wave_write_PCMU_mono_safer3;
 use rand::Rng;
 use sound_programming::MonoPcm;
 use sound_programming::StereoPcm;
@@ -21,8 +17,12 @@ use sound_programming::safe_ADSR;
 use sound_programming::safe_Hanning_window;
 use sound_programming::wave::wave_read_16bit_mono_safer3;
 use sound_programming::wave::wave_read_16bit_stereo_safer3;
+use sound_programming::wave_read_PCMA_mono_safer3;
+use sound_programming::wave_read_PCMU_mono_safer3;
 use sound_programming::wave_write_16bit_mono_safer3;
 use sound_programming::wave_write_16bit_stereo_safer3;
+use sound_programming::wave_write_PCMA_mono_safer3;
+use sound_programming::wave_write_PCMU_mono_safer3;
 use std::f64::consts::PI;
 //use std::io;
 fn main() {
@@ -1592,11 +1592,10 @@ fn ex8_12() {
     }
     let gain = 0.1;
     for n in 0..pcm3.length {
-    	pcm3.s[n] *= ratio as f64 * gain;
+        pcm3.s[n] *= ratio as f64 * gain;
     }
     wave_write_16bit_mono_safer3("ex8_12.wav", &pcm3);
 }
-
 
 #[allow(non_snake_case)]
 fn ex10_4() {
@@ -1649,16 +1648,16 @@ fn ex10_4() {
 
 #[allow(non_snake_case)]
 fn ex11_7() {
-	let pcm0 = wave_read_16bit_mono_safer3("vocal.wav");
-	wave_write_PCMU_mono_safer3("pcmu.wav", &pcm0);
-	let pcm1 = wave_read_PCMU_mono_safer3("pcmu.wav");
-	wave_write_16bit_mono_safer3("ex11_7_pcm.wav", &pcm1);
+    let pcm0 = wave_read_16bit_mono_safer3("vocal.wav");
+    wave_write_PCMU_mono_safer3("pcmu.wav", &pcm0);
+    let pcm1 = wave_read_PCMU_mono_safer3("pcmu.wav");
+    wave_write_16bit_mono_safer3("ex11_7_pcm.wav", &pcm1);
 }
 
 #[allow(non_snake_case)]
 fn ex11_8() {
-	let pcm0 = wave_read_16bit_mono_safer3("vocal.wav");
-	wave_write_PCMA_mono_safer3("pcma.wav", &pcm0);
-	let pcm1 = wave_read_PCMA_mono_safer3("pcma.wav");
-	wave_write_16bit_mono_safer3("ex11_8_pcm.wav", &pcm1);
+    let pcm0 = wave_read_16bit_mono_safer3("vocal.wav");
+    wave_write_PCMA_mono_safer3("pcma.wav", &pcm0);
+    let pcm1 = wave_read_PCMA_mono_safer3("pcma.wav");
+    wave_write_16bit_mono_safer3("ex11_8_pcm.wav", &pcm1);
 }

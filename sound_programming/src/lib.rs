@@ -4,8 +4,8 @@ pub use libc::c_double;
 pub use libc::c_int;
 use std::f64::consts::PI;
 use std::ffi::CString;
-use std::slice::from_raw_parts_mut;
 use std::mem;
+use std::slice::from_raw_parts_mut;
 pub mod fft;
 pub mod filter;
 pub mod wave;
@@ -129,13 +129,16 @@ extern "C" {
     /*pub*/
     fn wave_write_16bit_stereo(pcm: *const STEREO_PCM_CONST, file_name: *const c_char);
 
-
-	pub fn wave_read_PCMA_mono(pcm: *mut MONO_PCM, file_name: *const c_char);
-    pub fn wave_write_PCMA_mono(pcm: *const MONO_PCM_CONST, file_name: *const c_char);
+    /*pub*/
+    fn wave_read_PCMA_mono(pcm: *mut MONO_PCM, file_name: *const c_char);
+    /*pub*/
+    fn wave_write_PCMA_mono(pcm: *const MONO_PCM_CONST, file_name: *const c_char);
     pub fn wave_read_IMA_ADPCM_mono(pcm: *mut MONO_PCM, file_name: *const c_char);
     pub fn wave_write_IMA_ADPCM_mono(pcm: *const MONO_PCM_CONST, file_name: *const c_char);
-	pub fn wave_read_PCMU_mono(pcm: *mut MONO_PCM, file_name: *const c_char);
-    /*pub*/ fn wave_write_PCMU_mono(pcm: *const MONO_PCM_CONST, file_name: *const c_char);
+    /*pub*/
+    fn wave_read_PCMU_mono(pcm: *mut MONO_PCM, file_name: *const c_char);
+    /*pub*/
+    fn wave_write_PCMU_mono(pcm: *const MONO_PCM_CONST, file_name: *const c_char);
 
 }
 
@@ -186,23 +189,22 @@ pub fn wave_write_16bit_mono_safer3(path: &str, pcm: &MonoPcm) {
 }
 
 #[allow(non_snake_case)]
-pub fn wave_read_PCMU_mono_safer3(path: &str) -> MonoPcm{
-
-	unsafe{
-		let mut pcm: MONO_PCM = mem::uninitialized();
-		wave_read_PCMU_mono(&mut pcm, to_c_str(path));
-    	MonoPcm{
-    		fs: pcm.fs as usize,
-    		bits: pcm.bits,
-    		length: pcm.length as usize,
-    		s: from_raw_parts_mut(pcm.s, pcm.length as usize).to_vec()
-    	}
-	}
+pub fn wave_read_PCMU_mono_safer3(path: &str) -> MonoPcm {
+    unsafe {
+        let mut pcm: MONO_PCM = mem::uninitialized();
+        wave_read_PCMU_mono(&mut pcm, to_c_str(path));
+        MonoPcm {
+            fs: pcm.fs as usize,
+            bits: pcm.bits,
+            length: pcm.length as usize,
+            s: from_raw_parts_mut(pcm.s, pcm.length as usize).to_vec(),
+        }
+    }
 }
 
 #[allow(non_snake_case)]
-pub fn wave_write_PCMU_mono_safer3(path: &str, pcm: &MonoPcm){
-	let pcm1: MONO_PCM_CONST = MONO_PCM_CONST {
+pub fn wave_write_PCMU_mono_safer3(path: &str, pcm: &MonoPcm) {
+    let pcm1: MONO_PCM_CONST = MONO_PCM_CONST {
         fs: pcm.fs as i32,
         bits: pcm.bits,
         length: pcm.length as i32,
@@ -214,23 +216,22 @@ pub fn wave_write_PCMU_mono_safer3(path: &str, pcm: &MonoPcm){
 }
 
 #[allow(non_snake_case)]
-pub fn wave_read_PCMA_mono_safer3(path: &str) -> MonoPcm{
-
-	unsafe{
-		let mut pcm: MONO_PCM = mem::uninitialized();
-		wave_read_PCMA_mono(&mut pcm, to_c_str(path));
-    	MonoPcm{
-    		fs: pcm.fs as usize,
-    		bits: pcm.bits,
-    		length: pcm.length as usize,
-    		s: from_raw_parts_mut(pcm.s, pcm.length as usize).to_vec()
-    	}
-	}
+pub fn wave_read_PCMA_mono_safer3(path: &str) -> MonoPcm {
+    unsafe {
+        let mut pcm: MONO_PCM = mem::uninitialized();
+        wave_read_PCMA_mono(&mut pcm, to_c_str(path));
+        MonoPcm {
+            fs: pcm.fs as usize,
+            bits: pcm.bits,
+            length: pcm.length as usize,
+            s: from_raw_parts_mut(pcm.s, pcm.length as usize).to_vec(),
+        }
+    }
 }
 
 #[allow(non_snake_case)]
-pub fn wave_write_PCMA_mono_safer3(path: &str, pcm: &MonoPcm){
-	let pcm1: MONO_PCM_CONST = MONO_PCM_CONST {
+pub fn wave_write_PCMA_mono_safer3(path: &str, pcm: &MonoPcm) {
+    let pcm1: MONO_PCM_CONST = MONO_PCM_CONST {
         fs: pcm.fs as i32,
         bits: pcm.bits,
         length: pcm.length as i32,
