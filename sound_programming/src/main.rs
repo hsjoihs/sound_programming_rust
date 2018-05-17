@@ -14,7 +14,7 @@ use sound_programming::filter::safe_IIR_resonator;
 use sound_programming::safe_ADSR;
 use sound_programming::safe_Hanning_window;
 use sound_programming::wave::wave_read_16bit_mono_safer3;
-use sound_programming::wave::wave_read_16bit_stereo_safer2;
+use sound_programming::wave::wave_read_16bit_stereo_safer3;
 use sound_programming::wave_write_16bit_mono_safer2;
 use sound_programming::wave_write_16bit_stereo_safer2;
 use std::f64::consts::PI;
@@ -83,15 +83,15 @@ fn ex1_1() {
 
 #[allow(non_snake_case)]
 fn ex1_2() {
-    let (pcm0_sliceL, pcm0_sliceR, pcm0_fs, pcm0_bits, pcm0_length) =
-        wave_read_16bit_stereo_safer2("ex1_2_a.wav");
-    let pcm1_sL: Vec<c_double> = (0..pcm0_length).map(|n| pcm0_sliceL[n as usize]).collect();
+    let pcm0=
+        wave_read_16bit_stereo_safer3("ex1_2_a.wav");
+    let pcm1_sL: Vec<c_double> = (0..pcm0.length).map(|n| pcm0.s_l[n as usize]).collect();
 
-    let pcm1_sR: Vec<c_double> = (0..pcm0_length).map(|n| pcm0_sliceR[n as usize]).collect();
+    let pcm1_sR: Vec<c_double> = (0..pcm0.length).map(|n| pcm0.s_r[n as usize]).collect();
 
     wave_write_16bit_stereo_safer2(
         "ex1_2_b.wav",
-        (&pcm1_sL, &pcm1_sR, pcm0_fs, pcm0_bits, pcm0_length),
+        (&pcm1_sL, &pcm1_sR, pcm0.fs, pcm0.bits, pcm0.length),
     );
 }
 

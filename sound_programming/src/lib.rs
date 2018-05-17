@@ -57,6 +57,14 @@ pub struct MonoPcm {
     pub s: Vec<f64>,
 }
 
+pub struct StereoPcm {
+    pub fs: usize,
+    pub bits: i32,
+    pub length: usize,
+    pub s_l: Vec<f64>,
+    pub s_r: Vec<f64>,
+}
+
 #[repr(C)]
 pub struct MONO_PCM {
     pub fs: c_int,        /* 標本化周波数 */
