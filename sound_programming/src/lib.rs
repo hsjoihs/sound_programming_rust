@@ -57,6 +57,20 @@ pub struct MonoPcm {
     pub s: Vec<f64>,
 }
 
+impl MonoPcm {
+	pub fn new16(fs : usize, length: usize)->Self{
+		MonoPcm{
+			fs, length, bits:16, s:vec![0.0;length]
+		}
+	}
+	pub fn blank_copy(orig : &Self) -> Self {
+		MonoPcm{
+			s: vec![0.0; orig.length as usize]
+			, .. *orig
+		}
+	}
+}
+
 pub struct StereoPcm {
     pub fs: usize,
     pub bits: i32,
@@ -149,6 +163,19 @@ pub fn wave_write_16bit_mono_safer2(path: &str, x: (&[f64], usize, i32, usize)) 
 }
 
 #[allow(non_snake_case)]
+pub fn wave_write_16bit_mono_safer3(path: &str, pcm: &MonoPcm) {
+    let pcm1: MONO_PCM_CONST = MONO_PCM_CONST {
+        fs: pcm.fs as i32,
+        bits: pcm.bits,
+        length: pcm.length as i32,
+        s: pcm.s.as_ptr(),
+    };
+    unsafe {
+        wave_write_16bit_mono(&pcm1, to_c_str(path));
+    }
+}
+
+#[allow(non_snake_case)]
 pub fn wave_write_16bit_stereo_safer2(path: &str, x: (&[f64], &[f64], usize, i32, usize)) {
     let pcm1: STEREO_PCM_CONST = STEREO_PCM_CONST {
         fs: x.2 as i32,
@@ -156,6 +183,20 @@ pub fn wave_write_16bit_stereo_safer2(path: &str, x: (&[f64], &[f64], usize, i32
         length: x.4 as i32,
         sL: x.0.as_ptr(),
         sR: x.1.as_ptr(),
+    };
+    unsafe {
+        wave_write_16bit_stereo(&pcm1, to_c_str(path));
+    }
+}
+
+#[allow(non_snake_case)]
+pub fn wave_write_16bit_stereo_safer3(path: &str, pcm: &StereoPcm) {
+    let pcm1: STEREO_PCM_CONST = STEREO_PCM_CONST {
+        fs: pcm.fs as i32,
+        bits: pcm.bits,
+        length: pcm.length as i32,
+        sL: pcm.s_l.as_ptr(),
+        sR: pcm.s_r.as_ptr(),
     };
     unsafe {
         wave_write_16bit_stereo(&pcm1, to_c_str(path));

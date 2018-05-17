@@ -2,6 +2,8 @@ extern crate rand;
 extern crate sound_programming;
 //use std::io::Write;
 use rand::Rng;
+use sound_programming::MonoPcm;
+use sound_programming::StereoPcm;
 use sound_programming::c_double;
 use sound_programming::c_int;
 use sound_programming::fft::safe_FFT;
@@ -15,8 +17,8 @@ use sound_programming::safe_ADSR;
 use sound_programming::safe_Hanning_window;
 use sound_programming::wave::wave_read_16bit_mono_safer3;
 use sound_programming::wave::wave_read_16bit_stereo_safer3;
-use sound_programming::wave_write_16bit_mono_safer2;
-use sound_programming::wave_write_16bit_stereo_safer2;
+use sound_programming::wave_write_16bit_mono_safer3;
+use sound_programming::wave_write_16bit_stereo_safer3;
 use std::f64::consts::PI;
 //use std::io;
 fn main() {
@@ -73,26 +75,26 @@ fn ex1_1() {
     /* 音データの入力 */
 
     let pcm0 = wave_read_16bit_mono_safer3("ex1_1_a.wav");
+    let pcm1 = MonoPcm {
+        s: (0..pcm0.length)
+	      .map(|n| pcm0.s[n as usize])/* 音データのコピー */
+	      .collect(),
+        ..pcm0
+    };
 
-    let pcm1_s: Vec<c_double> = (0..pcm0.length)
-	  .map(|n| pcm0.s[n as usize])/* 音データのコピー */
-	  .collect();
-
-    wave_write_16bit_mono_safer2("ex1_1_b.wav", (&pcm1_s, pcm0.fs, pcm0.bits, pcm0.length)); /* 音データの出力 */
+    wave_write_16bit_mono_safer3("ex1_1_b.wav", &pcm1); /* 音データの出力 */
 }
 
 #[allow(non_snake_case)]
 fn ex1_2() {
-    let pcm0=
-        wave_read_16bit_stereo_safer3("ex1_2_a.wav");
-    let pcm1_sL: Vec<c_double> = (0..pcm0.length).map(|n| pcm0.s_l[n as usize]).collect();
+    let pcm0 = wave_read_16bit_stereo_safer3("ex1_2_a.wav");
+    let pcm1 = StereoPcm {
+        s_l: (0..pcm0.length).map(|n| pcm0.s_l[n as usize]).collect(),
+        s_r: (0..pcm0.length).map(|n| pcm0.s_r[n as usize]).collect(),
+        ..pcm0
+    };
 
-    let pcm1_sR: Vec<c_double> = (0..pcm0.length).map(|n| pcm0.s_r[n as usize]).collect();
-
-    wave_write_16bit_stereo_safer2(
-        "ex1_2_b.wav",
-        (&pcm1_sL, &pcm1_sR, pcm0.fs, pcm0.bits, pcm0.length),
-    );
+    wave_write_16bit_stereo_safer3("ex1_2_b.wav", &pcm1);
 }
 
 fn ex2_1() {
@@ -102,94 +104,97 @@ fn ex2_1() {
     let a = 0.1; /* 振幅 */
     let f0 = 500.0; /* 周波数 */
 
-    /* サイン波 */
-    let pcm_s: Vec<c_double> = (0..pcm_length)
-        .map(|n| a * (2.0 * PI * f0 * (n as f64) / (pcm_fs as f64)).sin())
-        .collect();
+    let pcm = MonoPcm {
+        fs: pcm_fs,
+        bits: 16,
+        length: pcm_length,
+        s: (0..pcm_length)
+            .map(|n| a * (2.0 * PI * f0 * (n as f64) / (pcm_fs as f64)).sin())
+            .collect(), /* サイン波 */
+    };
 
-    wave_write_16bit_mono_safer2("ex2_1.wav", (&pcm_s, pcm_fs, 16, pcm_length));
+    wave_write_16bit_mono_safer3("ex2_1.wav", &pcm);
 }
 
-fn sine_wave(x: (&mut [f64], usize), f0: c_double, a: c_double, offset: c_int, duration: c_int) {
-    let (pcm_s, pcm_fs) = x;
+fn sine_wave(pcm: &mut MonoPcm, f0: c_double, a: c_double, offset: c_int, duration: c_int) {
     /* サイン波 */
     let mut s: Vec<c_double> = (0..duration)
-        .map(|n| (2.0 * PI * f0 * (n as f64) / (pcm_fs as f64)).sin() * a)
+        .map(|n| (2.0 * PI * f0 * (n as f64) / (pcm.fs as f64)).sin() * a)
         .collect();
 
     /* フェード処理 */
-    for n in 0..(pcm_fs as f64 * 0.01).ceil() as usize {
-        s[n] *= n as c_double / (pcm_fs as f64 * 0.01);
-        s[duration as usize - n - 1] *= n as c_double / (pcm_fs as f64 * 0.01);
+    for n in 0..(pcm.fs as f64 * 0.01).ceil() as usize {
+        s[n] *= n as c_double / (pcm.fs as f64 * 0.01);
+        s[duration as usize - n - 1] *= n as c_double / (pcm.fs as f64 * 0.01);
     }
 
     for n in 0..duration as usize {
-        pcm_s[offset as usize + n] += s[n];
+        pcm.s[offset as usize + n] += s[n];
     }
 }
 fn ex2_2() {
     let pcm_fs: usize = 44100; /* 標本化周波数 */
     let pcm_length: usize = pcm_fs * 2; /* 音データの長さ */
-    let mut pcm_s: Vec<c_double> = vec![0.0; pcm_length];
+    let mut pcm = MonoPcm::new16(pcm_fs, pcm_length);
 
     sine_wave(
-        (&mut pcm_s, pcm_fs),
+        &mut pcm,
         261.63,
         0.1,
         itdyi(pcm_fs, 0.00),
         itdyi(pcm_fs, 0.25),
     ); /* C4 */
     sine_wave(
-        (&mut pcm_s, pcm_fs),
+        &mut pcm,
         293.66,
         0.1,
         itdyi(pcm_fs, 0.25),
         itdyi(pcm_fs, 0.25),
     ); /* D4 */
     sine_wave(
-        (&mut pcm_s, pcm_fs),
+        &mut pcm,
         329.63,
         0.1,
         itdyi(pcm_fs, 0.50),
         itdyi(pcm_fs, 0.25),
     ); /* E4 */
     sine_wave(
-        (&mut pcm_s, pcm_fs),
+        &mut pcm,
         349.23,
         0.1,
         itdyi(pcm_fs, 0.75),
         itdyi(pcm_fs, 0.25),
     ); /* F4 */
     sine_wave(
-        (&mut pcm_s, pcm_fs),
+        &mut pcm,
         392.00,
         0.1,
         itdyi(pcm_fs, 1.00),
         itdyi(pcm_fs, 0.25),
     ); /* G4 */
     sine_wave(
-        (&mut pcm_s, pcm_fs),
+        &mut pcm,
         440.00,
         0.1,
         itdyi(pcm_fs, 1.25),
         itdyi(pcm_fs, 0.25),
     ); /* A4 */
     sine_wave(
-        (&mut pcm_s, pcm_fs),
+        &mut pcm,
         493.88,
         0.1,
         itdyi(pcm_fs, 1.50),
         itdyi(pcm_fs, 0.25),
     ); /* B4 */
     sine_wave(
-        (&mut pcm_s, pcm_fs),
+        &mut pcm,
         523.25,
         0.1,
         itdyi(pcm_fs, 1.75),
         itdyi(pcm_fs, 0.25),
     ); /* C5 */
 
-    wave_write_16bit_mono_safer2("ex2_2.wav", (&pcm_s, pcm_fs, 16, pcm_length));
+    wave_write_16bit_mono_safer3("ex2_2.wav", &pcm);
 }
 
 // int_times_double_yielding_int
@@ -202,23 +207,23 @@ fn ex3_1() {
 
     let pcm_fs = 44100;
     let pcm_length = pcm_fs * 1;
-    let mut pcm_s: Vec<c_double> = vec![0.0; pcm_length];
-
+    let mut pcm = MonoPcm::new16(pcm_fs, pcm_length);
+    
     /* ノコギリ波 */
     for i_ in 1..=44 {
         let i = i_ as f64;
         for n in 0..pcm_length {
-            pcm_s[n] += 1.0 / i * (2.0 * PI * i * f0 * (n as f64) / (pcm_fs as f64)).sin();
+            pcm.s[n] += 1.0 / i * (2.0 * PI * i * f0 * (n as f64) / (pcm_fs as f64)).sin();
         }
     }
 
     let gain = 0.1; /* ゲイン */
 
     for n in 0..pcm_length {
-        pcm_s[n] *= gain;
+        pcm.s[n] *= gain;
     }
 
-    wave_write_16bit_mono_safer2("ex3_1.wav", (&pcm_s, pcm_fs, 16, pcm_length));
+    wave_write_16bit_mono_safer3("ex3_1.wav", &pcm);
 }
 
 fn ex3_2() {
@@ -226,23 +231,23 @@ fn ex3_2() {
 
     let pcm_fs = 44100;
     let pcm_length = pcm_fs * 1;
-    let mut pcm_s: Vec<c_double> = vec![0.0; pcm_length];
+    let mut pcm = MonoPcm::new16(pcm_fs, pcm_length);
 
     /* 矩形波 */
     for j in 0..22 {
         let i = (2 * j + 1) as f64;
         for n in 0..pcm_length {
-            pcm_s[n] += 1.0 / i * (2.0 * PI * i * f0 * (n as f64) / (pcm_fs as f64)).sin();
+            pcm.s[n] += 1.0 / i * (2.0 * PI * i * f0 * (n as f64) / (pcm_fs as f64)).sin();
         }
     }
 
     let gain = 0.1; /* ゲイン */
 
     for n in 0..pcm_length {
-        pcm_s[n] *= gain;
+        pcm.s[n] *= gain;
     }
 
-    wave_write_16bit_mono_safer2("ex3_2.wav", (&pcm_s, pcm_fs, 16, pcm_length));
+    wave_write_16bit_mono_safer3("ex3_2.wav", &pcm);
 }
 
 fn ex3_3() {
@@ -250,13 +255,13 @@ fn ex3_3() {
 
     let pcm_fs = 44100;
     let pcm_length = pcm_fs * 1;
-    let mut pcm_s: Vec<c_double> = vec![0.0; pcm_length];
+    let mut pcm = MonoPcm::new16(pcm_fs, pcm_length);
 
     /* 三角波 */
     for j in 0..22 {
         let i = (2 * j + 1) as f64;
         for n in 0..pcm_length {
-            pcm_s[n] += 1.0 / i / i * (PI * i / 2.0).sin()
+            pcm.s[n] += 1.0 / i / i * (PI * i / 2.0).sin()
                 * (2.0 * PI * i * f0 * (n as f64) / (pcm_fs as f64)).sin();
         }
     }
@@ -264,10 +269,10 @@ fn ex3_3() {
     let gain = 0.1; /* ゲイン */
 
     for n in 0..pcm_length {
-        pcm_s[n] *= gain;
+        pcm.s[n] *= gain;
     }
 
-    wave_write_16bit_mono_safer2("ex3_3.wav", (&pcm_s, pcm_fs, 16, pcm_length));
+    wave_write_16bit_mono_safer3("ex3_3.wav", &pcm);
 }
 
 fn ex3_4() {
@@ -275,23 +280,23 @@ fn ex3_4() {
 
     let pcm_fs = 44100;
     let pcm_length = pcm_fs * 1;
-    let mut pcm_s: Vec<c_double> = vec![0.0; pcm_length];
+    let mut pcm = MonoPcm::new16(pcm_fs, pcm_length);
 
     /* コサイン波の重ね合わせによるノコギリ波 */
     for i in 1..=44 {
         let i = i as f64;
         for n in 0..pcm_length {
-            pcm_s[n] += 1.0 / i * (2.0 * PI * i * f0 * (n as f64) / (pcm_fs as f64)).cos();
+            pcm.s[n] += 1.0 / i * (2.0 * PI * i * f0 * (n as f64) / (pcm_fs as f64)).cos();
         }
     }
 
     let gain = 0.1; /* ゲイン */
 
     for n in 0..pcm_length {
-        pcm_s[n] *= gain;
+        pcm.s[n] *= gain;
     }
 
-    wave_write_16bit_mono_safer2("ex3_4.wav", (&pcm_s, pcm_fs, 16, pcm_length));
+    wave_write_16bit_mono_safer3("ex3_4.wav", &pcm);
 }
 
 fn ex3_5() {
@@ -299,7 +304,7 @@ fn ex3_5() {
 
     let pcm_fs = 44100;
     let pcm_length = pcm_fs * 1;
-    let mut pcm_s: Vec<c_double> = vec![0.0; pcm_length];
+    let mut pcm = MonoPcm::new16(pcm_fs, pcm_length);
 
     let mut rng = rand::thread_rng();
     /* 白色雑音 */
@@ -310,17 +315,17 @@ fn ex3_5() {
         }
         let i = i as f64;
         for n in 0..pcm_length {
-            pcm_s[n] += (2.0 * PI * i * f0 * (n as f64) / (pcm_fs as f64) + theta).sin();
+            pcm.s[n] += (2.0 * PI * i * f0 * (n as f64) / (pcm_fs as f64) + theta).sin();
         }
     }
 
     let gain = 0.001; /* ゲイン */
 
     for n in 0..pcm_length {
-        pcm_s[n] *= gain;
+        pcm.s[n] *= gain;
     }
 
-    wave_write_16bit_mono_safer2("ex3_5.wav", (&pcm_s, pcm_fs, 16, pcm_length));
+    wave_write_16bit_mono_safer3("ex3_5.wav", &pcm);
 }
 
 #[allow(non_snake_case)]
@@ -424,55 +429,53 @@ fn ex4_3() {
     safe_FFT(&mut x_real, &mut x_imag); /* FFTの計算結果はx_realとx_imagに上書きされる */
 }
 
-#[allow(unused_variables, non_snake_case)]
+#[allow(non_snake_case)]
 fn ex4_4() {
     {
         let pcm0_fs = 44100;
-        let pcm0_bits = 16;
         let pcm0_length = pcm0_fs * 1; /* 音データの長さ */
-        let mut pcm0_s: Vec<c_double> = vec![0.0; pcm0_length]; /* 音データ */
+        let mut pcm0 = MonoPcm::new16(pcm0_fs, pcm0_length); /* 音データ */
 
         let f0 = 500.0; /* 基本周波数 */
 
         /* 基本音を含む音 */
         for i in 1..=44 {
             for n in 0..pcm0_length {
-                pcm0_s[n] += (2.0 * PI * i as f64 * f0 * n as f64 / pcm0_fs as f64).sin();
+                pcm0.s[n] += (2.0 * PI * i as f64 * f0 * n as f64 / pcm0_fs as f64).sin();
             }
         }
 
         let gain = 0.01; /* ゲイン */
         for n in 0..pcm0_length {
-            pcm0_s[n] *= gain;
+            pcm0.s[n] *= gain;
         }
-        wave_write_16bit_mono_safer2("ex4_4a.wav", (&pcm0_s, pcm0_fs, pcm0_bits, pcm0_length));
+        wave_write_16bit_mono_safer3("ex4_4a.wav", &pcm0);
     }
     {
         let pcm1_fs = 44100;
-        let pcm1_bits = 16;
         let pcm1_length = pcm1_fs * 1; /* 音データの長さ */
-        let mut pcm1_s: Vec<c_double> = vec![0.0; pcm1_length]; /* 音データ */
+        let mut pcm1 = MonoPcm::new16(pcm1_fs, pcm1_length); /* 音データ */
         let f0 = 500.0; /* 基本周波数 */
         /* 基本音を含まない音 */
         for i in 2..=44 {
             for n in 0..pcm1_length {
-                pcm1_s[n] += (2.0 * PI * i as f64 * f0 * n as f64 / pcm1_fs as f64).sin();
+                pcm1.s[n] += (2.0 * PI * i as f64 * f0 * n as f64 / pcm1_fs as f64).sin();
             }
         }
         let gain = 0.01; /* ゲイン */
         for n in 0..pcm1_length {
-            pcm1_s[n] *= gain;
+            pcm1.s[n] *= gain;
         }
-        wave_write_16bit_mono_safer2("ex4_4b.wav", (&pcm1_s, pcm1_fs, pcm1_bits, pcm1_length));
+        wave_write_16bit_mono_safer3("ex4_4b.wav", &pcm1);
     }
 }
 
 #[allow(non_snake_case)]
 fn ex5_1() {
     let pcm_fs = 44100; /* 標本化周波数 */
-    let pcm_bits = 16; /* 量子化精度 */
     let pcm_length = pcm_fs * 4; /* 音データの長さ */
-    let mut pcm_s = vec![0.0; pcm_length]; /* 音データ */
+    let mut pcm = MonoPcm::new16(pcm_fs, pcm_length);/* 音データ */
+
 
     let mut a0 = vec![0.0; pcm_length];
     /* 振幅の時間エンベロープ */
@@ -483,10 +486,10 @@ fn ex5_1() {
     }
     let f0 = 500.0; /* 周波数 */
     for n in 0..pcm_length {
-        pcm_s[n] = a0[n] * (2.0 * PI * f0 * n as f64 / pcm_fs as f64).sin();
+        pcm.s[n] = a0[n] * (2.0 * PI * f0 * n as f64 / pcm_fs as f64).sin();
     }
 
-    wave_write_16bit_mono_safer2("ex5_1.wav", (&pcm_s, pcm_fs, pcm_bits, pcm_length));
+    wave_write_16bit_mono_safer3("ex5_1.wav", &pcm);
 }
 
 #[allow(non_snake_case)]
@@ -512,10 +515,9 @@ fn ex5_2() {
     let pcm_s: Vec<c_double> = (0..pcm_length)
         .map(|n| a0 * (2.0 * PI * g0[n] / pcm_fs as f64).sin())
         .collect();
-    wave_write_16bit_mono_safer2("ex5_2.wav", (&pcm_s, pcm_fs, pcm_bits, pcm_length));
+    wave_write_16bit_mono_safer3("ex5_2.wav", &MonoPcm {s: pcm_s, fs: pcm_fs, bits: pcm_bits, length: pcm_length});
 }
 
-#[allow(non_snake_case)]
 fn ex5_3() {
     let pcm_fs = 44100; /* 標本化周波数 */
     let pcm_bits = 16; /* 量子化精度 */
@@ -536,15 +538,13 @@ fn ex5_3() {
     let pcm_s: Vec<c_double> = (0..pcm_length)
         .map(|n| a0 * (2.0 * PI * g0[n] / pcm_fs as f64).sin())
         .collect();
-    wave_write_16bit_mono_safer2("ex5_3.wav", (&pcm_s, pcm_fs, pcm_bits, pcm_length));
+    wave_write_16bit_mono_safer3("ex5_3.wav", &MonoPcm {s: pcm_s, fs: pcm_fs, bits: pcm_bits, length: pcm_length});
 }
 
-#[allow(non_snake_case)]
 fn ex5_4() {
     let pcm_fs = 44100; /* 標本化周波数 */
-    let pcm_bits = 16; /* 量子化精度 */
     let pcm_length = pcm_fs * 4; /* 音データの長さ */
-    let mut pcm_s = vec![0.0; pcm_length]; /* 音データ */
+    let mut pcm = MonoPcm::new16(pcm_fs, pcm_length);
 
     let a0 = vec![0.5; pcm_length];
     let a1 = vec![1.0; pcm_length];
@@ -559,32 +559,30 @@ fn ex5_4() {
 
     /* 加算合成 */
     for n in 0..pcm_length {
-        pcm_s[n] += a0[n] * (2.0 * PI * f0[n] * n as f64 / pcm_fs as f64).sin();
-        pcm_s[n] += a1[n] * (2.0 * PI * f1[n] * n as f64 / pcm_fs as f64).sin();
-        pcm_s[n] += a2[n] * (2.0 * PI * f2[n] * n as f64 / pcm_fs as f64).sin();
-        pcm_s[n] += a3[n] * (2.0 * PI * f3[n] * n as f64 / pcm_fs as f64).sin();
-        pcm_s[n] += a4[n] * (2.0 * PI * f4[n] * n as f64 / pcm_fs as f64).sin();
+        pcm.s[n] += a0[n] * (2.0 * PI * f0[n] * n as f64 / pcm_fs as f64).sin();
+        pcm.s[n] += a1[n] * (2.0 * PI * f1[n] * n as f64 / pcm_fs as f64).sin();
+        pcm.s[n] += a2[n] * (2.0 * PI * f2[n] * n as f64 / pcm_fs as f64).sin();
+        pcm.s[n] += a3[n] * (2.0 * PI * f3[n] * n as f64 / pcm_fs as f64).sin();
+        pcm.s[n] += a4[n] * (2.0 * PI * f4[n] * n as f64 / pcm_fs as f64).sin();
     }
     let gain = 0.1; /* ゲイン */
     for n in 0..pcm_length {
-        pcm_s[n] *= gain;
+        pcm.s[n] *= gain;
     }
 
     /* フェード処理 */
     for n in 0..(pcm_fs as f64 * 0.01).ceil() as usize {
-        pcm_s[n] *= n as f64 / (pcm_fs as f64 * 0.01);
-        pcm_s[pcm_length - n - 1] *= n as f64 / (pcm_fs as f64 * 0.01);
+        pcm.s[n] *= n as f64 / (pcm_fs as f64 * 0.01);
+        pcm.s[pcm_length - n - 1] *= n as f64 / (pcm_fs as f64 * 0.01);
     }
 
-    wave_write_16bit_mono_safer2("ex5_4.wav", (&pcm_s, pcm_fs, pcm_bits, pcm_length));
+    wave_write_16bit_mono_safer3("ex5_4.wav", &pcm);
 }
 
-#[allow(non_snake_case)]
 fn ex5_5() {
     let pcm_fs = 44100; /* 標本化周波数 */
-    let pcm_bits = 16; /* 量子化精度 */
     let pcm_length = pcm_fs * 4; /* 音データの長さ */
-    let mut pcm_s = vec![0.0; pcm_length]; /* 音データ */
+    let mut pcm = MonoPcm::new16(pcm_fs, pcm_length); /* 音データ */
 
     let mut a0 = vec![0.0; pcm_length];
     let mut a1 = vec![0.0; pcm_length];
@@ -606,35 +604,33 @@ fn ex5_5() {
     }
     /* 加算合成 */
     for n in 0..pcm_length {
-        pcm_s[n] += a0[n] * (2.0 * PI * f0[n] * n as f64 / pcm_fs as f64).sin();
-        pcm_s[n] += a1[n] * (2.0 * PI * f1[n] * n as f64 / pcm_fs as f64).sin();
-        pcm_s[n] += a2[n] * (2.0 * PI * f2[n] * n as f64 / pcm_fs as f64).sin();
-        pcm_s[n] += a3[n] * (2.0 * PI * f3[n] * n as f64 / pcm_fs as f64).sin();
-        pcm_s[n] += a4[n] * (2.0 * PI * f4[n] * n as f64 / pcm_fs as f64).sin();
+        pcm.s[n] += a0[n] * (2.0 * PI * f0[n] * n as f64 / pcm_fs as f64).sin();
+        pcm.s[n] += a1[n] * (2.0 * PI * f1[n] * n as f64 / pcm_fs as f64).sin();
+        pcm.s[n] += a2[n] * (2.0 * PI * f2[n] * n as f64 / pcm_fs as f64).sin();
+        pcm.s[n] += a3[n] * (2.0 * PI * f3[n] * n as f64 / pcm_fs as f64).sin();
+        pcm.s[n] += a4[n] * (2.0 * PI * f4[n] * n as f64 / pcm_fs as f64).sin();
     }
 
     let gain = 0.1; /* ゲイン */
 
     for n in 0..pcm_length {
-        pcm_s[n] *= gain;
+        pcm.s[n] *= gain;
     }
 
     /* フェード処理 */
     for n in 0..(pcm_fs as f64 * 0.01).ceil() as usize {
-        pcm_s[n] *= n as f64 / (pcm_fs as f64 * 0.01);
-        pcm_s[pcm_length - n - 1] *= n as f64 / (pcm_fs as f64 * 0.01);
+        pcm.s[n] *= n as f64 / (pcm_fs as f64 * 0.01);
+        pcm.s[pcm_length - n - 1] *= n as f64 / (pcm_fs as f64 * 0.01);
     }
 
-    wave_write_16bit_mono_safer2("ex5_5.wav", (&pcm_s, pcm_fs, pcm_bits, pcm_length));
+    wave_write_16bit_mono_safer3("ex5_5.wav", &pcm);
 }
 
 #[allow(non_snake_case)]
 fn ex6_1() {
     let pcm0 = wave_read_16bit_mono_safer3("sine_500hz_3500hz.wav");
-    let pcm1_fs = pcm0.fs; /* 標本化周波数 */
-    let pcm1_bits = pcm0.bits; /* 量子化精度 */
-    let pcm1_length = pcm0.length; /* 音データの長さ */
-    let mut pcm1_s = vec![0.0; pcm1_length as usize]; /* 音データ */
+    
+    let mut pcm1 = MonoPcm::blank_copy(&pcm0);
 
     let fe = 1000.0 / pcm0.fs as f64; /* エッジ周波数 */
     let delta = 1000.0 / pcm0.fs as f64; /* 遷移帯域幅 */
@@ -649,18 +645,15 @@ fn ex6_1() {
     safe_Hanning_window(&mut w); /* ハニング窓 */
 
     safe_FIR_LPF(fe, J, &mut b, &mut w); /* FIRフィルタの設計 */
-    safe_FIR_filtering(&pcm0.s, &mut pcm1_s, pcm1_length, &mut b, J);
-    wave_write_16bit_mono_safer2("ex6_1.wav", (&pcm1_s, pcm1_fs, pcm1_bits, pcm1_length));
+    safe_FIR_filtering(&pcm0.s, &mut pcm1.s, pcm1.length, &mut b, J);
+    wave_write_16bit_mono_safer3("ex6_1.wav", &pcm1);
 }
 
 #[allow(non_snake_case)]
 fn ex6_2() {
     let pcm0 = wave_read_16bit_mono_safer3("sine_500hz_3500hz.wav");
-    let pcm1_fs = pcm0.fs; /* 標本化周波数 */
-    let pcm1_bits = pcm0.bits; /* 量子化精度 */
-    let pcm1_length = pcm0.length; /* 音データの長さ */
-    let mut pcm1_s = vec![0.0; pcm1_length as usize]; /* 音データ */
-
+    let mut pcm1 = MonoPcm::blank_copy(&pcm0);
+   
     let fc = 1000.0 / pcm0.fs as f64; /* 遮断周波数 */
     let Q = 1.0 / 2.0f64.sqrt(); /* クオリティファクタ */
     let I = 2; /* 遅延器の数 */
@@ -670,18 +663,15 @@ fn ex6_2() {
     let mut b = [0.0; 3];
 
     safe_IIR_LPF(fc, Q, &mut a, &mut b); /* IIRフィルタの設計 */
-    safe_IIR_filtering(&pcm0.s, &mut pcm1_s, pcm1_length, &a, &b, I, J);
+    safe_IIR_filtering(&pcm0.s, &mut pcm1.s, pcm1.length, &a, &b, I, J);
 
-    wave_write_16bit_mono_safer2("ex6_2.wav", (&pcm1_s, pcm1_fs, pcm1_bits, pcm1_length));
+    wave_write_16bit_mono_safer3("ex6_2.wav", &pcm1);
 }
 
 #[allow(non_snake_case)]
 fn ex6_3() {
     let pcm0 = wave_read_16bit_mono_safer3("sine_500hz_3500hz.wav");
-    let pcm1_fs = pcm0.fs; /* 標本化周波数 */
-    let pcm1_bits = pcm0.bits; /* 量子化精度 */
-    let pcm1_length = pcm0.length; /* 音データの長さ */
-    let mut pcm1_s = vec![0.0; pcm1_length as usize]; /* 音データ */
+    let mut pcm1 = MonoPcm::blank_copy(&pcm0);
 
     let fe = 1000.0 / pcm0.fs as f64; /* エッジ周波数 */
     let delta = 1000.0 / pcm0.fs as f64; /* 遷移帯域幅 */
@@ -738,12 +728,12 @@ fn ex6_3() {
 
         /* オーバーラップアド */
         for n in 0..(L * 2) {
-            if offset + n < pcm1_length as usize {
-                pcm1_s[offset + n] += y_real[n];
+            if offset + n < pcm1.length as usize {
+                pcm1.s[offset + n] += y_real[n];
             }
         }
     }
-    wave_write_16bit_mono_safer2("ex6_3.wav", (&pcm1_s, pcm1_fs, pcm1_bits, pcm1_length));
+    wave_write_16bit_mono_safer3("ex6_3.wav", &pcm1);
 }
 
 #[allow(non_snake_case)]
@@ -752,7 +742,7 @@ fn ex6_4() {
 
     let N = 256; /* DFTのサイズ */
 
-    let mut pcm1_s: Vec<c_double> = vec![0.0; pcm0.length as usize];
+    let mut pcm1 = MonoPcm::blank_copy(&pcm0);
 
     let mut x_real: Vec<c_double> = vec![0.0; N];
     let mut x_imag: Vec<c_double> = vec![0.0; N];
@@ -801,10 +791,10 @@ fn ex6_4() {
 
         /* オーバーラップアド */
         for n in 0..N {
-            pcm1_s[offset + n] += y_real[n];
+            pcm1.s[offset + n] += y_real[n];
         }
     }
-    wave_write_16bit_mono_safer2("ex6_4.wav", (&pcm1_s, pcm0.fs, pcm0.bits, pcm0.length));
+    wave_write_16bit_mono_safer3("ex6_4.wav", &pcm1);
 }
 
 #[allow(non_snake_case)]
@@ -812,14 +802,11 @@ fn ex6_5() {
     let pcm0 = wave_read_16bit_mono_safer3("drum.wav");
     let pcm1 = wave_read_16bit_mono_safer3("response.wav");
 
-    let pcm2_fs = pcm0.fs; /* 標本化周波数 */
-    let pcm2_bits = pcm0.bits; /* 量子化精度 */
-    let pcm2_length = pcm0.length; /* 音データの長さ */
-
     let J = pcm1.fs; /* 遅延器の数 */
 
+
     /* フィルタリング */
-    let pcm2_s: Vec<c_double> = (0..pcm2_length as usize)
+    let pcm2 = MonoPcm {s:  (0..pcm0.length as usize)
         .map(|n| {
             let mut a = 0.0;
             for m in 0..=J as usize {
@@ -828,13 +815,15 @@ fn ex6_5() {
                 }
             }
             if n % 1000 == 0 {
-                println!("{} / {}", n, pcm2_length);
+                println!("{} / {}", n, pcm0.length);
             }
             a
         })
-        .collect();
+        .collect()
+        , .. pcm0
+    };
 
-    wave_write_16bit_mono_safer2("ex6_5.wav", (&pcm2_s, pcm2_fs, pcm2_bits, pcm2_length));
+    wave_write_16bit_mono_safer3("ex6_5.wav", &pcm2);
 }
 
 #[allow(non_snake_case)]
@@ -850,32 +839,30 @@ fn ex7_1() {
     let I = 2; /* 遅延器の数 */
     let J = 2; /* 遅延器の数 */
 
-    let pcm1_fs = pcm0.fs; /* 標本化周波数 */
-    let pcm1_bits = pcm0.bits; /* 量子化精度 */
     let pcm1_length = pcm0.length; /* 音データの長さ */
-    let mut pcm1_s = vec![0.0; pcm1_length as usize]; /* 音データ */
+    let mut pcm1 = MonoPcm::blank_copy(&pcm0);
 
     let mut a = [0.0; 3];
     let mut b = [0.0; 3];
 
     for n in 0..pcm1_length as usize {
-        safe_IIR_LPF(fc[n] / pcm1_fs as f64, Q, &mut a, &mut b); /* IIRフィルタの設計 */
+        safe_IIR_LPF(fc[n] / pcm1.fs as f64, Q, &mut a, &mut b); /* IIRフィルタの設計 */
 
         for m in 0..=J {
             if n >= m {
-                pcm1_s[n] += b[m] * pcm0.s[n - m];
+                pcm1.s[n] += b[m] * pcm0.s[n - m];
             }
         }
         for m in 1..=I {
             if n >= m {
-                pcm1_s[n] += -a[m] * pcm1_s[n - m];
+                pcm1.s[n] += -a[m] * pcm1.s[n - m];
             }
         }
     }
-    wave_write_16bit_mono_safer2("ex7_1.wav", (&pcm1_s, pcm1_fs, pcm1_bits, pcm1_length));
+    wave_write_16bit_mono_safer3("ex7_1.wav", &pcm1);
 }
 
-#[allow(non_snake_case, unused_variables)]
+#[allow(non_snake_case)]
 fn ex7_2() {
     let mut a = [0.0; 3];
     let mut b = [0.0; 3];
@@ -889,25 +876,22 @@ fn ex7_2() {
     let I = 2; /* 遅延器の数 */
     let J = 2; /* 遅延器の数 */
 
-    let pcm1_fs = pcm0.fs; /* 標本化周波数 */
-    let pcm1_bits = pcm0.bits; /* 量子化精度 */
-    let pcm1_length = pcm0.length; /* 音データの長さ */
-    let mut pcm1_s = vec![0.0; pcm1_length as usize]; /* 音データ */
+    let mut pcm1 = MonoPcm::blank_copy(&pcm0); /* 音データ */
 
-    for n in 0..pcm1_length as usize {
-        safe_IIR_LPF(fc[n] / pcm1_fs as f64, Q, &mut a, &mut b); /* IIRフィルタの設計 */
+    for n in 0..pcm1.length as usize {
+        safe_IIR_LPF(fc[n] / pcm1.fs as f64, Q, &mut a, &mut b); /* IIRフィルタの設計 */
         for m in 0..=J {
             if n >= m {
-                pcm1_s[n] += b[m] * pcm0.s[n - m];
+                pcm1.s[n] += b[m] * pcm0.s[n - m];
             }
         }
         for m in 1..=I {
             if n >= m {
-                pcm1_s[n] += -a[m] * pcm1_s[n - m];
+                pcm1.s[n] += -a[m] * pcm1.s[n - m];
             }
         }
     }
-    wave_write_16bit_mono_safer2("ex7_2.wav", (&pcm1_s, pcm1_fs, pcm1_bits, pcm1_length));
+    wave_write_16bit_mono_safer3("ex7_2.wav", &pcm1);
 }
 
 #[allow(non_snake_case)]
@@ -915,12 +899,9 @@ fn ex7_3() {
     let mut a = [0.0; 3];
     let mut b = [0.0; 3];
     let pcm0 = wave_read_16bit_mono_safer3("ex7_3_pulse_train.wav");
-    let pcm1_fs = pcm0.fs; /* 標本化周波数 */
-    let pcm1_bits = pcm0.bits; /* 量子化精度 */
-    let pcm1_length = pcm0.length; /* 音データの長さ */
-    let mut pcm1_s = vec![0.0; pcm1_length as usize]; /* 音データ */
+    let mut pcm1 = MonoPcm::blank_copy(&pcm0);
 
-    let mut s = vec![0.0; pcm1_length as usize];
+    let mut s = vec![0.0; pcm1.length as usize];
     let F = [
         800.0 /* F1の周波数 */, 1200.0 /* F2の周波数 */,
         2500.0 /* F3の周波数 */, 3500.0,
@@ -938,31 +919,28 @@ fn ex7_3() {
         /* IIRフィルタの設計 */
         safe_IIR_resonator(F[num] / pcm0.fs as f64, F[num] / B[num], &mut a, &mut b);
         safe_IIR_filtering(&pcm0.s, &mut s, pcm0.length, &a, &b, I, J); /* フィルタリング */
-        for n in 0..pcm1_length as usize {
-            pcm1_s[n] += s[n];
+        for n in 0..pcm1.length as usize {
+            pcm1.s[n] += s[n];
             s[n] = 0.0;
         }
     }
 
     /* ディエンファシス処理 */
-    s[0] = pcm1_s[0];
-    for n in 1..pcm1_length as usize {
-        s[n] = pcm1_s[n] + 0.98 * s[n - 1];
+    s[0] = pcm1.s[0];
+    for n in 1..pcm1.length as usize {
+        s[n] = pcm1.s[n] + 0.98 * s[n - 1];
     }
-    for n in 0..pcm1_length as usize {
-        pcm1_s[n] = s[n];
+    for n in 0..pcm1.length as usize {
+        pcm1.s[n] = s[n];
     }
-    wave_write_16bit_mono_safer2("ex7_3.wav", (&pcm1_s, pcm1_fs, pcm1_bits, pcm1_length));
+    wave_write_16bit_mono_safer3("ex7_3.wav", &pcm1);
 }
 
-#[allow(non_snake_case, unused_variables)]
+#[allow(non_snake_case)]
 fn ex7_4() {
     let pcm0 = wave_read_16bit_mono_safer3("synth.wav");
     let mut pcm1 = wave_read_16bit_mono_safer3("vocal.wav");
-    let pcm2_fs = pcm0.fs; /* 標本化周波数 */
-    let pcm2_bits = pcm0.bits; /* 量子化精度 */
-    let pcm2_length = pcm0.length; /* 音データの長さ */
-    let mut pcm2_s = vec![0.0; pcm2_length]; /* 音データ */
+    let mut pcm2 = MonoPcm::blank_copy(&pcm0);
 
     let mut s = vec![0.0; pcm0.length]; /* 音データ */
     /* プリエンファシス処理 */
@@ -1037,25 +1015,24 @@ fn ex7_4() {
         let offset = N / 2 * frame;
         /* オーバーラップアド */
         for n in 0..N {
-            pcm2_s[offset + n] += y_real[n];
+            pcm2.s[offset + n] += y_real[n];
         }
     }
-    wave_write_16bit_mono_safer2("ex7_4.wav", (&pcm2_s, pcm2_fs, pcm2_bits, pcm2_length));
+    wave_write_16bit_mono_safer3("ex7_4.wav", &pcm2);
 }
 
 #[allow(non_snake_case)]
 fn ex8_1() {
     let pcm_fs = 44100; /* 標本化周波数 */
-    let pcm_bits = 16; /* 量子化精度 */
     let pcm_length = pcm_fs * 1; /* 音データの長さ */
-    let mut pcm_s = vec![0.0; pcm_length]; /* 音データ */
+    let mut pcm = MonoPcm::new16(pcm_fs, pcm_length);
 
     let f0 = 500.0; /* 基本周波数 */
     /* ノコギリ波 */
     let t0 = pcm_fs / f0 as usize; /* 基本周期 */
     let mut m = 0;
     for n in 0..pcm_length {
-        pcm_s[n] = 1.0 - 2.0 * (m as f64) / (t0 as f64);
+        pcm.s[n] = 1.0 - 2.0 * (m as f64) / (t0 as f64);
 
         m += 1;
         if m >= t0 {
@@ -1064,25 +1041,24 @@ fn ex8_1() {
     }
     let gain = 0.1; /* ゲイン */
     for n in 0..pcm_length {
-        pcm_s[n] *= gain;
+        pcm.s[n] *= gain;
     }
-    wave_write_16bit_mono_safer2("ex8_1.wav", (&pcm_s, pcm_fs, pcm_bits, pcm_length));
+    wave_write_16bit_mono_safer3("ex8_1.wav", &pcm);
 }
 
-#[allow(non_snake_case, unused_variables)]
+#[allow(non_snake_case)]
 fn ex8_2() {
     let pcm_fs = 44100; /* 標本化周波数 */
-    let pcm_bits = 16; /* 量子化精度 */
     let pcm_length = pcm_fs * 1; /* 音データの長さ */
-    let mut pcm_s = vec![0.0; pcm_length]; /* 音データ */
+    let mut pcm = MonoPcm::new16(pcm_fs, pcm_length);
 
     let f0 = 500.0; /* 基本周波数 */
 
     /* 矩形波 */
-    let t0 = (pcm_fs as f64 / f0) as usize; /* 基本周期 */
+    let t0 = (pcm.fs as f64 / f0) as usize; /* 基本周期 */
     let mut m = 0;
-    for n in 0..pcm_length {
-        pcm_s[n] = if (m as f64) < t0 as f64 / 2.0 {
+    for n in 0..pcm.length {
+        pcm.s[n] = if (m as f64) < t0 as f64 / 2.0 {
             1.0
         } else {
             -1.0
@@ -1095,24 +1071,23 @@ fn ex8_2() {
     }
     let gain = 0.1; /* ゲイン */
     for n in 0..pcm_length {
-        pcm_s[n] *= gain;
+        pcm.s[n] *= gain;
     }
-    wave_write_16bit_mono_safer2("ex8_2.wav", (&pcm_s, pcm_fs, pcm_bits, pcm_length));
+    wave_write_16bit_mono_safer3("ex8_2.wav", &pcm);
 }
 
-#[allow(non_snake_case, unused_variables)]
+#[allow(non_snake_case)]
 fn ex8_3() {
     let pcm_fs = 44100; /* 標本化周波数 */
-    let pcm_bits = 16; /* 量子化精度 */
     let pcm_length = pcm_fs * 1; /* 音データの長さ */
-    let mut pcm_s = vec![0.0; pcm_length]; /* 音データ */
+    let mut pcm = MonoPcm::new16(pcm_fs, pcm_length);
 
     let f0 = 500.0; /* 基本周波数 */
     /* 三角波 */
     let t0 = (pcm_fs as f64 / f0) as usize; /* 基本周期 */
     let mut m = 0;
     for n in 0..pcm_length {
-        pcm_s[n] = if (m as f64) < t0 as f64 / 2.0 {
+        pcm.s[n] = if (m as f64) < t0 as f64 / 2.0 {
             -1.0 + 4.0 * m as f64 / t0 as f64
         } else {
             3.0 - 4.0 * m as f64 / t0 as f64
@@ -1125,41 +1100,39 @@ fn ex8_3() {
     }
     let gain = 0.1; /* ゲイン */
     for n in 0..pcm_length {
-        pcm_s[n] *= gain;
+        pcm.s[n] *= gain;
     }
-    wave_write_16bit_mono_safer2("ex8_3.wav", (&pcm_s, pcm_fs, pcm_bits, pcm_length));
+    wave_write_16bit_mono_safer3("ex8_3.wav", &pcm);
 }
 
 #[allow(non_snake_case)]
 fn ex8_4() {
     let pcm_fs = 44100; /* 標本化周波数 */
-    let pcm_bits = 16; /* 量子化精度 */
     let pcm_length = pcm_fs * 1; /* 音データの長さ */
-    let mut pcm_s = vec![0.0; pcm_length]; /* 音データ */
+    let mut pcm = MonoPcm::new16(pcm_fs, pcm_length);
 
     let mut rng = rand::thread_rng();
     /* 白色雑音 */
     for n in 0..pcm_length {
-        pcm_s[n] = rng.gen_range(-1.0, 1.0);
+        pcm.s[n] = rng.gen_range(-1.0, 1.0);
     }
     let gain = 0.1; /* ゲイン */
     for n in 0..pcm_length {
-        pcm_s[n] *= gain;
+        pcm.s[n] *= gain;
     }
-    wave_write_16bit_mono_safer2("ex8_4.wav", (&pcm_s, pcm_fs, pcm_bits, pcm_length));
+    wave_write_16bit_mono_safer3("ex8_4.wav", &pcm);
 }
 
 fn ex8_5() {
     let pcm_fs = 44100; /* 標本化周波数 */
-    let pcm_bits = 16; /* 量子化精度 */
     let pcm_length = pcm_fs * 8; /* 音データの長さ */
-    let mut pcm_s = vec![0.0; pcm_length]; /* 音データ */
+    let mut pcm = MonoPcm::new16(pcm_fs, pcm_length);
 
     let mut rng = rand::thread_rng();
 
     /* 白色雑音 */
     for n in 0..pcm_length {
-        pcm_s[n] = rng.gen_range(-1.0, 1.0);
+        pcm.s[n] = rng.gen_range(-1.0, 1.0);
     }
 
     let mut e = vec![0.0; pcm_length];
@@ -1181,9 +1154,9 @@ fn ex8_5() {
     }
     let gain = 0.1; /* ゲイン */
     for n in 0..pcm_length {
-        pcm_s[n] *= gain;
+        pcm.s[n] *= gain;
     }
-    wave_write_16bit_mono_safer2("ex8_5.wav", (&pcm_s, pcm_fs, pcm_bits, pcm_length));
+    wave_write_16bit_mono_safer3("ex8_5.wav", &pcm);
 }
 
 fn square_wave(
@@ -1268,49 +1241,47 @@ fn white_noise(pcm_s: &mut [c_double], gain: c_double, offset: usize, duration: 
 
 fn ex8_6() {
     let pcm_fs = 44100; /* 標本化周波数 */
-    let pcm_bits = 16; /* 量子化精度 */
     let pcm_length = 7000 * 16; /* 音データの長さ */
-    let mut pcm_s = vec![0.0; pcm_length]; /* 音データ */
+    let mut pcm = MonoPcm::new16(pcm_fs, pcm_length); /* 音データ */
 
     /* メロディパート */
-    square_wave((&mut pcm_s, pcm_fs), 659.26, 0.1, 7000 * 0, 6125); /* E5 */
-    square_wave((&mut pcm_s, pcm_fs), 659.26, 0.1, 7000 * 1, 6125); /* E5 */
-    square_wave((&mut pcm_s, pcm_fs), 659.26, 0.1, 7000 * 3, 6125); /* E5 */
-    square_wave((&mut pcm_s, pcm_fs), 523.25, 0.1, 7000 * 5, 6125); /* C5 */
-    square_wave((&mut pcm_s, pcm_fs), 659.26, 0.1, 7000 * 6, 6125); /* E5 */
-    square_wave((&mut pcm_s, pcm_fs), 783.99, 0.1, 7000 * 8, 6125); /* G5 */
-    square_wave((&mut pcm_s, pcm_fs), 392.00, 0.1, 7000 * 12, 6125); /* G4 */
+    square_wave((&mut pcm.s, pcm_fs), 659.26, 0.1, 7000 * 0, 6125); /* E5 */
+    square_wave((&mut pcm.s, pcm_fs), 659.26, 0.1, 7000 * 1, 6125); /* E5 */
+    square_wave((&mut pcm.s, pcm_fs), 659.26, 0.1, 7000 * 3, 6125); /* E5 */
+    square_wave((&mut pcm.s, pcm_fs), 523.25, 0.1, 7000 * 5, 6125); /* C5 */
+    square_wave((&mut pcm.s, pcm_fs), 659.26, 0.1, 7000 * 6, 6125); /* E5 */
+    square_wave((&mut pcm.s, pcm_fs), 783.99, 0.1, 7000 * 8, 6125); /* G5 */
+    square_wave((&mut pcm.s, pcm_fs), 392.00, 0.1, 7000 * 12, 6125); /* G4 */
 
     /* ベースパート */
-    triangle_wave((&mut pcm_s, pcm_fs), 146.83, 0.2, 7000 * 0, 6125); /* D3 */
-    triangle_wave((&mut pcm_s, pcm_fs), 146.83, 0.2, 7000 * 1, 6125); /* D3 */
-    triangle_wave((&mut pcm_s, pcm_fs), 146.83, 0.2, 7000 * 3, 6125); /* D3 */
-    triangle_wave((&mut pcm_s, pcm_fs), 146.83, 0.2, 7000 * 5, 6125); /* D3 */
-    triangle_wave((&mut pcm_s, pcm_fs), 146.83, 0.2, 7000 * 6, 6125); /* D3 */
-    triangle_wave((&mut pcm_s, pcm_fs), 196.00, 0.2, 7000 * 8, 6125); /* G3 */
-    triangle_wave((&mut pcm_s, pcm_fs), 196.00, 0.2, 7000 * 12, 6125); /* G3 */
+    triangle_wave((&mut pcm.s, pcm_fs), 146.83, 0.2, 7000 * 0, 6125); /* D3 */
+    triangle_wave((&mut pcm.s, pcm_fs), 146.83, 0.2, 7000 * 1, 6125); /* D3 */
+    triangle_wave((&mut pcm.s, pcm_fs), 146.83, 0.2, 7000 * 3, 6125); /* D3 */
+    triangle_wave((&mut pcm.s, pcm_fs), 146.83, 0.2, 7000 * 5, 6125); /* D3 */
+    triangle_wave((&mut pcm.s, pcm_fs), 146.83, 0.2, 7000 * 6, 6125); /* D3 */
+    triangle_wave((&mut pcm.s, pcm_fs), 196.00, 0.2, 7000 * 8, 6125); /* G3 */
+    triangle_wave((&mut pcm.s, pcm_fs), 196.00, 0.2, 7000 * 12, 6125); /* G3 */
 
     /* パーカッション */
-    white_noise(&mut pcm_s, 0.1, 7000 * 0, 4000);
-    white_noise(&mut pcm_s, 0.1, 7000 * 2, 1000);
-    white_noise(&mut pcm_s, 0.1, 7000 * 3, 4000);
-    white_noise(&mut pcm_s, 0.1, 7000 * 5, 1000);
-    white_noise(&mut pcm_s, 0.1, 7000 * 6, 4000);
-    white_noise(&mut pcm_s, 0.1, 7000 * 8, 4000);
-    white_noise(&mut pcm_s, 0.1, 7000 * 11, 4000);
-    white_noise(&mut pcm_s, 0.1, 7000 * 13, 1000);
-    white_noise(&mut pcm_s, 0.1, 7000 * 14, 1000);
-    white_noise(&mut pcm_s, 0.1, 7000 * 15, 1000);
+    white_noise(&mut pcm.s, 0.1, 7000 * 0, 4000);
+    white_noise(&mut pcm.s, 0.1, 7000 * 2, 1000);
+    white_noise(&mut pcm.s, 0.1, 7000 * 3, 4000);
+    white_noise(&mut pcm.s, 0.1, 7000 * 5, 1000);
+    white_noise(&mut pcm.s, 0.1, 7000 * 6, 4000);
+    white_noise(&mut pcm.s, 0.1, 7000 * 8, 4000);
+    white_noise(&mut pcm.s, 0.1, 7000 * 11, 4000);
+    white_noise(&mut pcm.s, 0.1, 7000 * 13, 1000);
+    white_noise(&mut pcm.s, 0.1, 7000 * 14, 1000);
+    white_noise(&mut pcm.s, 0.1, 7000 * 15, 1000);
 
-    wave_write_16bit_mono_safer2("ex8_6.wav", (&pcm_s, pcm_fs, pcm_bits, pcm_length));
+    wave_write_16bit_mono_safer3("ex8_6.wav", &pcm);
 }
 
 fn ex8_7() {
     let pcm_fs = 44100; /* 標本化周波数 */
-    let pcm_bits = 16; /* 量子化精度 */
     let pcm_length = (pcm_fs as f64 * 0.6) as usize - 1; /* 音データの長さ */
     // -1 is here to match the file with the original data
-    let mut pcm_s = vec![0.0; pcm_length]; /* 音データ */
+    let mut pcm = MonoPcm::new16(pcm_fs, pcm_length);
 
     let mut f0 = vec![0.0; pcm_length];
     /* 基本周波数 */
@@ -1325,7 +1296,7 @@ fn ex8_7() {
     let mut t0 = (pcm_fs as f64 / f0[0]) as usize; /* 矩形波の基本周期 */
     let mut m = 0;
     for n in 0..pcm_length {
-        pcm_s[n] = if (m as f64) < t0 as f64 / 2.0 {
+        pcm.s[n] = if (m as f64) < t0 as f64 / 2.0 {
             1.0
         } else {
             -1.0
@@ -1347,18 +1318,17 @@ fn ex8_7() {
     let gain = 0.1; /* ゲイン */
 
     for n in 0..pcm_length {
-        pcm_s[n] *= e[n] * gain;
+        pcm.s[n] *= e[n] * gain;
     }
 
-    wave_write_16bit_mono_safer2("ex8_7.wav", (&pcm_s, pcm_fs, pcm_bits, pcm_length));
+    wave_write_16bit_mono_safer3("ex8_7.wav", &pcm);
 }
 
 fn ex8_8() {
     let pcm_fs = 44100; /* 標本化周波数 */
-    let pcm_bits = 16; /* 量子化精度 */
     let pcm_length = (pcm_fs as f64 * 0.6) as usize - 1; /* 音データの長さ */
     // -1 is here to match the file with the original data
-    let mut pcm_s = vec![0.0; pcm_length]; /* 音データ */
+    let mut pcm = MonoPcm::new16(pcm_fs, pcm_length);
 
     /* 基本周波数 */
     let mut f0 = vec![0.0; pcm_length];
@@ -1374,7 +1344,7 @@ fn ex8_8() {
     let mut t0 = (pcm_fs as f64 / f0[0]) as usize; /* 矩形波の基本周期 */
     let mut m = 0;
     for n in 0..pcm_length {
-        pcm_s[n] = if (m as f64) < t0 as f64 / 2.0 {
+        pcm.s[n] = if (m as f64) < t0 as f64 / 2.0 {
             1.0
         } else {
             -1.0
@@ -1395,17 +1365,16 @@ fn ex8_8() {
 
     let gain = 0.1; /* ゲイン */
     for n in 0..pcm_length {
-        pcm_s[n] *= e[n] * gain;
+        pcm.s[n] *= e[n] * gain;
     }
-    wave_write_16bit_mono_safer2("ex8_8.wav", (&pcm_s, pcm_fs, pcm_bits, pcm_length));
+    wave_write_16bit_mono_safer3("ex8_8.wav", &pcm);
 }
 
 #[allow(non_snake_case)]
 fn ex8_9() {
     let pcm_fs = 8000; /* 標本化周波数 */
-    let pcm_bits = 16; /* 量子化精度 */
     let pcm_length = pcm_fs * 2; /* 音データの長さ */
-    let mut pcm_s = vec![0.0; pcm_length];
+    let mut pcm = MonoPcm::new16(pcm_fs, pcm_length);
 
     let mut f0 = vec![0.0; pcm_length];
 
@@ -1420,7 +1389,7 @@ fn ex8_9() {
     let mut t0 = (pcm_fs as f64 / f0[0]) as usize; /* 基本周期 */
     let mut m = 0;
     for n in 0..pcm_length {
-        pcm_s[n] = 1.0 - 2.0 * m as f64 / t0 as f64;
+        pcm.s[n] = 1.0 - 2.0 * m as f64 / t0 as f64;
 
         m += 1;
         if m >= t0 {
@@ -1430,10 +1399,10 @@ fn ex8_9() {
     }
     let gain = 0.1; /* ゲイン */
     for n in 0..pcm_length {
-        pcm_s[n] *= gain;
+        pcm.s[n] *= gain;
     }
 
-    wave_write_16bit_mono_safer2("ex8_9.wav", (&pcm_s, pcm_fs, pcm_bits, pcm_length));
+    wave_write_16bit_mono_safer3("ex8_9.wav", &pcm);
 }
 
 #[allow(non_snake_case)]
@@ -1464,9 +1433,8 @@ fn ex8_10() {
     }
 
     let pcm1_fs = 8000; /* 標本化周波数 */
-    let pcm1_bits = 16; /* 量子化精度 */
     let pcm1_length = pcm1_fs * 2; /* 音データの長さ */
-    let mut pcm1_s = vec![0.0; pcm1_length];
+    let mut pcm1 = MonoPcm::new16(pcm1_fs, pcm1_length);
     let ratio = pcm0_fs / pcm1_fs; /* ダウンサンプリングのレシオ */
     let fe = 0.45 / ratio as f64; /* エッジ周波数 */
     let delta = 0.1 / ratio as f64; /* 遷移帯域幅 */
@@ -1484,23 +1452,23 @@ fn ex8_10() {
     for n in 0..pcm1_length {
         for m in 0..=J {
             if n * ratio + J / 2 >= m && n * ratio + J / 2 < pcm0_length + m {
-                pcm1_s[n] += b[m] * pcm0_s[n * ratio + J / 2 - m];
+                pcm1.s[n] += b[m] * pcm0_s[n * ratio + J / 2 - m];
             }
         }
     }
     let gain = 0.1; /* ゲイン */
     for n in 0..pcm1_length {
-        pcm1_s[n] *= gain;
+        pcm1.s[n] *= gain;
     }
-    wave_write_16bit_mono_safer2("ex8_10.wav", (&pcm1_s, pcm1_fs, pcm1_bits, pcm1_length));
+    wave_write_16bit_mono_safer3("ex8_10.wav", &pcm1);
 }
 
-#[allow(non_snake_case, unused_variables, unused_mut)]
+#[allow(non_snake_case)]
 fn ex8_11() {
     let pcm0_fs = 192000; /* 標本化周波数 */
-    let pcm0_bits = 16; /* 量子化精度 */
     let pcm0_length = pcm0_fs * 2; /* 音データの長さ */
-    let mut pcm0_s = vec![0.0; pcm0_length];
+
+    let mut pcm0 = MonoPcm::new16(pcm0_fs, pcm0_length);
 
     let mut f0 = vec![0.0; pcm0_length];
 
@@ -1515,7 +1483,7 @@ fn ex8_11() {
 
     let mut m = 0;
     for n in 0..pcm0_length {
-        pcm0_s[n] = 1.0 - 2.0 * m as f64 / t0 as f64;
+        pcm0.s[n] = 1.0 - 2.0 * m as f64 / t0 as f64;
 
         m += 1;
         if m >= t0 {
@@ -1524,30 +1492,29 @@ fn ex8_11() {
         }
     }
     let pcm1_fs = 8000; /* 標本化周波数 */
-    let pcm1_bits = 16; /* 量子化精度 */
     let pcm1_length = pcm1_fs * 2; /* 音データの長さ */
-    let mut pcm1_s = vec![0.0; pcm1_length];
+    let mut pcm1 = MonoPcm::new16(pcm1_fs, pcm1_length);
+
     let ratio = pcm0_fs / pcm1_fs; /* ダウンサンプリングのレシオ */
 
     for n in 0..pcm1_length {
-        pcm1_s[n] = pcm0_s[n * ratio];
+        pcm1.s[n] = pcm0.s[n * ratio];
     }
 
     let gain = 0.1; /* ゲイン */
 
     for n in 0..pcm1_length {
-        pcm1_s[n] *= gain;
+        pcm1.s[n] *= gain;
     }
 
-    wave_write_16bit_mono_safer2("ex8_11.wav", (&pcm1_s, pcm1_fs, pcm1_bits, pcm1_length));
+    wave_write_16bit_mono_safer3("ex8_11.wav", &pcm1);
 }
 
 #[allow(non_snake_case)]
 fn ex10_4() {
     let pcm_fs = 44100; /* 標本化周波数 */
-    let pcm_bits = 16; /* 量子化精度 */
     let pcm_length = pcm_fs * 4; /* 音データの長さ */
-    let mut pcm_s: Vec<c_double> = vec![0.0; pcm_length]; /* 音データ */
+    let mut pcm = MonoPcm::new16(pcm_fs, pcm_length);
 
     let mut ac: Vec<c_double> = vec![0.0; pcm_length];
     let mut am: Vec<c_double> = vec![0.0; pcm_length];
@@ -1577,7 +1544,7 @@ fn ex10_4() {
 
     /* FM音源 */
     for n in 0..pcm_length {
-        pcm_s[n] = ac[n]
+        pcm.s[n] = ac[n]
             * (2.0 * PI * fc * n as f64 / pcm_fs as f64
                 + am[n] * (2.0 * PI * fm * n as f64 / pcm_fs as f64).sin())
                 .sin();
@@ -1586,8 +1553,8 @@ fn ex10_4() {
     let gain = 0.1; /* ゲイン */
 
     for n in 0..pcm_length {
-        pcm_s[n] *= gain;
+        pcm.s[n] *= gain;
     }
 
-    wave_write_16bit_mono_safer2("ex10_4.wav", (&pcm_s, pcm_fs, pcm_bits, pcm_length));
+    wave_write_16bit_mono_safer3("ex10_4.wav", &pcm);
 }
