@@ -630,8 +630,7 @@ fn ex5_5() {
 
 #[allow(non_snake_case)]
 fn ex6_1() {
-    let pcm0 =
-        wave_read_16bit_mono_safer3("sine_500hz_3500hz.wav");
+    let pcm0 = wave_read_16bit_mono_safer3("sine_500hz_3500hz.wav");
     let pcm1_fs = pcm0.fs; /* 標本化周波数 */
     let pcm1_bits = pcm0.bits; /* 量子化精度 */
     let pcm1_length = pcm0.length; /* 音データの長さ */
@@ -656,8 +655,7 @@ fn ex6_1() {
 
 #[allow(non_snake_case)]
 fn ex6_2() {
-    let pcm0=
-        wave_read_16bit_mono_safer3("sine_500hz_3500hz.wav");
+    let pcm0 = wave_read_16bit_mono_safer3("sine_500hz_3500hz.wav");
     let pcm1_fs = pcm0.fs; /* 標本化周波数 */
     let pcm1_bits = pcm0.bits; /* 量子化精度 */
     let pcm1_length = pcm0.length; /* 音データの長さ */
@@ -679,8 +677,7 @@ fn ex6_2() {
 
 #[allow(non_snake_case)]
 fn ex6_3() {
-    let pcm0 =
-        wave_read_16bit_mono_safer3("sine_500hz_3500hz.wav");
+    let pcm0 = wave_read_16bit_mono_safer3("sine_500hz_3500hz.wav");
     let pcm1_fs = pcm0.fs; /* 標本化周波数 */
     let pcm1_bits = pcm0.bits; /* 量子化精度 */
     let pcm1_length = pcm0.length; /* 音データの長さ */
@@ -751,8 +748,7 @@ fn ex6_3() {
 
 #[allow(non_snake_case)]
 fn ex6_4() {
-    let pcm0 =
-        wave_read_16bit_mono_safer3("sine_500hz_3500hz.wav");
+    let pcm0 = wave_read_16bit_mono_safer3("sine_500hz_3500hz.wav");
 
     let N = 256; /* DFTのサイズ */
 
@@ -843,8 +839,7 @@ fn ex6_5() {
 
 #[allow(non_snake_case)]
 fn ex7_1() {
-    let pcm0 =
-        wave_read_16bit_mono_safer3("ex7_1_pulse_train.wav");
+    let pcm0 = wave_read_16bit_mono_safer3("ex7_1_pulse_train.wav");
 
     let mut fc = vec![0.0; pcm0.length as usize];
     /* LPFの遮断周波数 */
@@ -919,8 +914,7 @@ fn ex7_2() {
 fn ex7_3() {
     let mut a = [0.0; 3];
     let mut b = [0.0; 3];
-    let pcm0 =
-        wave_read_16bit_mono_safer3("ex7_3_pulse_train.wav");
+    let pcm0 = wave_read_16bit_mono_safer3("ex7_3_pulse_train.wav");
     let pcm1_fs = pcm0.fs; /* 標本化周波数 */
     let pcm1_bits = pcm0.bits; /* 量子化精度 */
     let pcm1_length = pcm0.length; /* 音データの長さ */
@@ -963,7 +957,7 @@ fn ex7_3() {
 
 #[allow(non_snake_case, unused_variables)]
 fn ex7_4() {
-    let pcm0= wave_read_16bit_mono_safer3("synth.wav");
+    let pcm0 = wave_read_16bit_mono_safer3("synth.wav");
     let mut pcm1 = wave_read_16bit_mono_safer3("vocal.wav");
     let pcm2_fs = pcm0.fs; /* 標本化周波数 */
     let pcm2_bits = pcm0.bits; /* 量子化精度 */

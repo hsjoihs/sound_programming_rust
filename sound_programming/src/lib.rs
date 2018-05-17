@@ -67,9 +67,9 @@ pub struct MONO_PCM {
 
 #[repr(C)]
 pub struct MONO_PCM_CONST {
-    pub fs: c_int,        /* 標本化周波数 */
-    pub bits: c_int,      /* 量子化精度 */
-    pub length: c_int,    /* 音データの長さ */
+    pub fs: c_int,          /* 標本化周波数 */
+    pub bits: c_int,        /* 量子化精度 */
+    pub length: c_int,      /* 音データの長さ */
     pub s: *const c_double, /* 音データ */
 }
 
@@ -86,9 +86,9 @@ pub struct STEREO_PCM {
 #[allow(non_snake_case)]
 #[repr(C)]
 pub struct STEREO_PCM_CONST {
-    pub fs: c_int,         /* 標本化周波数 */
-    pub bits: c_int,       /* 量子化精度 */
-    pub length: c_int,     /* 音データの長さ */
+    pub fs: c_int,           /* 標本化周波数 */
+    pub bits: c_int,         /* 量子化精度 */
+    pub length: c_int,       /* 音データの長さ */
     pub sL: *const c_double, /* 音データ（Lチャンネル） */
     pub sR: *const c_double, /* 音データ（Rチャンネル） */
 }
