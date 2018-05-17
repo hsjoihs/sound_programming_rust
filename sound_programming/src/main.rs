@@ -17,10 +17,12 @@ use sound_programming::safe_ADSR;
 use sound_programming::safe_Hanning_window;
 use sound_programming::wave::wave_read_16bit_mono_safer3;
 use sound_programming::wave::wave_read_16bit_stereo_safer3;
+use sound_programming::wave_read_IMA_ADPCM_mono_safer3;
 use sound_programming::wave_read_PCMA_mono_safer3;
 use sound_programming::wave_read_PCMU_mono_safer3;
 use sound_programming::wave_write_16bit_mono_safer3;
 use sound_programming::wave_write_16bit_stereo_safer3;
+use sound_programming::wave_write_IMA_ADPCM_mono_safer3;
 use sound_programming::wave_write_PCMA_mono_safer3;
 use sound_programming::wave_write_PCMU_mono_safer3;
 use std::f64::consts::PI;
@@ -76,6 +78,7 @@ fn main() {
     ex10_4();
     ex11_7();
     ex11_8();
+    ex11_9();
 }
 
 fn ex1_1() {
@@ -1660,4 +1663,12 @@ fn ex11_8() {
     wave_write_PCMA_mono_safer3("pcma.wav", &pcm0);
     let pcm1 = wave_read_PCMA_mono_safer3("pcma.wav");
     wave_write_16bit_mono_safer3("ex11_8_pcm.wav", &pcm1);
+}
+
+#[allow(non_snake_case)]
+fn ex11_9() {
+    let pcm0 = wave_read_16bit_mono_safer3("vocal.wav");
+    wave_write_IMA_ADPCM_mono_safer3("ima_adpcm.wav", &pcm0);
+    let pcm1 = wave_read_IMA_ADPCM_mono_safer3("ima_adpcm.wav");
+    wave_write_16bit_mono_safer3("ex11_9_pcm.wav", &pcm1);
 }
