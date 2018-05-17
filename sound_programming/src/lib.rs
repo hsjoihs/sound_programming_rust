@@ -58,17 +58,20 @@ pub struct MonoPcm {
 }
 
 impl MonoPcm {
-	pub fn new16(fs : usize, length: usize)->Self{
-		MonoPcm{
-			fs, length, bits:16, s:vec![0.0;length]
-		}
-	}
-	pub fn blank_copy(orig : &Self) -> Self {
-		MonoPcm{
-			s: vec![0.0; orig.length as usize]
-			, .. *orig
-		}
-	}
+    pub fn new16(fs: usize, length: usize) -> Self {
+        MonoPcm {
+            fs,
+            length,
+            bits: 16,
+            s: vec![0.0; length],
+        }
+    }
+    pub fn blank_copy(orig: &Self) -> Self {
+        MonoPcm {
+            s: vec![0.0; orig.length as usize],
+            ..*orig
+        }
+    }
 }
 
 pub struct StereoPcm {
