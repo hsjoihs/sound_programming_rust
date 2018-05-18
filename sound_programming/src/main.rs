@@ -8,7 +8,7 @@ use sound_programming::MonoPcm;
 use sound_programming::StereoPcm;
 use sound_programming::c_double;
 use sound_programming::c_int;
-use sound_programming::fft::safe_FFT;
+use sound_programming::fft::safe_FFT_;
 use sound_programming::fft::safe_IFFT;
 use sound_programming::filter::safe_FIR_LPF;
 use sound_programming::filter::safe_FIR_filtering;
@@ -60,7 +60,7 @@ fn main() {
     ex7_1();
     ex7_2();
     ex7_3();
-    if false {
+    /*if false*/ {
         ex7_4(); // slow
     }
     ex8_1();
@@ -401,17 +401,15 @@ fn ex4_2() {
 #[allow(non_snake_case)]
 fn ex4_3() {
     let N = 64;
-    let mut x_real: Vec<c_double> = vec![0.0; N];
-    let mut x_imag: Vec<c_double> = vec![0.0; N];
-    let pcm_slice = wave_read_16bit_mono_safer3("sine_500hz.wav").s;
+    let mut x: Vec<Complex<f64>> = vec![Complex::new(0.0, 0.0); N];
+    let pcm_s = wave_read_16bit_mono_safer3("sine_500hz.wav").s;
 
     /* 波形 */
     for n in 0..N {
-        x_real[n] = pcm_slice[n]; /* x(n)の実数部 */
-        x_imag[n] = 0.0; /* x(n)の虚数部 */
+        x[n] = Complex::new(pcm_s[n], 0.0); /* x(n)の虚数部 */
     }
 
-    safe_FFT(&mut x_real, &mut x_imag); /* FFTの計算結果はx_realとx_imagに上書きされる */
+    safe_FFT_(&mut x); /* FFTの計算結果はxに上書きされる */
 }
 
 #[allow(non_snake_case)]
@@ -668,40 +666,35 @@ fn ex6_3() {
     let L: usize = 128; /* フレームの長さ */
     let N = 256; /* DFTのサイズ */
 
-    let mut x_real = vec![0.0; N];
-    let mut x_imag = vec![0.0; N];
     let mut y_real = vec![0.0; N];
     let mut y_imag = vec![0.0; N];
-    let mut b_real = vec![0.0; N];
-    let mut b_imag = vec![0.0; N];
+    let mut b_ = vec![Complex::new(0.0, 0.0); N];
 
     let number_of_frame = pcm0.length as usize / L; /* フレームの数 */
     for frame in 0..number_of_frame {
         let offset = (L * frame) as usize;
         /* X(k) */
-        for n in 0..N {
-            x_real[n] = 0.0;
-            x_imag[n] = 0.0;
-        }
+        let mut x = vec![Complex::new(0.0, 0.0); N];
+
         for n in 0..L {
-            x_real[n] = pcm0.s[offset + n];
+            x[n].re = pcm0.s[offset + n];
         }
-        safe_FFT(&mut x_real, &mut x_imag);
+        safe_FFT_(&mut x);
 
         /* B(k) */
         for m in 0..N {
-            b_real[m] = 0.0;
-            b_imag[m] = 0.0;
+            b_[m].re = 0.0;
+            b_[m].im = 0.0;
         }
         for m in 0..=J {
-            b_real[m] = b[m];
+            b_[m].re = b[m];
         }
-        safe_FFT(&mut b_real, &mut b_imag);
+        safe_FFT_(&mut b_);
 
         /* フィルタリング */
         for k in 0..N {
-            y_real[k] = x_real[k] * b_real[k] - x_imag[k] * b_imag[k];
-            y_imag[k] = x_imag[k] * b_real[k] + x_real[k] * b_imag[k];
+            y_real[k] = x[k].re * b_[k].re - x[k].im * b_[k].im;
+            y_imag[k] = x[k].im * b_[k].re + x[k].re * b_[k].im;
         }
         safe_IFFT(&mut y_real, &mut y_imag);
 
@@ -723,8 +716,7 @@ fn ex6_4() {
 
     let mut pcm1 = MonoPcm::blank_copy(&pcm0);
 
-    let mut x_real: Vec<c_double> = vec![0.0; N];
-    let mut x_imag: Vec<c_double> = vec![0.0; N];
+    let mut x = vec![Complex::new(0.0, 0.0); N];
     let mut y_real: Vec<c_double> = vec![0.0; N];
     let mut y_imag: Vec<c_double> = vec![0.0; N];
     let mut b_real: Vec<c_double> = vec![0.0; N];
@@ -740,10 +732,9 @@ fn ex6_4() {
 
         /* X(n) */
         for n in 0..N {
-            x_real[n] = pcm0.s[offset + n] * w[n];
-            x_imag[n] = 0.0;
+            x[n] = Complex::new(pcm0.s[offset + n] * w[n], 0.0);
         }
-        safe_FFT(&mut x_real, &mut x_imag);
+        safe_FFT_(&mut x);
 
         /* B(k) */
         let fe = 1000.0 / pcm0.fs as f64; /* エッジ周波数 */
@@ -763,8 +754,8 @@ fn ex6_4() {
 
         /* フィルタリング */
         for k in 0..N {
-            y_real[k] = x_real[k] * b_real[k] - x_imag[k] * b_imag[k];
-            y_imag[k] = x_imag[k] * b_real[k] + x_real[k] * b_imag[k];
+            y_real[k] = x[k].re * b_real[k] - x[k].im * b_imag[k];
+            y_imag[k] = x[k].im * b_real[k] + x[k].re * b_imag[k];
         }
         safe_IFFT(&mut y_real, &mut y_imag);
 
@@ -932,12 +923,10 @@ fn ex7_4() {
 
     let N = 1024; /* DFTのサイズ */
 
-    let mut x_real = vec![0.0; N];
-    let mut x_imag = vec![0.0; N];
+    let mut x = vec![Complex::new(0.0, 0.0); N];
     let mut y_real = vec![0.0; N];
     let mut y_imag = vec![0.0; N];
-    let mut b_real = vec![0.0; N];
-    let mut b_imag = vec![0.0; N];
+    let mut b_ = vec![Complex::new(0.0, 0.0); N];
     let mut w = vec![0.0; N];
     safe_Hanning_window(&mut w); /* ハニング窓 */
     let number_of_frame = (pcm0.length - N / 2) / (N / 2); /* フレームの数 */
@@ -948,45 +937,44 @@ fn ex7_4() {
         let offset = N / 2 * frame;
         /* X(n) */
         for n in 0..N {
-            x_real[n] = pcm0.s[offset + n] * w[n];
-            x_imag[n] = 0.0;
+            x[n] = Complex::new(pcm0.s[offset + n] * w[n], 0.0);
         }
-        safe_FFT(&mut x_real, &mut x_imag);
+        safe_FFT_(&mut x);
 
         /* B(k) */
         for n in 0..N {
-            b_real[n] = pcm1.s[offset + n] * w[n];
-            b_imag[n] = 0.0;
+            b_[n].re = pcm1.s[offset + n] * w[n];
+            b_[n].im = 0.0;
         }
-        safe_FFT(&mut b_real, &mut b_imag);
+        safe_FFT_(&mut b_);
 
         for k in 0..N {
-            b_real[k] = (b_real[k] * b_real[k] + b_imag[k] * b_imag[k]).sqrt();
-            b_imag[k] = 0.0;
+            b_[k].re = b_[k].norm_sqr().sqrt();
+            b_[k].im = 0.0;
         }
 
         for band in 0..number_of_band {
             let offset = band_width * band;
             let mut a = 0.0;
             for k in 0..band_width {
-                a += b_real[offset + k];
+                a += b_[offset + k].re;
             }
             a /= band_width as f64;
             for k in 0..band_width {
-                b_real[offset + k] = a;
+                b_[offset + k].re = a;
             }
         }
-        b_real[0] = 0.0;
-        b_real[N / 2] = 0.0;
+        b_[0].re = 0.0;
+        b_[N / 2].re = 0.0;
         for k in 1..N / 2 {
-            b_real[N - k] = b_real[k];
+            b_[N - k].re = b_[k].re;
         }
 
         /* フィルタリング */
 
         for k in 0..N {
-            y_real[k] = x_real[k] * b_real[k] - x_imag[k] * b_imag[k];
-            y_imag[k] = x_imag[k] * b_real[k] + x_real[k] * b_imag[k];
+            y_real[k] = x[k].re * b_[k].re - x[k].im * b_[k].im;
+            y_imag[k] = x[k].im * b_[k].re + x[k].re * b_[k].im;
         }
         safe_IFFT(&mut y_real, &mut y_imag);
 
