@@ -692,8 +692,7 @@ fn ex6_3() {
 
         /* フィルタリング */
         for k in 0..N {
-            y[k].re = x[k].re * b_[k].re - x[k].im * b_[k].im;
-            y[k].im = x[k].im * b_[k].re + x[k].re * b_[k].im;
+            y[k] = x[k] * b_[k];
         }
         safe_IFFT_(&mut y);
 
@@ -717,8 +716,7 @@ fn ex6_4() {
 
     let mut x = vec![Complex::new(0.0, 0.0); N];
     let mut y = vec![Complex::new(0.0, 0.0); N];
-    let mut b_real: Vec<c_double> = vec![0.0; N];
-    let mut b_imag: Vec<c_double> = vec![0.0; N];
+    let mut b_ = vec![Complex::new(0.0, 0.0); N];
 
     let mut w: Vec<c_double> = vec![0.0; N];
     safe_Hanning_window(&mut w); /* ハニング窓 */
@@ -738,22 +736,18 @@ fn ex6_4() {
         let fe = 1000.0 / pcm0.fs as f64; /* エッジ周波数 */
         let fe = (fe * N as f64) as usize;
         for k in 0..=fe {
-            b_real[k] = 1.0;
-            b_imag[k] = 0.0;
+            b_[k] = Complex::new(1.0, 0.0);
         }
         for k in (fe + 1)..=N / 2 {
-            b_real[k] = 0.0;
-            b_imag[k] = 0.0;
+            b_[k] = Complex::new(0.0, 0.0);
         }
         for k in 1..N / 2 {
-            b_real[N - k] = b_real[k];
-            b_imag[N - k] = -b_imag[k];
+            b_[N - k] = b_[k].conj();
         }
 
         /* フィルタリング */
         for k in 0..N {
-            y[k].re = x[k].re * b_real[k] - x[k].im * b_imag[k];
-            y[k].im = x[k].im * b_real[k] + x[k].re * b_imag[k];
+            y[k] = x[k] * b_[k];
         }
         safe_IFFT_(&mut y);
 
@@ -970,8 +964,7 @@ fn ex7_4() {
         /* フィルタリング */
 
         for k in 0..N {
-            y[k].re = x[k].re * b_[k].re - x[k].im * b_[k].im;
-            y[k].im = x[k].im * b_[k].re + x[k].re * b_[k].im;
+            y[k] = x[k] * b_[k];
         }
         safe_IFFT_(&mut y);
 
