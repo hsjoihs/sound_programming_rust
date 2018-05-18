@@ -9,7 +9,7 @@ use sound_programming::StereoPcm;
 use sound_programming::c_double;
 use sound_programming::c_int;
 use sound_programming::fft::safe_FFT_;
-use sound_programming::fft::safe_IFFT;
+use sound_programming::fft::safe_IFFT_;
 use sound_programming::filter::safe_FIR_LPF;
 use sound_programming::filter::safe_FIR_filtering;
 use sound_programming::filter::safe_IIR_LPF;
@@ -666,8 +666,7 @@ fn ex6_3() {
     let L: usize = 128; /* フレームの長さ */
     let N = 256; /* DFTのサイズ */
 
-    let mut y_real = vec![0.0; N];
-    let mut y_imag = vec![0.0; N];
+    let mut y = vec![Complex::new(0.0, 0.0); N];
     let mut b_ = vec![Complex::new(0.0, 0.0); N];
 
     let number_of_frame = pcm0.length as usize / L; /* フレームの数 */
@@ -693,15 +692,15 @@ fn ex6_3() {
 
         /* フィルタリング */
         for k in 0..N {
-            y_real[k] = x[k].re * b_[k].re - x[k].im * b_[k].im;
-            y_imag[k] = x[k].im * b_[k].re + x[k].re * b_[k].im;
+            y[k].re = x[k].re * b_[k].re - x[k].im * b_[k].im;
+            y[k].im = x[k].im * b_[k].re + x[k].re * b_[k].im;
         }
-        safe_IFFT(&mut y_real, &mut y_imag);
+        safe_IFFT_(&mut y);
 
         /* オーバーラップアド */
         for n in 0..(L * 2) {
             if offset + n < pcm1.length as usize {
-                pcm1.s[offset + n] += y_real[n];
+                pcm1.s[offset + n] += y[n].re;
             }
         }
     }
@@ -717,8 +716,7 @@ fn ex6_4() {
     let mut pcm1 = MonoPcm::blank_copy(&pcm0);
 
     let mut x = vec![Complex::new(0.0, 0.0); N];
-    let mut y_real: Vec<c_double> = vec![0.0; N];
-    let mut y_imag: Vec<c_double> = vec![0.0; N];
+    let mut y = vec![Complex::new(0.0, 0.0); N];
     let mut b_real: Vec<c_double> = vec![0.0; N];
     let mut b_imag: Vec<c_double> = vec![0.0; N];
 
@@ -754,14 +752,14 @@ fn ex6_4() {
 
         /* フィルタリング */
         for k in 0..N {
-            y_real[k] = x[k].re * b_real[k] - x[k].im * b_imag[k];
-            y_imag[k] = x[k].im * b_real[k] + x[k].re * b_imag[k];
+            y[k].re = x[k].re * b_real[k] - x[k].im * b_imag[k];
+            y[k].im = x[k].im * b_real[k] + x[k].re * b_imag[k];
         }
-        safe_IFFT(&mut y_real, &mut y_imag);
+        safe_IFFT_(&mut y);
 
         /* オーバーラップアド */
         for n in 0..N {
-            pcm1.s[offset + n] += y_real[n];
+            pcm1.s[offset + n] += y[n].re;
         }
     }
     wave_write_16bit_mono_safer3("ex6_4.wav", &pcm1);
@@ -924,8 +922,7 @@ fn ex7_4() {
     let N = 1024; /* DFTのサイズ */
 
     let mut x = vec![Complex::new(0.0, 0.0); N];
-    let mut y_real = vec![0.0; N];
-    let mut y_imag = vec![0.0; N];
+    let mut y  = vec![Complex::new(0.0, 0.0); N];
     let mut b_ = vec![Complex::new(0.0, 0.0); N];
     let mut w = vec![0.0; N];
     safe_Hanning_window(&mut w); /* ハニング窓 */
@@ -973,15 +970,15 @@ fn ex7_4() {
         /* フィルタリング */
 
         for k in 0..N {
-            y_real[k] = x[k].re * b_[k].re - x[k].im * b_[k].im;
-            y_imag[k] = x[k].im * b_[k].re + x[k].re * b_[k].im;
+            y[k].re = x[k].re * b_[k].re - x[k].im * b_[k].im;
+            y[k].im = x[k].im * b_[k].re + x[k].re * b_[k].im;
         }
-        safe_IFFT(&mut y_real, &mut y_imag);
+        safe_IFFT_(&mut y);
 
         let offset = N / 2 * frame;
         /* オーバーラップアド */
         for n in 0..N {
-            pcm2.s[offset + n] += y_real[n];
+            pcm2.s[offset + n] += y[n].re;
         }
     }
     wave_write_16bit_mono_safer3("ex7_4.wav", &pcm2);
