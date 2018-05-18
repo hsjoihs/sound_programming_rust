@@ -44,10 +44,10 @@ pub fn safe_FFT_(x: &mut [Complex<f64>]) {
                 let r = pow2(stage - 1) * j;
                 let a = x[n];
                 let b = x[m];
-                let c = Complex::new(0.0,-(2.0 * PI * r as f64) / N as f64).exp();
+                let c = Complex::new(0.0, -(2.0 * PI * r as f64) / N as f64).exp();
                 if stage < number_of_stage {
                     x[n] = a + b;
-                    x[m] = (a-b)*c;
+                    x[m] = (a - b) * c;
                 } else {
                     x[n] = a + b;
                     x[m] = a - b;

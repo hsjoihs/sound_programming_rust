@@ -60,7 +60,8 @@ fn main() {
     ex7_1();
     ex7_2();
     ex7_3();
-    /*if false*/ {
+    /*if false*/
+    {
         ex7_4(); // slow
     }
     ex8_1();
@@ -361,7 +362,7 @@ fn foo_(func: Box<Fn(usize) -> f64>) -> Vec<Complex<f64>> {
         for n_ in 0..N {
             let n = n_ as f64;
             let N = N as f64;
-            let W = Complex::new(0.0,-(2.0 * PI * k * n / N)).exp();
+            let W = Complex::new(0.0, -(2.0 * PI * k * n / N)).exp();
             X[k_] += W * x[n_];
         }
     }
@@ -916,7 +917,7 @@ fn ex7_4() {
     let N = 1024; /* DFTのサイズ */
 
     let mut x = vec![Complex::new(0.0, 0.0); N];
-    let mut y  = vec![Complex::new(0.0, 0.0); N];
+    let mut y = vec![Complex::new(0.0, 0.0); N];
     let mut b_ = vec![Complex::new(0.0, 0.0); N];
     let mut w = vec![0.0; N];
     safe_Hanning_window(&mut w); /* ハニング窓 */
