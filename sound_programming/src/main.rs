@@ -84,6 +84,7 @@ fn main() {
     ex8_11();
     ex8_12();
     ex9_1();
+    ex9_2();
     ex10_4();
     ex11_7();
     ex11_8();
@@ -1512,7 +1513,6 @@ fn ex8_12() {
     wave_write_16bit_mono_safer3("ex8_12.wav", &pcm3);
 }
 
-#[allow(non_snake_case, unused_variables, unused_mut)]
 fn ex9_1() {
     let pcm_fs = 44100; /* 標本化周波数 */
     let pcm_length = pcm_fs * 2; /* 音データの長さ */
@@ -1553,6 +1553,37 @@ fn ex9_1() {
     wave_write_16bit_mono_safer3("ex9_1.wav", &pcm);
 }
 
+#[allow(non_snake_case, unused_variables, unused_mut)]
+fn ex9_2() {
+    let pcm_fs = 44100; /* 標本化周波数 */
+    let pcm_length = pcm_fs * 2; /* 音データの長さ */
+    let mut pcm = MonoPcm::new16(pcm_fs, pcm_length);
+    let mut vco = vec![0.0; pcm_length];
+    /* 時間エンベロープ */
+    vco[0] = 500.0; /* Hz */
+    let am = 100.0; /* LFOの振幅 */
+    let fm = 2.0; /* LFOの周波数 */
+    /* LFO */
+    for n in 0..pcm.length {
+        vco[n] = vco[0] + am * (2.0 * PI * fm * n as f64 / pcm.fs as f64).sin();
+    }
+
+    /* ノコギリ波 */
+    let mut t0 = (pcm.fs as f64 / vco[0]) as usize; /* 基本周期 */
+    let mut m = 0;
+    for n in 0..pcm.length {
+        pcm.s[n] = 1.0 - 2.0 * m as f64 / t0 as f64;
+
+        m += 1;
+        if m >= t0 {
+            t0 = (pcm.fs as f64 / vco[n]) as usize; /* 基本周期 */
+            m = 0;
+        }
+    }
+
+    pcm.mult_constant_gain(0.1);
+    wave_write_16bit_mono_safer3("ex9_2.wav", &pcm);
+}
 
 #[allow(non_snake_case)]
 fn ex10_4() {
