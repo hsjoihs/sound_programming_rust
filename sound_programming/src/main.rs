@@ -29,7 +29,7 @@ use sound_programming::wave_write_PCMA_mono_safer3;
 use sound_programming::wave_write_PCMU_mono_safer3;
 use std::f64::consts::PI;
 //use std::io;
-fn main() {
+fn former_half() {
     ex1_1();
     ex1_2();
     ex2_1();
@@ -57,11 +57,16 @@ fn main() {
     if false {
         ex6_5(); // slooooow
     }
+}
+
+fn main() {
+    if false {
+        former_half();
+    }
     ex7_1();
     ex7_2();
     ex7_3();
-    /*if false*/
-    {
+    if false {
         ex7_4(); // slow
     }
     ex8_1();
@@ -78,6 +83,7 @@ fn main() {
     ex8_10();
     ex8_11();
     ex8_12();
+    ex9_1();
     ex10_4();
     ex11_7();
     ex11_8();
@@ -1400,7 +1406,6 @@ fn ex8_10() {
     wave_write_16bit_mono_safer3("ex8_10.wav", &pcm1);
 }
 
-#[allow(non_snake_case)]
 fn ex8_11() {
     let pcm0_fs = 192000; /* 標本化周波数 */
     let pcm0_length = pcm0_fs * 2; /* 音データの長さ */
@@ -1443,7 +1448,7 @@ fn ex8_11() {
     wave_write_16bit_mono_safer3("ex8_11.wav", &pcm1);
 }
 
-#[allow(non_snake_case, unused_variables, unused_mut)]
+#[allow(non_snake_case)]
 fn ex8_12() {
     let mut pcm0 = MonoPcm::new16(192000, 192000 * 2);
 
@@ -1506,6 +1511,48 @@ fn ex8_12() {
 
     wave_write_16bit_mono_safer3("ex8_12.wav", &pcm3);
 }
+
+#[allow(non_snake_case, unused_variables, unused_mut)]
+fn ex9_1() {
+    let pcm_fs = 44100; /* 標本化周波数 */
+    let pcm_length = pcm_fs * 2; /* 音データの長さ */
+    let mut pcm = MonoPcm::new16(pcm_fs, pcm_length);
+    let vco = 500.0; /* 基本周波数 */
+
+    /* ノコギリ波 */
+    let t0 = (pcm.fs as f64 / vco) as usize; /* 基本周期 */
+    {
+        let mut m = 0;
+        for n in 0..pcm_length {
+            pcm.s[n] = 1.0 - 2.0 * m as f64 / t0 as f64;
+
+            m += 1;
+            if m >= t0 {
+                m = 0;
+            }
+        }
+    }
+
+    let mut vca = vec![0.0; pcm_length];
+
+    /* 時間エンベロープ */
+    vca[0] = 1.0;
+    let am = 0.2; /* LFOの振幅 */
+    let fm = 2.0; /* LFOの周波数 */
+    /* LFO */
+    for n in 0..pcm_length {
+        vca[n] = vca[0] + am * (2.0 * PI * fm * n as f64 / pcm.fs as f64).sin();
+    }
+
+    let gain = 0.1; /* ゲイン */
+
+    for n in 0..pcm.length {
+        pcm.s[n] *= vca[n] * gain;
+    }
+
+    wave_write_16bit_mono_safer3("ex9_1.wav", &pcm);
+}
+
 
 #[allow(non_snake_case)]
 fn ex10_4() {

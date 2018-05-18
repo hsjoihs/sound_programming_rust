@@ -87,22 +87,16 @@ pub fn safe_IFFT_(x: &mut [Complex<f64>]) {
                 let n = pow2(number_of_stage - stage + 1) * i + j;
                 let m = pow2(number_of_stage - stage) + n;
                 let r = pow2(stage - 1) * j;
-                let a_real = x[n].re;
-                let a_imag = x[n].im;
-                let b_real = x[m].re;
-                let b_imag = x[m].im;
-                let cc_real = ((2.0 * PI * r as f64) / N as f64).cos();
-                let cc_imag = ((2.0 * PI * r as f64) / N as f64).sin();
+                let a = x[n];
+                let b = x[m];
+                let c = Complex::new(0.0, (2.0 * PI * r as f64) / N as f64).exp();
+
                 if stage < number_of_stage {
-                    x[n].re = a_real + b_real;
-                    x[n].im = a_imag + b_imag;
-                    x[m].re = (a_real - b_real) * cc_real - (a_imag - b_imag) * cc_imag;
-                    x[m].im = (a_imag - b_imag) * cc_real + (a_real - b_real) * cc_imag;
+                    x[n] = a + b;
+                    x[m] = (a - b) * c;
                 } else {
-                    x[n].re = a_real + b_real;
-                    x[n].im = a_imag + b_imag;
-                    x[m].re = a_real - b_real;
-                    x[m].im = a_imag - b_imag;
+                    x[n] = a + b;
+                    x[m] = a - b;
                 }
             }
         }
