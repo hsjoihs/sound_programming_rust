@@ -1,7 +1,8 @@
+extern crate num_complex;
 extern crate rand;
 extern crate sound_programming;
-extern crate num_complex;
 //use std::io::Write;
+use num_complex::Complex;
 use rand::Rng;
 use sound_programming::MonoPcm;
 use sound_programming::StereoPcm;
@@ -27,7 +28,6 @@ use sound_programming::wave_write_IMA_ADPCM_mono_safer3;
 use sound_programming::wave_write_PCMA_mono_safer3;
 use sound_programming::wave_write_PCMU_mono_safer3;
 use std::f64::consts::PI;
-use num_complex::Complex;
 //use std::io;
 fn main() {
     ex1_1();
@@ -345,16 +345,14 @@ fn ex4_1() {
 #[allow(non_snake_case)]
 fn foo_(func: Box<Fn(usize) -> f64>) -> Vec<Complex<f64>> {
     let N = 64;
-    let mut x_real: Vec<c_double> = vec![0.0; N];
-    let mut x_imag: Vec<c_double> = vec![0.0; N];
+    let mut x: Vec<Complex<f64>> = vec![Complex::new(0.0, 0.0); N];
     let mut X: Vec<Complex<f64>> = vec![Complex::new(0.0, 0.0); N];
 
     let pcm_slice = wave_read_16bit_mono_safer3("sine_500hz.wav").s;
 
     /* 波形 */
     for n in 0..N {
-        x_real[n] = pcm_slice[n] * func(n); /* x(n)の実数部 */
-        x_imag[n] = 0.0; /* x(n)の虚数部 */
+        x[n] = Complex::new(pcm_slice[n] * func(n) /* x(n)の実数部 */, 0.0); /* x(n)の虚数部 */
     }
 
     /* DFT */
@@ -363,10 +361,8 @@ fn foo_(func: Box<Fn(usize) -> f64>) -> Vec<Complex<f64>> {
         for n_ in 0..N {
             let n = n_ as f64;
             let N = N as f64;
-            let W_real = (2.0 * PI * k * n / N).cos();
-            let W_imag = -(2.0 * PI * k * n / N).sin();
-            X[k_].re += W_real * x_real[n_] - W_imag * x_imag[n_]; /* X(k)の実数部 */
-            X[k_].im += W_real * x_imag[n_] + W_imag * x_real[n_]; /* X(k)の虚数部 */
+            let W = Complex::new((2.0 * PI * k * n / N).cos(), -(2.0 * PI * k * n / N).sin());
+            X[k_] += W * x[n_];
         }
     }
 
