@@ -361,7 +361,7 @@ fn foo_(func: Box<Fn(usize) -> f64>) -> Vec<Complex<f64>> {
         for n_ in 0..N {
             let n = n_ as f64;
             let N = N as f64;
-            let W = Complex::new((2.0 * PI * k * n / N).cos(), -(2.0 * PI * k * n / N).sin());
+            let W = Complex::new(0.0,-(2.0 * PI * k * n / N)).exp();
             X[k_] += W * x[n_];
         }
     }
