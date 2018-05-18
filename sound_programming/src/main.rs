@@ -52,7 +52,7 @@ fn main() {
     ex6_2();
     ex6_3();
     ex6_4();
-    if false {
+    /*if false */{
         ex6_5(); // slow
     }
     ex7_1();
@@ -114,14 +114,12 @@ fn ex2_1() {
     let a = 0.1; /* 振幅 */
     let f0 = 500.0; /* 周波数 */
 
-    let pcm = MonoPcm {
-        fs: pcm_fs,
-        bits: 16,
-        length: pcm_length,
-        s: (0..pcm_length)
-            .map(|n| a * (2.0 * PI * f0 * (n as f64) / (pcm_fs as f64)).sin())
-            .collect(), /* サイン波 */
-    };
+    /* サイン波 */
+    let pcm = MonoPcm::new16_fn(
+        pcm_fs,
+        pcm_length,
+        Box::new(move |n| a * (2.0 * PI * f0 * (n as f64) / (pcm_fs as f64)).sin()),
+    );
 
     wave_write_16bit_mono_safer3("ex2_1.wav", &pcm);
 }
@@ -227,11 +225,7 @@ fn ex3_1() {
         }
     }
 
-    let gain = 0.1; /* ゲイン */
-
-    for n in 0..pcm_length {
-        pcm.s[n] *= gain;
-    }
+    pcm.mult_constant_gain(0.1);
 
     wave_write_16bit_mono_safer3("ex3_1.wav", &pcm);
 }
@@ -251,11 +245,7 @@ fn ex3_2() {
         }
     }
 
-    let gain = 0.1; /* ゲイン */
-
-    for n in 0..pcm_length {
-        pcm.s[n] *= gain;
-    }
+    pcm.mult_constant_gain(0.1);
 
     wave_write_16bit_mono_safer3("ex3_2.wav", &pcm);
 }
@@ -276,11 +266,7 @@ fn ex3_3() {
         }
     }
 
-    let gain = 0.1; /* ゲイン */
-
-    for n in 0..pcm_length {
-        pcm.s[n] *= gain;
-    }
+    pcm.mult_constant_gain(0.1);
 
     wave_write_16bit_mono_safer3("ex3_3.wav", &pcm);
 }
@@ -300,11 +286,7 @@ fn ex3_4() {
         }
     }
 
-    let gain = 0.1; /* ゲイン */
-
-    for n in 0..pcm_length {
-        pcm.s[n] *= gain;
-    }
+    pcm.mult_constant_gain(0.1);
 
     wave_write_16bit_mono_safer3("ex3_4.wav", &pcm);
 }
@@ -329,11 +311,7 @@ fn ex3_5() {
         }
     }
 
-    let gain = 0.001; /* ゲイン */
-
-    for n in 0..pcm_length {
-        pcm.s[n] *= gain;
-    }
+    pcm.mult_constant_gain(0.001);
 
     wave_write_16bit_mono_safer3("ex3_5.wav", &pcm);
 }
@@ -455,10 +433,7 @@ fn ex4_4() {
             }
         }
 
-        let gain = 0.01; /* ゲイン */
-        for n in 0..pcm0_length {
-            pcm0.s[n] *= gain;
-        }
+        pcm0.mult_constant_gain(0.01);
         wave_write_16bit_mono_safer3("ex4_4a.wav", &pcm0);
     }
     {
@@ -472,10 +447,7 @@ fn ex4_4() {
                 pcm1.s[n] += (2.0 * PI * i as f64 * f0 * n as f64 / pcm1_fs as f64).sin();
             }
         }
-        let gain = 0.01; /* ゲイン */
-        for n in 0..pcm1_length {
-            pcm1.s[n] *= gain;
-        }
+        pcm1.mult_constant_gain(0.01);
         wave_write_16bit_mono_safer3("ex4_4b.wav", &pcm1);
     }
 }
@@ -504,7 +476,6 @@ fn ex5_1() {
 #[allow(non_snake_case)]
 fn ex5_2() {
     let pcm_fs = 44100; /* 標本化周波数 */
-    let pcm_bits = 16; /* 量子化精度 */
     let pcm_length = pcm_fs * 4; /* 音データの長さ */
 
     let a0 = 0.5; /* 振幅 */
@@ -521,23 +492,18 @@ fn ex5_2() {
             + (f0[pcm_length - 1] - f0[0]) * n as f64 * n as f64 / (pcm_length - 1) as f64 / 2.0;
     }
 
-    let pcm_s: Vec<c_double> = (0..pcm_length)
-        .map(|n| a0 * (2.0 * PI * g0[n] / pcm_fs as f64).sin())
-        .collect();
     wave_write_16bit_mono_safer3(
         "ex5_2.wav",
-        &MonoPcm {
-            s: pcm_s,
-            fs: pcm_fs,
-            bits: pcm_bits,
-            length: pcm_length,
-        },
+        &MonoPcm::new16_fn(
+            pcm_fs,
+            pcm_length,
+            Box::new(move |n| a0 * (2.0 * PI * g0[n] / pcm_fs as f64).sin()),
+        ),
     );
 }
 
 fn ex5_3() {
     let pcm_fs = 44100; /* 標本化周波数 */
-    let pcm_bits = 16; /* 量子化精度 */
     let pcm_length = (pcm_fs as f64 * 0.2) as usize; /* 音データの長さ */
     let a0 = 0.5; /* 振幅 */
     let mut f0 = vec![0.0; pcm_length];
@@ -552,17 +518,14 @@ fn ex5_3() {
         g0[n] = f0[0] * n as f64
             + (f0[pcm_length - 1] - f0[0]) * n as f64 * n as f64 / (pcm_length - 1) as f64 / 2.0;
     }
-    let pcm_s: Vec<c_double> = (0..pcm_length)
-        .map(|n| a0 * (2.0 * PI * g0[n] / pcm_fs as f64).sin())
-        .collect();
+
     wave_write_16bit_mono_safer3(
         "ex5_3.wav",
-        &MonoPcm {
-            s: pcm_s,
-            fs: pcm_fs,
-            bits: pcm_bits,
-            length: pcm_length,
-        },
+        &MonoPcm::new16_fn(
+            pcm_fs,
+            pcm_length,
+            Box::new(move |n| a0 * (2.0 * PI * g0[n] / pcm_fs as f64).sin()),
+        ),
     );
 }
 
@@ -590,10 +553,8 @@ fn ex5_4() {
         pcm.s[n] += a3[n] * (2.0 * PI * f3[n] * n as f64 / pcm_fs as f64).sin();
         pcm.s[n] += a4[n] * (2.0 * PI * f4[n] * n as f64 / pcm_fs as f64).sin();
     }
-    let gain = 0.1; /* ゲイン */
-    for n in 0..pcm_length {
-        pcm.s[n] *= gain;
-    }
+
+    pcm.mult_constant_gain(0.1);
 
     /* フェード処理 */
     for n in 0..(pcm_fs as f64 * 0.01).ceil() as usize {
@@ -636,11 +597,7 @@ fn ex5_5() {
         pcm.s[n] += a4[n] * (2.0 * PI * f4[n] * n as f64 / pcm_fs as f64).sin();
     }
 
-    let gain = 0.1; /* ゲイン */
-
-    for n in 0..pcm_length {
-        pcm.s[n] *= gain;
-    }
+    pcm.mult_constant_gain(0.1);
 
     /* フェード処理 */
     for n in 0..(pcm_fs as f64 * 0.01).ceil() as usize {
@@ -830,23 +787,22 @@ fn ex6_5() {
     let J = pcm1.fs; /* 遅延器の数 */
 
     /* フィルタリング */
-    let pcm2 = MonoPcm {
-        s: (0..pcm0.length as usize)
-            .map(|n| {
-                let mut a = 0.0;
-                for m in 0..=J as usize {
-                    if n >= m {
-                        a += pcm1.s[m] * pcm0.s[n - m];
-                    }
+    let pcm2 = MonoPcm::new16_fn(
+        pcm0.fs,
+        pcm0.length,
+        Box::new(move |n| {
+            let mut a = 0.0;
+            for m in 0..=J as usize {
+                if n >= m {
+                    a += pcm1.s[m] * pcm0.s[n - m];
                 }
-                if n % 1000 == 0 {
-                    println!("{} / {}", n, pcm0.length);
-                }
-                a
-            })
-            .collect(),
-        ..pcm0
-    };
+            }
+            if n % 1000 == 0 {
+                println!("{} / {}", n, pcm0.length);
+            }
+            a
+        }),
+    );
 
     wave_write_16bit_mono_safer3("ex6_5.wav", &pcm2);
 }
@@ -1064,10 +1020,8 @@ fn ex8_1() {
             m = 0;
         }
     }
-    let gain = 0.1; /* ゲイン */
-    for n in 0..pcm_length {
-        pcm.s[n] *= gain;
-    }
+    pcm.mult_constant_gain(0.1);
+
     wave_write_16bit_mono_safer3("ex8_1.wav", &pcm);
 }
 
@@ -1094,10 +1048,7 @@ fn ex8_2() {
             m = 0;
         }
     }
-    let gain = 0.1; /* ゲイン */
-    for n in 0..pcm_length {
-        pcm.s[n] *= gain;
-    }
+    pcm.mult_constant_gain(0.1);
     wave_write_16bit_mono_safer3("ex8_2.wav", &pcm);
 }
 
@@ -1123,10 +1074,7 @@ fn ex8_3() {
             m = 0;
         }
     }
-    let gain = 0.1; /* ゲイン */
-    for n in 0..pcm_length {
-        pcm.s[n] *= gain;
-    }
+    pcm.mult_constant_gain(0.1);
     wave_write_16bit_mono_safer3("ex8_3.wav", &pcm);
 }
 
@@ -1141,10 +1089,7 @@ fn ex8_4() {
     for n in 0..pcm_length {
         pcm.s[n] = rng.gen_range(-1.0, 1.0);
     }
-    let gain = 0.1; /* ゲイン */
-    for n in 0..pcm_length {
-        pcm.s[n] *= gain;
-    }
+    pcm.mult_constant_gain(0.1);
     wave_write_16bit_mono_safer3("ex8_4.wav", &pcm);
 }
 
@@ -1177,10 +1122,7 @@ fn ex8_5() {
             m = 0;
         }
     }
-    let gain = 0.1; /* ゲイン */
-    for n in 0..pcm_length {
-        pcm.s[n] *= gain;
-    }
+    pcm.mult_constant_gain(0.1);
     wave_write_16bit_mono_safer3("ex8_5.wav", &pcm);
 }
 
@@ -1422,10 +1364,7 @@ fn ex8_9() {
             m = 0;
         }
     }
-    let gain = 0.1; /* ゲイン */
-    for n in 0..pcm_length {
-        pcm.s[n] *= gain;
-    }
+    pcm.mult_constant_gain(0.1);
 
     wave_write_16bit_mono_safer3("ex8_9.wav", &pcm);
 }
@@ -1481,10 +1420,7 @@ fn ex8_10() {
             }
         }
     }
-    let gain = 0.1; /* ゲイン */
-    for n in 0..pcm1_length {
-        pcm1.s[n] *= gain;
-    }
+    pcm1.mult_constant_gain(0.1);
     wave_write_16bit_mono_safer3("ex8_10.wav", &pcm1);
 }
 
@@ -1526,11 +1462,7 @@ fn ex8_11() {
         pcm1.s[n] = pcm0.s[n * ratio];
     }
 
-    let gain = 0.1; /* ゲイン */
-
-    for n in 0..pcm1_length {
-        pcm1.s[n] *= gain;
-    }
+    pcm1.mult_constant_gain(0.1);
 
     wave_write_16bit_mono_safer3("ex8_11.wav", &pcm1);
 }
@@ -1593,10 +1525,9 @@ fn ex8_12() {
             }
         }
     }
-    let gain = 0.1;
-    for n in 0..pcm3.length {
-        pcm3.s[n] *= ratio as f64 * gain;
-    }
+
+    pcm3.mult_constant_gain(ratio as f64 * 0.1);
+
     wave_write_16bit_mono_safer3("ex8_12.wav", &pcm3);
 }
 
@@ -1640,11 +1571,7 @@ fn ex10_4() {
                 .sin();
     }
 
-    let gain = 0.1; /* ゲイン */
-
-    for n in 0..pcm_length {
-        pcm.s[n] *= gain;
-    }
+    pcm.mult_constant_gain(0.1);
 
     wave_write_16bit_mono_safer3("ex10_4.wav", &pcm);
 }

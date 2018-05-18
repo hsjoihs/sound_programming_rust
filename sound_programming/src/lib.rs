@@ -73,6 +73,21 @@ impl MonoPcm {
             ..*orig
         }
     }
+
+    pub fn mult_constant_gain(&mut self, gain: f64) {
+        for n in 0..self.length {
+            self.s[n] *= gain;
+        }
+    }
+
+    pub fn new16_fn(fs: usize, length: usize, mut fun: Box<FnMut(usize) -> f64>) -> Self {
+        MonoPcm {
+            fs,
+            length,
+            bits: 16,
+            s: (0..length).map(|n| fun(n)).collect(),
+        }
+    }
 }
 
 pub struct StereoPcm {
