@@ -81,6 +81,16 @@ fn latter_half() {
     ex8_10();
     ex8_11();
     ex8_12();
+
+}
+
+fn main() {
+    if false {
+        former_half();
+    }
+    if false {
+        latter_half();
+    }
     ex9_1();
     ex9_2();
     ex9_3();
@@ -92,16 +102,6 @@ fn latter_half() {
     ex9_9();
     ex9_10();
     ex9_11();
-}
-
-fn main() {
-    if false {
-        former_half();
-    }
-    if false {
-        latter_half();
-    }
-
     ex10_1();
     ex10_4();
     ex11_7();
@@ -1973,7 +1973,8 @@ fn ex9_8() {
     let vco = 500.0; /* 基本周波数 */
 
     /* パルス列 */
-    generate_pulse_sequence(&mut pcm, vco);
+    let N = 128;
+    generate_pulse_sequence(&mut pcm, vco, N);
 
     let mut s = vec![0.0; pcm.length];
 
@@ -2091,10 +2092,9 @@ fn ex9_10() {
 }
 
 #[allow(non_snake_case)]
-fn generate_pulse_sequence(pcm: &mut MonoPcm, vco: f64) {
+fn generate_pulse_sequence(pcm: &mut MonoPcm, vco: f64, N: usize) {
     let t0 = pcm.fs as f64 / vco; /* 基本周期 */
     let mut t = 0.0;
-    let N = 128;
     while t < pcm.length as f64 {
         let ta = t as usize;
 
@@ -2115,7 +2115,7 @@ fn generate_pulse_sequence(pcm: &mut MonoPcm, vco: f64) {
     }
 }
 
-#[allow(non_snake_case, unused_mut, unused_variables)]
+#[allow(non_snake_case)]
 fn ex9_11() {
     let pcm0_fs = 44100; /* 標本化周波数 */
     let pcm0_length = pcm0_fs * 4; /* 音データの長さ */
@@ -2125,10 +2125,8 @@ fn ex9_11() {
     let vco = 440.0; /* 基本周波数 */
 
     /* パルス列 */
-    let t0 = pcm0.fs as f64 / vco; /* 基本周期 */
-    let t = 0.0;
     let N = 128;
-    generate_pulse_sequence(&mut pcm0, vco);
+    generate_pulse_sequence(&mut pcm0, vco, N);
 
     /* 積分フィルタ */
     s[0] = pcm0.s[0] - 0.5;
@@ -2182,7 +2180,7 @@ fn ex9_11() {
     let vco = 440.5; /* 基本周波数 */
 
     /* パルス列 */
-    generate_pulse_sequence(&mut pcm2, vco);
+    generate_pulse_sequence(&mut pcm2, vco, N);
 
     /* 積分フィルタ */
     s[0] = pcm2.s[0] - 0.5;
