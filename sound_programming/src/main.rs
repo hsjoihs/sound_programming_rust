@@ -95,6 +95,7 @@ fn main() {
     ex9_4();
     ex9_5();
     ex9_6();
+    ex9_7();
     ex10_4();
     ex11_7();
     ex11_8();
@@ -1780,7 +1781,7 @@ fn ex9_5() {
     wave_write_16bit_mono_safer3("ex9_5.wav", &pcm1);
 }
 
-#[allow(non_snake_case, unused_mut, unused_variables)]
+#[allow(non_snake_case)]
 fn ex9_6() {
     let pcm0_fs = 44100; /* 標本化周波数 */
     let pcm0_length = pcm0_fs * 4; /* 音データの長さ */
@@ -1858,11 +1859,103 @@ fn ex9_6() {
     }
     wave_write_16bit_mono_safer3("ex9_6.wav", &pcm1);
 }
-/*
 
+#[allow(non_snake_case, unused_mut, unused_variables)]
+fn ex9_7() {
+    let pcm0_fs = 44100; /* 標本化周波数 */
+    let pcm0_length = pcm0_fs * 1; /* 音データの長さ */
+    let mut pcm0 = MonoPcm::new16(pcm0_fs, pcm0_length);
 
+    let mut vco = vec![0.0; pcm0.length]; /* 基本周波数 */
+    let gate = pcm0.fs * 1;
+    let duration = pcm0.fs * 1;
+    let A = 0;
+    let D = (pcm0.fs as f64 * 0.4) as usize;
+    let S = 0.0;
+    let R = (pcm0.fs as f64 * 0.4) as usize;
+    safe_ADSR(&mut vco, A, D, S, R, gate, duration);
+    let offset = 40.0; /* 時間エンベロープのオフセット */
+    let depth = 120.0; /* 時間エンベロープのデプス */
+    for n in 0..pcm0.length {
+        vco[n] = offset + vco[n] * depth;
+    }
+    {
+        /* 三角波 */
+        let mut t0 = (pcm0.fs as f64 / vco[0]) as usize; /* 基本周期 */
+        let mut m = 0;
+        for n in 0..pcm0.length {
+            pcm0.s[n] = if (m as f64) < t0 as f64 / 2.0 {
+                -1.0 + 4.0 * m as f64 / t0 as f64
+            } else {
+                3.0 - 4.0 * m as f64 / t0 as f64
+            };
 
-*/
+            m += 1;
+            if m >= t0 {
+                t0 = (pcm0.fs as f64 / vco[n]) as usize; /* 基本周期 */
+                m = 0;
+            }
+        }
+    }
+
+    let mut vcf = vec![0.0; pcm0.length]; /* 遮断周波数 */
+    let gate = pcm0.fs * 1;
+    let duration = pcm0.fs * 1;
+    let A = 0;
+    let D = (pcm0.fs as f64 * 0.4) as usize;
+    let S = 0.0;
+    let R = (pcm0.fs as f64 * 0.4) as usize;
+    safe_ADSR(&mut vcf, A, D, S, R, gate, duration);
+
+    let offset = 80.0; /* 時間エンベロープのオフセット */
+    let depth = 240.0; /* 時間エンベロープのデプス */
+    for n in 0..pcm0.length {
+        vcf[n] = offset + vcf[n] * depth;
+    }
+    let Q = 5.0; /* レゾナンス */
+    let I = 2; /* 遅延器の数 */
+    let J = 2; /* 遅延器の数 */
+
+    let mut pcm1 = MonoPcm::blank_copy(&pcm0);
+    let mut a = [0.0; 3];
+    let mut b = [0.0; 3];
+    /* フィルタリング */
+    for n in 0..pcm1.length {
+        safe_IIR_LPF(vcf[n] / pcm1.fs as f64, Q, &mut a, &mut b); /* IIRフィルタの設計 */
+
+        for m in 0..=J {
+            if n >= m {
+                pcm1.s[n] += b[m] * pcm0.s[n - m];
+            }
+        }
+        for m in 1..=I {
+            if n >= m {
+                pcm1.s[n] += -a[m] * pcm1.s[n - m];
+            }
+        }
+    }
+
+    let mut vca = vec![0.0; pcm1.length]; /* 振幅 */
+    let gate = pcm1.fs * 1;
+    let duration = pcm1.fs * 1;
+    let A = 0;
+    let D = (pcm0.fs as f64 * 0.4) as usize;
+    let S = 0.0;
+    let R = (pcm0.fs as f64 * 0.4) as usize;
+    safe_ADSR(&mut vca, A, D, S, R, gate, duration);
+
+    let gain = 0.9; /* ゲイン */
+    for n in 0..pcm1.length {
+        pcm1.s[n] *= vca[n] * gain;
+    }
+
+    /* フェード処理 */
+    for n in 0..(pcm1.fs as f64 * 0.01).ceil() as usize {
+        pcm1.s[n] *= n as f64 / (pcm1.fs as f64 * 0.01);
+        pcm1.s[pcm1.length - n - 1] *= n as f64 / (pcm1.fs as f64 * 0.01);
+    }
+    wave_write_16bit_mono_safer3("ex9_7.wav", &pcm1);
+}
 
 #[allow(non_snake_case)]
 fn ex10_4() {
