@@ -1583,7 +1583,7 @@ fn ex9_2() {
     wave_write_16bit_mono_safer3("ex9_2.wav", &pcm);
 }
 
-#[allow(non_snake_case, unused_variables, unused_mut)]
+#[allow(non_snake_case)]
 fn ex9_3() {
     let pcm0_fs = 44100;
     let pcm0_length = 44100 * 2;
@@ -1592,7 +1592,7 @@ fn ex9_3() {
     let vco = 500.0; /* 基本周波数 */
 
     /* ノコギリ波 */
-    let mut t0 = (pcm0.fs as f64 / vco) as usize; /* 基本周期 */
+    let t0 = (pcm0.fs as f64 / vco) as usize; /* 基本周期 */
     let mut m = 0;
     for n in 0..pcm0.length {
         pcm0.s[n] = 1.0 - 2.0 * m as f64 / t0 as f64;

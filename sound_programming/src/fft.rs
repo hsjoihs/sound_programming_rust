@@ -1,6 +1,5 @@
 extern crate num_complex;
 use self::num_complex::Complex;
-use libc::c_double;
 use std::f64::consts::PI;
 //use libc::c_int;
 
