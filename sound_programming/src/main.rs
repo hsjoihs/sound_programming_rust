@@ -103,6 +103,7 @@ fn main() {
     ex9_10();
     ex9_11();
     ex10_1();
+    ex10_2();
     ex10_4();
     ex11_7();
     ex11_8();
@@ -2254,6 +2255,27 @@ fn ex10_1() {
 
     pcm.mult_constant_gain(0.1);
     wave_write_16bit_mono_safer3("ex10_1.wav", &pcm);
+}
+
+#[allow(non_snake_case, unused_mut, unused_variables)]
+fn ex10_2() {
+    let pcm_fs = 44100; /* 標本化周波数 */
+    let pcm_length = pcm_fs * 1; /* 音データの長さ */
+    let mut pcm = MonoPcm::new16(pcm_fs, pcm_length);
+    let ac = 1.0; /* キャリア振幅 */
+    let fc = 500.0; /* キャリア周波数 */
+
+    let am = 1.0; /* モジュレータ振幅 */
+    let ratio = 2.0; /* 周波数比 */
+    let fm = fc * ratio; /* モジュレータ周波数 */
+    /* FM音源 */
+    for n in 0..pcm.length {
+        pcm.s[n] = ac * (2.0 * PI * fc * n as f64 / pcm.fs as f64
+            + am * (2.0 * PI * fm * n as f64 / pcm.fs as f64).sin())
+            .sin();
+    }
+    pcm.mult_constant_gain(0.1);
+    wave_write_16bit_mono_safer3("ex10_2.wav", &pcm);
 }
 /*
 
