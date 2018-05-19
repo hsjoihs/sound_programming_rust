@@ -59,10 +59,7 @@ fn former_half() {
     }
 }
 
-fn main() {
-    if false {
-        former_half();
-    }
+fn latter_half() {
     ex7_1();
     ex7_2();
     ex7_3();
@@ -83,10 +80,20 @@ fn main() {
     ex8_10();
     ex8_11();
     ex8_12();
+}
+
+fn main() {
+    if false {
+        former_half();
+    }
+    if false {
+        latter_half();
+    }
     ex9_1();
     ex9_2();
     ex9_3();
     ex9_4();
+    ex9_5();
     ex10_4();
     ex11_7();
     ex11_8();
@@ -1661,7 +1668,7 @@ fn ex9_4() {
             m = 0;
         }
     }
-    
+
     let vcf = 1500.0; /* 遮断周波数 */
     let Q = 5.0; /* レゾナンス */
     let I = 2; /* 遅延器の数 */
@@ -1705,18 +1712,76 @@ fn ex9_4() {
     }
     wave_write_16bit_mono_safer3("ex9_4.wav", &pcm1);
 }
-/*
-int main(void)
-{
-  MONO_PCM pcm0, pcm1;
-  int n, m, t0, I, J, A, D, R, gate, duration;
-  double vco, vcf, *vca, gain, S, Q, a[3], b[3];
 
- 
+#[allow(non_snake_case, unused_mut, unused_variables)]
+fn ex9_5() {
+    let pcm0_fs = 44100; /* 標本化周波数 */
+    let pcm0_length = pcm0_fs * 4; /* 音データの長さ */
+    let mut pcm0 = MonoPcm::new16(pcm0_fs, pcm0_length);
+
+    let vco = 440.0; /* 基本周波数 */
+
+    /* ノコギリ波 */
+    let t0 = (pcm0.fs as f64 / vco) as usize; /* 基本周期 */
+    let mut m = 0;
+    for n in 0..pcm0.length {
+        pcm0.s[n] = 1.0 - 2.0 * m as f64 / t0 as f64;
+
+        m += 1;
+        if m >= t0 {
+            m = 0;
+        }
+    }
+
+    let vcf = 4000.0; /* 遮断周波数 */
+    let Q = 1.0 / 2.0f64.sqrt(); /* レゾナンス */
+    let I = 2; /* 遅延器の数 */
+    let J = 2; /* 遅延器の数 */
+    let mut a = [0.0; 3];
+    let mut b = [0.0; 3];
+    safe_IIR_LPF(vcf / pcm0.fs as f64, Q, &mut a, &mut b); /* IIRフィルタの設計 */
+
+    let mut pcm1 = MonoPcm::blank_copy(&pcm0);
+
+    /* フィルタリング */
+    for n in 0..pcm1.length {
+        for m in 0..=J {
+            if n >= m {
+                pcm1.s[n] += b[m] * pcm0.s[n - m];
+            }
+        }
+        for m in 1..=I {
+            if n >= m {
+                pcm1.s[n] += -a[m] * pcm1.s[n - m];
+            }
+        }
+    }
+    let mut vca = vec![0.0; pcm0.length]; /* 振幅 */
+    let gate = pcm1.fs * 3;
+    let duration = pcm1.fs * 4;
+    let A = pcm1.fs * 1;
+    let D = 0;
+    let S = 1.0;
+    let R = pcm1.fs * 1;
+
+    safe_ADSR(&mut vca, A, D, S, R, gate, duration);
+
+    let gain = 0.1; /* ゲイン */
+    for n in 0..pcm1.length {
+        pcm1.s[n] *= vca[n] * gain;
+    }
+
+    /* フェード処理 */
+    for n in 0..(pcm1.fs as f64 * 0.01).ceil() as usize {
+        pcm1.s[n] *= n as f64 / (pcm1.fs as f64 * 0.01);
+        pcm1.s[pcm1.length - n - 1] *= n as f64 / (pcm1.fs as f64 * 0.01);
+    }
+    wave_write_16bit_mono_safer3("ex9_5.wav", &pcm1);
+}
+/*
+
+
   
-  
-  
-  wave_write_16bit_mono(&pcm1, "ex9_4.wav");
   
   free(pcm0.s);
   free(pcm1.s);
@@ -1724,6 +1789,7 @@ int main(void)
   
   return 0;
 }
+
 
 */
 
