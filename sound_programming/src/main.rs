@@ -1035,7 +1035,6 @@ fn ex8_2() {
     wave_write_16bit_mono_safer3("ex8_2.wav", &pcm);
 }
 
-#[allow(non_snake_case)]
 fn ex8_3() {
     let pcm_fs = 44100; /* 標本化周波数 */
     let pcm_length = pcm_fs * 1; /* 音データの長さ */
@@ -1061,7 +1060,6 @@ fn ex8_3() {
     wave_write_16bit_mono_safer3("ex8_3.wav", &pcm);
 }
 
-#[allow(non_snake_case)]
 fn ex8_4() {
     let pcm_fs = 44100; /* 標本化周波数 */
     let pcm_length = pcm_fs * 1; /* 音データの長さ */
@@ -1320,7 +1318,6 @@ fn ex8_8() {
     wave_write_16bit_mono_safer3("ex8_8.wav", &pcm);
 }
 
-#[allow(non_snake_case)]
 fn ex8_9() {
     let pcm_fs = 8000; /* 標本化周波数 */
     let pcm_length = pcm_fs * 2; /* 音データの長さ */
@@ -1553,7 +1550,6 @@ fn ex9_1() {
     wave_write_16bit_mono_safer3("ex9_1.wav", &pcm);
 }
 
-#[allow(non_snake_case, unused_variables, unused_mut)]
 fn ex9_2() {
     let pcm_fs = 44100; /* 標本化周波数 */
     let pcm_length = pcm_fs * 2; /* 音データの長さ */
