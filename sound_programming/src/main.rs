@@ -85,6 +85,7 @@ fn main() {
     ex8_12();
     ex9_1();
     ex9_2();
+    ex9_3();
     ex10_4();
     ex11_7();
     ex11_8();
@@ -1579,6 +1580,65 @@ fn ex9_2() {
 
     pcm.mult_constant_gain(0.1);
     wave_write_16bit_mono_safer3("ex9_2.wav", &pcm);
+}
+
+#[allow(non_snake_case, unused_variables, unused_mut)]
+fn ex9_3() {
+    let pcm0_fs = 44100;
+    let pcm0_length = 44100 * 2;
+    let mut pcm0 = MonoPcm::new16(pcm0_fs, pcm0_length);
+
+    let vco = 500.0; /* 基本周波数 */
+
+    /* ノコギリ波 */
+    let mut t0 = (pcm0.fs as f64 / vco) as usize; /* 基本周期 */
+    let mut m = 0;
+    for n in 0..pcm0.length {
+        pcm0.s[n] = 1.0 - 2.0 * m as f64 / t0 as f64;
+
+        m += 1;
+        if m >= t0 {
+            m = 0;
+        }
+    }
+
+    let mut vcf = vec![0.0; pcm0.length];
+
+    /* 時間エンベロープ */
+    vcf[0] = 1000.0; /* Hz */
+    let am = 800.0; /* LFOの振幅 */
+    let fm = 2.0; /* LFOの周波数 */
+    /* LFO */
+    for n in 0..pcm0.length {
+        vcf[n] = vcf[0] + am * (2.0 * PI * fm * n as f64 / pcm0.fs as f64).sin();
+    }
+
+    let Q = 5.0; /* レゾナンス */
+    let I = 2; /* 遅延器の数 */
+    let J = 2; /* 遅延器の数 */
+
+    let mut pcm1 = MonoPcm::blank_copy(&pcm0);
+
+    let mut a = [0.0; 3];
+    let mut b = [0.0; 3];
+    /* フィルタリング */
+    for n in 0..pcm1.length {
+        safe_IIR_LPF(vcf[n] / pcm1.fs as f64, Q, &mut a, &mut b); /* IIRフィルタの設計 */
+
+        for m in 0..=J {
+            if n >= m {
+                pcm1.s[n] += b[m] * pcm0.s[n - m];
+            }
+        }
+        for m in 1..=I {
+            if n >= m {
+                pcm1.s[n] += -a[m] * pcm1.s[n - m];
+            }
+        }
+    }
+
+    pcm1.mult_constant_gain(0.1);
+    wave_write_16bit_mono_safer3("ex9_3.wav", &pcm1);
 }
 
 #[allow(non_snake_case)]
