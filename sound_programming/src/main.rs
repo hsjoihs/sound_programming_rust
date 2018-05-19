@@ -17,6 +17,7 @@ use sound_programming::filter::safe_IIR_filtering;
 use sound_programming::filter::safe_IIR_resonator;
 use sound_programming::safe_ADSR;
 use sound_programming::safe_Hanning_window;
+use sound_programming::sinc;
 use sound_programming::wave::wave_read_16bit_mono_safer3;
 use sound_programming::wave::wave_read_16bit_stereo_safer3;
 use sound_programming::wave_read_IMA_ADPCM_mono_safer3;
@@ -96,6 +97,7 @@ fn main() {
     ex9_5();
     ex9_6();
     ex9_7();
+    ex9_8();
     ex10_4();
     ex11_7();
     ex11_8();
@@ -1860,7 +1862,7 @@ fn ex9_6() {
     wave_write_16bit_mono_safer3("ex9_6.wav", &pcm1);
 }
 
-#[allow(non_snake_case, unused_mut, unused_variables)]
+#[allow(non_snake_case)]
 fn ex9_7() {
     let pcm0_fs = 44100; /* 標本化周波数 */
     let pcm0_length = pcm0_fs * 1; /* 音データの長さ */
@@ -1956,6 +1958,56 @@ fn ex9_7() {
     }
     wave_write_16bit_mono_safer3("ex9_7.wav", &pcm1);
 }
+
+#[allow(non_snake_case, unused_mut, unused_variables)]
+fn ex9_8() {
+    let pcm_fs = 44100; /* 標本化周波数 */
+    let pcm_length = pcm_fs * 1; /* 音データの長さ */
+    let mut pcm = MonoPcm::new16(pcm_fs, pcm_length);
+
+    let vco = 500.0; /* 基本周波数 */
+
+    /* パルス列 */
+    let t0 = pcm.fs as f64 / vco; /* 基本周期 */
+    let mut t = 0.0;
+    let N = 128;
+    while t < pcm.length as f64 {
+        let ta = t as usize;
+
+        let tb = if t == ta as f64 { ta } else { ta + 1 };
+
+        for n in (tb as i32 - N as i32 / 2)..=(ta as i32 + N as i32 / 2) {
+            if n >= 0 && n < pcm.length as i32 {
+                pcm.s[n as usize] += sinc(PI * (t - n as f64))
+                    * (0.5 + 0.5 * (2.0 * PI * (t - n as f64) / (N * 2 + 1) as f64).cos());
+            }
+        }
+
+        t += t0;
+    }
+
+    for n in 0..pcm.length {
+        pcm.s[n] -= 1.0 / t0 as f64;
+    }
+
+    let mut s = vec![0.0; pcm.length];
+
+    /* 積分フィルタ */
+    s[0] = pcm.s[0] - 0.5;
+    for n in 1..pcm.length {
+        s[n] = pcm.s[n] + 0.98 * s[n - 1];
+    }
+    for n in 0..pcm.length {
+        pcm.s[n] = s[n] * 2.0;
+    }
+
+    pcm.mult_constant_gain(0.1);
+    wave_write_16bit_mono_safer3("ex9_8.wav", &pcm);
+}
+
+/*
+
+*/
 
 #[allow(non_snake_case)]
 fn ex10_4() {
