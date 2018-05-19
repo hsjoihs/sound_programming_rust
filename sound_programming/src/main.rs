@@ -100,6 +100,7 @@ fn main() {
     ex9_8();
     ex9_9();
     ex9_10();
+    ex9_11();
     ex10_4();
     ex11_7();
     ex11_8();
@@ -1970,27 +1971,7 @@ fn ex9_8() {
     let vco = 500.0; /* 基本周波数 */
 
     /* パルス列 */
-    let t0 = pcm.fs as f64 / vco; /* 基本周期 */
-    let mut t = 0.0;
-    let N = 128;
-    while t < pcm.length as f64 {
-        let ta = t as usize;
-
-        let tb = if t == ta as f64 { ta } else { ta + 1 };
-
-        for n in (tb as i32 - N as i32 / 2)..=(ta as i32 + N as i32 / 2) {
-            if n >= 0 && n < pcm.length as i32 {
-                pcm.s[n as usize] += sinc(PI * (t - n as f64))
-                    * (0.5 + 0.5 * (2.0 * PI * (t - n as f64) / (N * 2 + 1) as f64).cos());
-            }
-        }
-
-        t += t0;
-    }
-
-    for n in 0..pcm.length {
-        pcm.s[n] -= 1.0 / t0 as f64;
-    }
+    generate_pulse_sequence(&mut pcm, vco);
 
     let mut s = vec![0.0; pcm.length];
 
@@ -2107,6 +2088,156 @@ fn ex9_10() {
     wave_write_16bit_mono_safer3("ex9_10.wav", &pcm);
 }
 
+#[allow(non_snake_case)]
+fn generate_pulse_sequence(pcm: &mut MonoPcm, vco: f64) {
+    let t0 = pcm.fs as f64 / vco; /* 基本周期 */
+    let mut t = 0.0;
+    let N = 128;
+    while t < pcm.length as f64 {
+        let ta = t as usize;
+
+        let tb = if t == ta as f64 { ta } else { ta + 1 };
+
+        for n in (tb as i32 - N as i32 / 2)..=(ta as i32 + N as i32 / 2) {
+            if n >= 0 && n < pcm.length as i32 {
+                pcm.s[n as usize] += sinc(PI * (t - n as f64))
+                    * (0.5 + 0.5 * (2.0 * PI * (t - n as f64) / (N * 2 + 1) as f64).cos());
+            }
+        }
+
+        t += t0;
+    }
+
+    for n in 0..pcm.length {
+        pcm.s[n] -= 1.0 / t0 as f64;
+    }
+}
+
+#[allow(non_snake_case, unused_mut, unused_variables)]
+fn ex9_11() {
+    let pcm0_fs = 44100; /* 標本化周波数 */
+    let pcm0_length = pcm0_fs * 4; /* 音データの長さ */
+    let mut pcm0 = MonoPcm::new16(pcm0_fs, pcm0_length);
+
+    let mut s = vec![0.0; pcm0.length];
+    let vco = 440.0; /* 基本周波数 */
+
+    /* パルス列 */
+    let t0 = pcm0.fs as f64 / vco; /* 基本周期 */
+    let t = 0.0;
+    let N = 128;
+    generate_pulse_sequence(&mut pcm0, vco);
+
+    /* 積分フィルタ */
+    s[0] = pcm0.s[0] - 0.5;
+    for n in 1..pcm0.length {
+        s[n] = pcm0.s[n] + 0.98 * s[n - 1];
+    }
+
+    for n in 0..pcm0.length {
+        pcm0.s[n] = s[n] * 2.0;
+    }
+    let vcf = 4000.0; /* 遮断周波数 */
+    let Q = 1.0 / 2.0f64.sqrt(); /* レゾナンス */
+    let I = 2; /* 遅延器の数 */
+    let J = 2; /* 遅延器の数 */
+    let mut a = [0.0; 3];
+    let mut b = [0.0; 3];
+    safe_IIR_LPF(vcf / pcm0.fs as f64, Q, &mut a, &mut b); /* IIRフィルタの設計 */
+
+    let mut pcm1 = MonoPcm::blank_copy(&pcm0);
+    /* フィルタリング */
+    for n in 0..pcm1.length {
+        for m in 0..=J {
+            if n >= m {
+                pcm1.s[n] += b[m] * pcm0.s[n - m];
+            }
+        }
+        for m in 1..=I {
+            if n >= m {
+                pcm1.s[n] += -a[m] * pcm1.s[n - m];
+            }
+        }
+    }
+
+    let mut vca = vec![0.0; pcm1.length]; /* 振幅 */
+    let gate = pcm1.fs * 3;
+    let duration = pcm1.fs * 4;
+    let A = pcm1.fs * 1;
+    let D = 0;
+    let S = 1.0;
+    let R = pcm1.fs * 1;
+    safe_ADSR(&mut vca, A, D, S, R, gate, duration);
+    let gain = 0.1; /* ゲイン */
+
+    for n in 0..pcm1.length {
+        pcm1.s[n] *= vca[n] * gain;
+    }
+
+    let pcm2_fs = 44100; /* 標本化周波数 */
+    let pcm2_length = pcm2_fs * 4; /* 音データの長さ */
+    let mut pcm2 = MonoPcm::new16(pcm2_fs, pcm2_length);
+    let vco = 440.5; /* 基本周波数 */
+
+    /* パルス列 */
+    generate_pulse_sequence(&mut pcm2, vco);
+
+    /* 積分フィルタ */
+    s[0] = pcm2.s[0] - 0.5;
+    for n in 1..pcm2.length {
+        s[n] = pcm2.s[n] + 0.98 * s[n - 1];
+    }
+
+    for n in 0..pcm2.length {
+        pcm2.s[n] = s[n] * 2.0;
+    }
+
+    let vcf = 4000.0; /* 遮断周波数 */
+    let Q = 1.0 / 2.0f64.sqrt(); /* レゾナンス */
+    let I = 2; /* 遅延器の数 */
+    let J = 2; /* 遅延器の数 */
+    safe_IIR_LPF(vcf / pcm2.fs as f64, Q, &mut a, &mut b); /* IIRフィルタの設計 */
+
+    let mut pcm3 = MonoPcm::blank_copy(&pcm2);
+    /* フィルタリング */
+    for n in 0..pcm3.length {
+        for m in 0..=J {
+            if n >= m {
+                pcm3.s[n] += b[m] * pcm2.s[n - m];
+            }
+        }
+        for m in 1..=I {
+            if n >= m {
+                pcm3.s[n] += -a[m] * pcm3.s[n - m];
+            }
+        }
+    }
+    let mut vca = vec![0.0; pcm3.length]; /* 振幅 */
+    let gate = pcm3.fs * 3;
+    let duration = pcm3.fs * 4;
+    let A = pcm3.fs * 1;
+    let D = 0;
+    let S = 1.0;
+    let R = pcm3.fs * 1;
+    safe_ADSR(&mut vca, A, D, S, R, gate, duration);
+    let gain = 0.1; /* ゲイン */
+
+    for n in 0..pcm3.length {
+        pcm3.s[n] *= vca[n] * gain;
+    }
+
+    /* デチューン */
+    for n in 0..pcm3.length {
+        pcm1.s[n] += pcm3.s[n];
+    }
+    wave_write_16bit_mono_safer3("ex9_11.wav", &pcm1);
+}
+
+/*
+
+
+
+*/
 
 #[allow(non_snake_case)]
 fn ex10_4() {
