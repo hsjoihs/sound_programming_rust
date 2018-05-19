@@ -99,6 +99,7 @@ fn main() {
     ex9_7();
     ex9_8();
     ex9_9();
+    ex9_10();
     ex10_4();
     ex11_7();
     ex11_8();
@@ -2006,7 +2007,7 @@ fn ex9_8() {
     wave_write_16bit_mono_safer3("ex9_8.wav", &pcm);
 }
 
-#[allow(non_snake_case, unused_mut, unused_variables)]
+#[allow(non_snake_case)]
 fn ex9_9() {
     let pcm_fs = 44100; /* 標本化周波数 */
     let pcm_length = pcm_fs * 1; /* 音データの長さ */
@@ -2048,6 +2049,62 @@ fn ex9_9() {
 
     pcm.mult_constant_gain(0.1);
     wave_write_16bit_mono_safer3("ex9_9.wav", &pcm);
+}
+
+#[allow(non_snake_case, unused_mut, unused_variables)]
+fn ex9_10() {
+    let pcm_fs = 44100; /* 標本化周波数 */
+    let pcm_length = pcm_fs * 1; /* 音データの長さ */
+    let mut pcm = MonoPcm::new16(pcm_fs, pcm_length);
+    let vco = 500.0; /* 基本周波数 */
+    /* 双極性パルス列 */
+    let t0 = pcm.fs as f64 / vco; /* 基本周期 */
+    let mut t = 0.0;
+    let mut sign = 1.0;
+    let N = 128;
+
+    while t < pcm.length as f64 {
+        let ta = t as i32;
+
+        let tb = if t == ta as f64 { ta } else { ta + 1 };
+
+        for n in (tb - N / 2)..=(ta + N / 2) {
+            if n >= 0 && n < pcm.length as i32 {
+                pcm.s[n as usize] += sign * sinc(PI * (t - n as f64))
+                    * (0.5 + 0.5 * (2.0 * PI * (t - n as f64) / (N * 2 + 1) as f64).cos());
+            }
+        }
+
+        t += t0 / 2.0;
+        sign *= -1.0;
+    }
+    let mut s = vec![0.0; pcm.length];
+
+    /* 積分フィルタ */
+    s[0] = pcm.s[0] - 0.5;
+    for n in 1..pcm.length {
+        s[n] = pcm.s[n] + 0.98 * s[n - 1];
+    }
+
+    for n in 0..pcm.length {
+        pcm.s[n] = s[n] * 2.0;
+    }
+
+    for n in 0..pcm.length {
+        pcm.s[n] *= 2.0 / t0;
+    }
+
+    /* 積分フィルタ */
+    s[0] = pcm.s[0] - 0.5;
+    for n in 1..pcm.length {
+        s[n] = pcm.s[n] + 0.98 * s[n - 1];
+    }
+
+    for n in 0..pcm.length {
+        pcm.s[n] = s[n] * 2.0;
+    }
+    pcm.mult_constant_gain(0.1);
+    wave_write_16bit_mono_safer3("ex9_10.wav", &pcm);
 }
 
 
