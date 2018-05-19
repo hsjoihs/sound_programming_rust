@@ -51,6 +51,7 @@ pub fn sinc(x: c_double) -> c_double {
     }
 }
 
+#[derive(Clone)]
 pub struct MonoPcm {
     pub fs: usize,
     pub bits: i32,
@@ -90,6 +91,7 @@ impl MonoPcm {
     }
 }
 
+#[derive(Clone)]
 pub struct StereoPcm {
     pub fs: usize,
     pub bits: i32,

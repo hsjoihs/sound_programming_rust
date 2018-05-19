@@ -5,9 +5,7 @@ extern crate sound_programming;
 use num_complex::Complex;
 use rand::Rng;
 use sound_programming::MonoPcm;
-use sound_programming::StereoPcm;
 use sound_programming::c_double;
-use sound_programming::c_int;
 use sound_programming::fft::safe_FFT_;
 use sound_programming::fft::safe_IFFT_;
 use sound_programming::filter::safe_FIR_LPF;
@@ -84,10 +82,10 @@ fn latter_half() {
 }
 
 fn main() {
-    if false {
+    if true {
         former_half();
     }
-    if false {
+    if true {
         latter_half();
     }
     ex9_1();
@@ -113,15 +111,8 @@ fn main() {
 }
 
 fn ex1_1() {
-    /* 音データの入力 */
-
-    let pcm0 = wave_read_16bit_mono_safer3("ex1_1_a.wav");
-    let pcm1 = MonoPcm {
-        s: (0..pcm0.length)
-	      .map(|n| pcm0.s[n as usize])/* 音データのコピー */
-	      .collect(),
-        ..pcm0
-    };
+    let pcm0 = wave_read_16bit_mono_safer3("ex1_1_a.wav"); /* 音データの入力 */
+    let pcm1 = pcm0.clone(); /* 音データのコピー */
 
     wave_write_16bit_mono_safer3("ex1_1_b.wav", &pcm1); /* 音データの出力 */
 }
@@ -129,11 +120,7 @@ fn ex1_1() {
 #[allow(non_snake_case)]
 fn ex1_2() {
     let pcm0 = wave_read_16bit_stereo_safer3("ex1_2_a.wav");
-    let pcm1 = StereoPcm {
-        s_l: (0..pcm0.length).map(|n| pcm0.s_l[n as usize]).collect(),
-        s_r: (0..pcm0.length).map(|n| pcm0.s_r[n as usize]).collect(),
-        ..pcm0
-    };
+    let pcm1 = pcm0.clone(); /* 音データのコピー */
 
     wave_write_16bit_stereo_safer3("ex1_2_b.wav", &pcm1);
 }
@@ -142,20 +129,21 @@ fn ex2_1() {
     let pcm_fs: usize = 44100; /* 標本化周波数 */
     let pcm_length: usize = pcm_fs * 1; /* 音データの長さ */
 
-    let a = 0.1; /* 振幅 */
-    let f0 = 500.0; /* 周波数 */
-
     /* サイン波 */
     let pcm = MonoPcm::new16_fn(
         pcm_fs,
         pcm_length,
-        Box::new(move |n| a * (2.0 * PI * f0 * (n as f64) / (pcm_fs as f64)).sin()),
+        Box::new(move |n| {
+            let a = 0.1; /* 振幅 */
+            let f0 = 500.0; /* 周波数 */
+            a * (2.0 * PI * f0 * (n as f64) / (pcm_fs as f64)).sin()
+        }),
     );
 
     wave_write_16bit_mono_safer3("ex2_1.wav", &pcm);
 }
 
-fn sine_wave(pcm: &mut MonoPcm, f0: c_double, a: c_double, offset: c_int, duration: c_int) {
+fn sine_wave(pcm: &mut MonoPcm, f0: c_double, a: c_double, offset: usize, duration: usize) {
     /* サイン波 */
     let mut s: Vec<c_double> = (0..duration)
         .map(|n| (2.0 * PI * f0 * (n as f64) / (pcm.fs as f64)).sin() * a)
@@ -164,11 +152,11 @@ fn sine_wave(pcm: &mut MonoPcm, f0: c_double, a: c_double, offset: c_int, durati
     /* フェード処理 */
     for n in 0..(pcm.fs as f64 * 0.01).ceil() as usize {
         s[n] *= n as c_double / (pcm.fs as f64 * 0.01);
-        s[duration as usize - n - 1] *= n as c_double / (pcm.fs as f64 * 0.01);
+        s[duration - n - 1] *= n as c_double / (pcm.fs as f64 * 0.01);
     }
 
     for n in 0..duration as usize {
-        pcm.s[offset as usize + n] += s[n];
+        pcm.s[offset + n] += s[n];
     }
 }
 fn ex2_2() {
@@ -180,65 +168,64 @@ fn ex2_2() {
         &mut pcm,
         261.63,
         0.1,
-        itdyi(pcm_fs, 0.00),
-        itdyi(pcm_fs, 0.25),
+        mult(pcm_fs, 0.00),
+        mult(pcm_fs, 0.25),
     ); /* C4 */
     sine_wave(
         &mut pcm,
         293.66,
         0.1,
-        itdyi(pcm_fs, 0.25),
-        itdyi(pcm_fs, 0.25),
+        mult(pcm_fs, 0.25),
+        mult(pcm_fs, 0.25),
     ); /* D4 */
     sine_wave(
         &mut pcm,
         329.63,
         0.1,
-        itdyi(pcm_fs, 0.50),
-        itdyi(pcm_fs, 0.25),
+        mult(pcm_fs, 0.50),
+        mult(pcm_fs, 0.25),
     ); /* E4 */
     sine_wave(
         &mut pcm,
         349.23,
         0.1,
-        itdyi(pcm_fs, 0.75),
-        itdyi(pcm_fs, 0.25),
+        mult(pcm_fs, 0.75),
+        mult(pcm_fs, 0.25),
     ); /* F4 */
     sine_wave(
         &mut pcm,
         392.00,
         0.1,
-        itdyi(pcm_fs, 1.00),
-        itdyi(pcm_fs, 0.25),
+        mult(pcm_fs, 1.00),
+        mult(pcm_fs, 0.25),
     ); /* G4 */
     sine_wave(
         &mut pcm,
         440.00,
         0.1,
-        itdyi(pcm_fs, 1.25),
-        itdyi(pcm_fs, 0.25),
+        mult(pcm_fs, 1.25),
+        mult(pcm_fs, 0.25),
     ); /* A4 */
     sine_wave(
         &mut pcm,
         493.88,
         0.1,
-        itdyi(pcm_fs, 1.50),
-        itdyi(pcm_fs, 0.25),
+        mult(pcm_fs, 1.50),
+        mult(pcm_fs, 0.25),
     ); /* B4 */
     sine_wave(
         &mut pcm,
         523.25,
         0.1,
-        itdyi(pcm_fs, 1.75),
-        itdyi(pcm_fs, 0.25),
+        mult(pcm_fs, 1.75),
+        mult(pcm_fs, 0.25),
     ); /* C5 */
 
     wave_write_16bit_mono_safer3("ex2_2.wav", &pcm);
 }
 
-// int_times_double_yielding_int
-fn itdyi(i: usize, d: c_double) -> c_int {
-    ((i as c_double) * d) as c_int
+fn mult(i: usize, d: f64) -> usize {
+    ((i as f64) * d) as usize
 }
 
 fn ex3_1() {
@@ -251,8 +238,8 @@ fn ex3_1() {
     /* ノコギリ波 */
     for i_ in 1..=44 {
         let i = i_ as f64;
-        for n in 0..pcm_length {
-            pcm.s[n] += 1.0 / i * (2.0 * PI * i * f0 * (n as f64) / (pcm_fs as f64)).sin();
+        for (n,item) in pcm.s.iter_mut().enumerate(){
+            *item += 1.0 / i * (2.0 * PI * i * f0 * (n as f64) / (pcm_fs as f64)).sin();
         }
     }
 
@@ -271,8 +258,8 @@ fn ex3_2() {
     /* 矩形波 */
     for j in 0..22 {
         let i = (2 * j + 1) as f64;
-        for n in 0..pcm_length {
-            pcm.s[n] += 1.0 / i * (2.0 * PI * i * f0 * (n as f64) / (pcm_fs as f64)).sin();
+        for (n,item) in pcm.s.iter_mut().enumerate() {
+            *item += 1.0 / i * (2.0 * PI * i * f0 * (n as f64) / (pcm_fs as f64)).sin();
         }
     }
 
@@ -291,8 +278,8 @@ fn ex3_3() {
     /* 三角波 */
     for j in 0..22 {
         let i = (2 * j + 1) as f64;
-        for n in 0..pcm_length {
-            pcm.s[n] += 1.0 / i / i * (PI * i / 2.0).sin()
+        for (n,item) in pcm.s.iter_mut().enumerate() {
+            *item += 1.0 / i / i * (PI * i / 2.0).sin()
                 * (2.0 * PI * i * f0 * (n as f64) / (pcm_fs as f64)).sin();
         }
     }
@@ -312,8 +299,8 @@ fn ex3_4() {
     /* コサイン波の重ね合わせによるノコギリ波 */
     for i in 1..=44 {
         let i = i as f64;
-        for n in 0..pcm_length {
-            pcm.s[n] += 1.0 / i * (2.0 * PI * i * f0 * (n as f64) / (pcm_fs as f64)).cos();
+        for (n,item) in pcm.s.iter_mut().enumerate() {
+            *item += 1.0 / i * (2.0 * PI * i * f0 * (n as f64) / (pcm_fs as f64)).cos();
         }
     }
 
@@ -337,8 +324,8 @@ fn ex3_5() {
             println!("{} / 22050", i);
         }
         let i = i as f64;
-        for n in 0..pcm_length {
-            pcm.s[n] += (2.0 * PI * i * f0 * (n as f64) / (pcm_fs as f64) + theta).sin();
+        for (n,item) in pcm.s.iter_mut().enumerate() {
+           *item += (2.0 * PI * i * f0 * (n as f64) / (pcm_fs as f64) + theta).sin();
         }
     }
 
@@ -1240,10 +1227,10 @@ fn ex8_7() {
 
     let mut f0 = vec![0.0; pcm_length];
     /* 基本周波数 */
-    for n in 0..itdyi(pcm_fs, 0.1) as usize {
+    for n in 0..mult(pcm_fs, 0.1) as usize {
         f0[n] = 987.77; /* B5 */
     }
-    for n in itdyi(pcm_fs, 0.1) as usize..pcm_length {
+    for n in mult(pcm_fs, 0.1) as usize..pcm_length {
         f0[n] = 1318.51; /* E6 */
     }
 
