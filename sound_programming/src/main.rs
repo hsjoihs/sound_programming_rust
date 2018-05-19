@@ -106,6 +106,7 @@ fn main() {
     ex10_3();
     ex10_4();
     ex10_5();
+    ex10_6();
     ex11_7();
     ex11_8();
     ex11_9();
@@ -2278,7 +2279,7 @@ fn ex10_2() {
     wave_write_16bit_mono_safer3("ex10_2.wav", &pcm);
 }
 
-#[allow(non_snake_case, unused_mut, unused_variables)]
+#[allow(non_snake_case)]
 fn ex10_3() {
     let pcm_fs = 44100; /* 標本化周波数 */
     let pcm_length = pcm_fs * 1; /* 音データの長さ */
@@ -2345,7 +2346,7 @@ fn ex10_4() {
     wave_write_16bit_mono_safer3("ex10_4.wav", &pcm);
 }
 
-#[allow(non_snake_case, unused_mut, unused_variables)]
+#[allow(non_snake_case)]
 fn ex10_5() {
     let pcm0_fs = 44100; /* 標本化周波数 */
     let pcm0_length = pcm0_fs * 4; /* 音データの長さ */
@@ -2426,7 +2427,52 @@ fn ex10_5() {
 
     wave_write_16bit_mono_safer3("ex10_5.wav", &pcm1);
 }
+
+#[allow(non_snake_case, unused_mut, unused_variables)]
+fn ex10_6() {
+    let pcm_fs = 44100; /* 標本化周波数 */
+    let pcm_length = pcm_fs * 4; /* 音データの長さ */
+    let mut pcm = MonoPcm::new16(pcm_fs, pcm_length);
+
+    let mut ac = vec![0.0; pcm.length];
+    let mut am = vec![0.0; pcm.length];
+
+    {
+        /* キャリア振幅 */
+        let gate = pcm.fs * 4;
+        let duration = pcm.fs * 4;
+        let A = 0;
+        let D = pcm.fs * 4;
+        let S = 0.0;
+        let R = pcm.fs * 4;
+        safe_ADSR(&mut ac, A, D, S, R, gate, duration);
+    }
+    let fc = 440.0; /* キャリア周波数 */
+    {
+        /* モジュレータ振幅 */
+        let gate = pcm.fs * 4;
+        let duration = pcm.fs * 4;
+        let A = 0;
+        let D = pcm.fs * 2;
+        let S = 0.0;
+        let R = pcm.fs * 2;
+        safe_ADSR(&mut am, A, D, S, R, gate, duration);
+    }
+    let ratio = 3.5;
+    let fm = fc * ratio; /* モジュレータ周波数 */
+    /* AM変調 */
+    for n in 0..pcm.length {
+        pcm.s[n] = ac[n] * (2.0 * PI * fc * n as f64 / pcm.fs as f64).sin()
+            * (1.0 + am[n] * (2.0 * PI * fm * n as f64 / pcm.fs as f64).sin());
+    }
+
+    pcm.mult_constant_gain(0.1);
+
+    wave_write_16bit_mono_safer3("ex10_6.wav", &pcm);
+}
 /*
+
+
 
 */
 
