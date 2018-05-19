@@ -105,6 +105,7 @@ fn main() {
     ex10_2();
     ex10_3();
     ex10_4();
+    ex10_5();
     ex11_7();
     ex11_8();
     ex11_9();
@@ -2298,9 +2299,6 @@ fn ex10_3() {
     pcm.mult_constant_gain(0.1);
     wave_write_16bit_mono_safer3("ex10_3.wav", &pcm);
 }
-/*
-
-*/
 
 #[allow(non_snake_case)]
 fn ex10_4() {
@@ -2346,6 +2344,91 @@ fn ex10_4() {
 
     wave_write_16bit_mono_safer3("ex10_4.wav", &pcm);
 }
+
+#[allow(non_snake_case, unused_mut, unused_variables)]
+fn ex10_5() {
+    let pcm0_fs = 44100; /* 標本化周波数 */
+    let pcm0_length = pcm0_fs * 4; /* 音データの長さ */
+    let mut pcm0 = MonoPcm::new16(pcm0_fs, pcm0_length);
+
+    let mut pcm1 = MonoPcm::blank_copy(&pcm0);
+
+    let mut ac = vec![0.0; pcm0.length];
+    let mut am = vec![0.0; pcm0.length];
+    {
+        /* キャリア振幅 */
+        let gate = pcm0.fs * 4;
+        let duration = pcm0.fs * 4;
+        let A = 0;
+        let D = pcm0.fs * 4;
+        let S = 0.0;
+        let R = pcm0.fs * 1;
+        safe_ADSR(&mut ac, A, D, S, R, gate, duration);
+    }
+    let fc = 440.0; /* キャリア周波数 */
+    {
+        /* モジュレータ振幅 */
+        let gate = pcm0.fs * 4;
+        let duration = pcm0.fs * 4;
+        let A = 0;
+        let D = pcm0.fs * 2;
+        let S = 0.0;
+        let R = pcm0.fs * 2;
+        safe_ADSR(&mut am, A, D, S, R, gate, duration);
+    }
+
+    let ratio = 1.0;
+    let fm = 440.0 * ratio; /* モジュレータ周波数 */
+    /* FM音源 */
+    for n in 0..pcm0.length {
+        pcm0.s[n] = ac[n]
+            * (2.0 * PI * fc * n as f64 / pcm0.fs as f64
+                + am[n] * (2.0 * PI * fm * n as f64 / pcm0.fs as f64).sin())
+                .sin();
+    }
+    {
+        /* キャリア振幅 */
+        let gate = pcm1.fs * 4;
+        let duration = pcm1.fs * 4;
+        let A = 0;
+        let D = pcm1.fs * 1;
+        let S = 0.0;
+        let R = pcm1.fs * 1;
+        safe_ADSR(&mut ac, A, D, S, R, gate, duration);
+    }
+    let fc = 440.0; /* キャリア周波数 */
+    {
+        /* モジュレータ振幅 */
+        let gate = pcm1.fs * 4;
+        let duration = pcm1.fs * 4;
+        let A = 0;
+        let D = pcm1.fs * 1;
+        let S = 0.0;
+        let R = pcm1.fs * 1;
+        safe_ADSR(&mut am, A, D, S, R, gate, duration);
+    }
+    let ratio = 14.0;
+    let fm = fc * ratio; /* モジュレータ周波数 */
+    /* FM音源 */
+    for n in 0..pcm1.length {
+        pcm1.s[n] = ac[n]
+            * (2.0 * PI * fc * n as f64 / pcm1.fs as f64
+                + am[n] * (2.0 * PI * fm * n as f64 / pcm1.fs as f64).sin())
+                .sin();
+    }
+
+    let gain = 0.1; /* ゲイン */
+
+    for n in 0..pcm1.length {
+        pcm1.s[n] += pcm0.s[n];
+        pcm1.s[n] *= gain;
+    }
+
+    wave_write_16bit_mono_safer3("ex10_5.wav", &pcm1);
+}
+/*
+
+*/
 
 #[allow(non_snake_case)]
 fn ex11_7() {
