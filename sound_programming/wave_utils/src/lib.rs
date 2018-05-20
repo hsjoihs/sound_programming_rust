@@ -83,6 +83,31 @@ impl MonoPcm {
     }
 }
 
+pub fn linear(initial_v: f64, final_v: f64, length: usize) -> Vec<f64> {
+    (0..length)
+        .map(|n| initial_v + (final_v - initial_v) * n as f64 / (length - 1) as f64)
+        .collect()
+}
+
+pub fn sawtooth_with_varying_freq(pcm0_fs: usize, pcm0_length: usize, f0: &[f64]) -> Vec<f64> {
+    assert!(f0.len() >= pcm0_length);
+    let mut pcm0_s = vec![0.0; pcm0_length];
+
+    /* ノコギリ波 */
+    let mut t0 = (pcm0_fs as f64 / f0[0]) as usize; /* 基本周期 */
+    let mut m = 0;
+    for n in 0..pcm0_length {
+        pcm0_s[n] = 1.0 - 2.0 * m as f64 / t0 as f64;
+
+        m += 1;
+        if m >= t0 {
+            t0 = (pcm0_fs as f64 / f0[n]) as usize; /* 基本周期 */
+            m = 0;
+        }
+    }
+    pcm0_s
+}
+
 #[derive(Clone)]
 pub struct StereoPcm {
     pub fs: usize,
@@ -108,4 +133,28 @@ pub fn sinc(x: f64) -> f64 {
     } else {
         x.sin() / x
     }
+}
+
+#[allow(non_snake_case)]
+pub fn determine_J(delta: f64) -> usize {
+    let mut J = (3.1 / delta + 0.5) as usize - 1; /* 遅延器の数 */
+    if J % 2 == 1 {
+        J += 1; /* J+1が奇数になるように調整する */
+    }
+    return J;
+}
+
+pub fn lfo(
+    pcm: &MonoPcm,
+    center: f64,
+    am: f64, /* LFOの振幅 */
+    fm: f64, /* LFOの周波数 */
+) -> Vec<f64> {
+    (0..pcm.length)
+        .map(|n| center + am * (2.0 * PI * fm * n as f64 / pcm.fs as f64).sin())
+        .collect()
+}
+
+pub fn mult(i: usize, d: f64) -> usize {
+    ((i as f64) * d) as usize
 }

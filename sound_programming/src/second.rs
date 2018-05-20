@@ -1,19 +1,20 @@
 extern crate num_complex;
 extern crate rand;
 
-use determine_J;
-use linear;
-use mult;
 use num_complex::Complex;
 use rand::Rng;
 use wave_utils::MonoPcm;
 use wave_utils::create_Hanning_window;
+use wave_utils::determine_J;
 use wave_utils::fft::safe_FFT_;
 use wave_utils::fft::safe_IFFT_;
 use wave_utils::filter::safe_FIR_LPF;
 use wave_utils::filter::safe_IIR_LPF;
 use wave_utils::filter::safe_IIR_filtering;
 use wave_utils::filter::safe_IIR_resonator;
+use wave_utils::linear;
+use wave_utils::mult;
+use wave_utils::sawtooth_with_varying_freq;
 use wave_utils::wave::wave_read_16bit_mono_safer3;
 use wave_utils::wave::wave_write_16bit_mono_safer3;
 
@@ -628,25 +629,6 @@ fn ex8_11() {
     pcm1.mult_constant_gain(0.1);
 
     wave_write_16bit_mono_safer3("ex8_11.wav", &pcm1);
-}
-
-fn sawtooth_with_varying_freq(pcm0_fs: usize, pcm0_length: usize, f0: &[f64]) -> Vec<f64> {
-    assert!(f0.len() >= pcm0_length);
-    let mut pcm0_s = vec![0.0; pcm0_length];
-
-    /* ノコギリ波 */
-    let mut t0 = (pcm0_fs as f64 / f0[0]) as usize; /* 基本周期 */
-    let mut m = 0;
-    for n in 0..pcm0_length {
-        pcm0_s[n] = 1.0 - 2.0 * m as f64 / t0 as f64;
-
-        m += 1;
-        if m >= t0 {
-            t0 = (pcm0_fs as f64 / f0[n]) as usize; /* 基本周期 */
-            m = 0;
-        }
-    }
-    pcm0_s
 }
 
 #[allow(non_snake_case)]
