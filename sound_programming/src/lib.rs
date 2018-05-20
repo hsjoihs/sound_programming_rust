@@ -1,14 +1,12 @@
 extern crate num_complex;
 extern crate rand;
 extern crate wave_utils;
+use std::f64::consts::PI;
 use wave_utils::MonoPcm;
 use wave_utils::c_double;
-use std::f64::consts::PI;
 
 pub mod first;
 pub mod second;
-
-
 
 fn sine_wave(pcm: &mut MonoPcm, f0: c_double, a: c_double, offset: usize, duration: usize) {
     /* サイン波 */
@@ -31,17 +29,11 @@ pub fn mult(i: usize, d: f64) -> usize {
     ((i as f64) * d) as usize
 }
 
-
-
-
 pub fn linear(initial_v: f64, final_v: f64, length: usize) -> Vec<f64> {
     (0..length)
         .map(|n| initial_v + (final_v - initial_v) * n as f64 / (length - 1) as f64)
         .collect()
 }
-
-
-
 
 #[allow(non_snake_case)]
 pub fn determine_J(delta: f64) -> usize {

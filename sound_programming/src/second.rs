@@ -1,8 +1,8 @@
 extern crate num_complex;
 extern crate rand;
 
-use mult;
 use determine_J;
+use mult;
 use num_complex::Complex;
 use rand::Rng;
 use wave_utils::MonoPcm;
@@ -37,8 +37,6 @@ pub fn second() {
     ex8_11();
     ex8_12();
 }
-
-
 
 #[allow(non_snake_case)]
 fn ex7_1() {
@@ -218,7 +216,7 @@ fn ex7_4() {
 
         let offset = N / 2 * frame;
         /* オーバーラップアド */
-        for (n,item) in y.iter().enumerate() {
+        for (n, item) in y.iter().enumerate() {
             pcm2.s[offset + n] += item.re;
         }
     }

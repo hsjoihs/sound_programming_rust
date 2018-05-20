@@ -1,11 +1,12 @@
-use num_complex::Complex;
-use linear;
 use determine_J;
+use linear;
+use num_complex::Complex;
 
 use mult;
 extern crate rand;
-use sine_wave;
 use rand::Rng;
+use sine_wave;
+use std::f64::consts::PI;
 use wave_utils::MonoPcm;
 use wave_utils::c_double;
 use wave_utils::fft::safe_FFT_;
@@ -19,7 +20,6 @@ use wave_utils::wave::wave_read_16bit_mono_safer3;
 use wave_utils::wave::wave_read_16bit_stereo_safer3;
 use wave_utils::wave_write_16bit_mono_safer3;
 use wave_utils::wave_write_16bit_stereo_safer3;
-use std::f64::consts::PI;
 
 #[allow(non_snake_case)]
 fn verify_(X: Vec<Complex<f64>>) {
@@ -207,7 +207,6 @@ fn ex2_2() {
     wave_write_16bit_mono_safer3("ex2_2.wav", &pcm);
 }
 
-
 fn ex3_1() {
     let f0 = 500.0; /* 基本周波数 */
 
@@ -315,14 +314,12 @@ fn ex3_5() {
     wave_write_16bit_mono_safer3("ex3_5.wav", &pcm);
 }
 
-
 #[allow(non_snake_case)]
 fn ex4_1() {
     let N = 64;
     let X = dft(N, Box::new(|_| 1.0));
     verify_(X)
 }
-
 
 #[allow(non_snake_case)]
 fn ex4_2() {
@@ -398,7 +395,6 @@ fn ex4_4() {
         wave_write_16bit_mono_safer3("ex4_4b.wav", &pcm1);
     }
 }
-
 
 #[allow(non_snake_case)]
 fn ex5_1() {
@@ -504,7 +500,6 @@ fn ex5_4() {
     wave_write_16bit_mono_safer3("ex5_4.wav", &pcm);
 }
 
-
 fn ex5_5() {
     let pcm_fs = 44100; /* 標本化周波数 */
     let pcm_length = pcm_fs * 4; /* 音データの長さ */
@@ -542,7 +537,6 @@ fn ex5_5() {
 
     wave_write_16bit_mono_safer3("ex5_5.wav", &pcm);
 }
-
 
 #[allow(non_snake_case)]
 fn ex6_1() {
@@ -709,4 +703,3 @@ fn ex6_5() {
 
     wave_write_16bit_mono_safer3("ex6_5.wav", &pcm2);
 }
-
