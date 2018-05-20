@@ -1,9 +1,9 @@
 extern crate byteorder;
-use wave::WaveData;
 use self::byteorder::{LittleEndian, WriteBytesExt};
 use MonoPcm;
 use StereoPcm;
 use std::fs::File;
+use wave::WaveData;
 
 fn write_i8x4<T>(mut fp: T, arr: [i8; 4])
 where

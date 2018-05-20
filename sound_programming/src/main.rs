@@ -1428,7 +1428,8 @@ fn ex11_7() {
     let mut pcm0 = wave_read_16bit_mono_safer3("vocal.wav");
     pcm0.bits = 8;
     wave_write_PCMU_mono_safer3("pcmu.wav", &pcm0);
-    let pcm1 = wave_read_PCMU_mono_safer3("pcmu.wav");
+    let mut pcm1 = wave_read_PCMU_mono_safer3("pcmu.wav");
+    pcm1.bits = 16;
     wave_write_16bit_mono_safer3("ex11_7_pcm.wav", &pcm1);
 }
 

@@ -101,7 +101,6 @@ extern "C" {
     fn wave_read_PCMA_mono(pcm: *mut MONO_PCM, file_name: *const c_char);
     fn wave_read_IMA_ADPCM_mono(pcm: *mut MONO_PCM, file_name: *const c_char);
     fn wave_write_IMA_ADPCM_mono(pcm: *const MONO_PCM_CONST, file_name: *const c_char);
-    fn wave_read_PCMU_mono(pcm: *mut MONO_PCM, file_name: *const c_char);
 
 }
 
@@ -136,8 +135,7 @@ pub fn wave_write_IMA_ADPCM_mono_safer3(path: &str, pcm: &MonoPcm) {
 pub fn wave_write_8bit_mono_safer3(path: &str, pcm: &MonoPcm) {
     let mut fp = wave_write_header::<MonoPcm, u8>(path, pcm);
     for n in 0..pcm.get_length() {
-        fp.write_u8(WaveData::convert_from_float(pcm.s[n]))
-            .unwrap(); /* 音データの書き出し */
+        fp.write_u8(WaveData::convert_from_float(pcm.s[n])).unwrap(); /* 音データの書き出し */
     }
     if (pcm.length % 2) == 1 {
         /* 音データの長さが奇数のとき */
@@ -159,17 +157,23 @@ pub fn wave_write_8bit_stereo_safer3(path: &str, pcm: &StereoPcm) {
 
 #[allow(non_snake_case)]
 pub fn wave_read_PCMU_mono_safer3(path: &str) -> MonoPcm {
-    unsafe {
-        let mut pcm: MONO_PCM = mem::uninitialized();
-        wave_read_PCMU_mono(&mut pcm, to_c_str(path));
-        MonoPcm {
-            fs: pcm.fs as usize,
-            bits: pcm.bits,
-            length: pcm.length as usize,
-            s: from_raw_parts_mut(pcm.s, pcm.length as usize).to_vec(),
-        }
+    let (mut fp, pcm_fs, pcm_bits, data_chunk_size) = read::read_header2(path, true);
+    let pcm_length = data_chunk_size as usize;
+    let mut pcm_s = vec![0.0; pcm_length];
+
+    for n in 0..pcm_length {
+        let data = PCMU(fp.read_u8().unwrap());
+        pcm_s[n] = data.convert_to_float(); /* 音データを-1以上1未満の範囲に正規化する */
     }
+
+    return MonoPcm {
+        s: pcm_s,
+        fs: pcm_fs as usize,
+        bits: pcm_bits as i32,
+        length: pcm_length as usize,
+    };
 }
+
 
 #[allow(non_snake_case)]
 pub fn wave_write_PCMU_mono_safer3(path: &str, pcm: &MonoPcm) {
@@ -237,10 +241,27 @@ pub fn wave_write_16bit_mono_safer3(path: &str, pcm: &MonoPcm) {
     }
 }
 
-
 impl WaveData for PCMU {
     fn convert_to_float(&self) -> f64 {
-        unimplemented!();
+        let s: i16; /* 16bitの音データ */
+        let magnitude: i32;
+
+        let PCMU(mut c) = self; /* 8bitの圧縮データ */
+        c = !c;
+
+        let sign: u8 = c & 0x80;
+        let exponent: u8 = (c >> 4) & 0x07;
+        let mantissa: u8 = c & 0x0F;
+
+        magnitude = ((((mantissa as i32) << 3) + 0x84) << exponent) - 0x84;
+
+        if sign == 0x80 {
+            s = -(magnitude as i16);
+        } else {
+            s = magnitude as i16;
+        }
+
+        s as f64 / 32768.0 /* 音データを-1以上1未満の範囲に正規化する */
     }
     const MYSTERIOUS: i32 = 50;
     const BYTE_NUM: i32 = 1;
@@ -327,7 +348,7 @@ impl WaveData for u8 {
 }
 
 impl WaveData for i16 {
-    fn convert_to_float(&self) -> f64{
+    fn convert_to_float(&self) -> f64 {
         (*self as f64) / 32768.0
     }
     fn convert_from_float(d: f64) -> i16 {
@@ -396,4 +417,3 @@ impl WaveData for PCMA {
         PCMA((sign | (exponent << 4) | mantissa) ^ 0xD5)
     }
 }
-
