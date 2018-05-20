@@ -238,7 +238,7 @@ fn ex3_1() {
     /* ノコギリ波 */
     for i_ in 1..=44 {
         let i = i_ as f64;
-        for (n,item) in pcm.s.iter_mut().enumerate(){
+        for (n, item) in pcm.s.iter_mut().enumerate() {
             *item += 1.0 / i * (2.0 * PI * i * f0 * (n as f64) / (pcm_fs as f64)).sin();
         }
     }
@@ -258,7 +258,7 @@ fn ex3_2() {
     /* 矩形波 */
     for j in 0..22 {
         let i = (2 * j + 1) as f64;
-        for (n,item) in pcm.s.iter_mut().enumerate() {
+        for (n, item) in pcm.s.iter_mut().enumerate() {
             *item += 1.0 / i * (2.0 * PI * i * f0 * (n as f64) / (pcm_fs as f64)).sin();
         }
     }
@@ -278,7 +278,7 @@ fn ex3_3() {
     /* 三角波 */
     for j in 0..22 {
         let i = (2 * j + 1) as f64;
-        for (n,item) in pcm.s.iter_mut().enumerate() {
+        for (n, item) in pcm.s.iter_mut().enumerate() {
             *item += 1.0 / i / i * (PI * i / 2.0).sin()
                 * (2.0 * PI * i * f0 * (n as f64) / (pcm_fs as f64)).sin();
         }
@@ -299,7 +299,7 @@ fn ex3_4() {
     /* コサイン波の重ね合わせによるノコギリ波 */
     for i in 1..=44 {
         let i = i as f64;
-        for (n,item) in pcm.s.iter_mut().enumerate() {
+        for (n, item) in pcm.s.iter_mut().enumerate() {
             *item += 1.0 / i * (2.0 * PI * i * f0 * (n as f64) / (pcm_fs as f64)).cos();
         }
     }
@@ -324,8 +324,8 @@ fn ex3_5() {
             println!("{} / 22050", i);
         }
         let i = i as f64;
-        for (n,item) in pcm.s.iter_mut().enumerate() {
-           *item += (2.0 * PI * i * f0 * (n as f64) / (pcm_fs as f64) + theta).sin();
+        for (n, item) in pcm.s.iter_mut().enumerate() {
+            *item += (2.0 * PI * i * f0 * (n as f64) / (pcm_fs as f64) + theta).sin();
         }
     }
 
@@ -336,13 +336,11 @@ fn ex3_5() {
 
 #[allow(non_snake_case)]
 fn verify_(X: Vec<Complex<f64>>) {
-    let N = 64;
-
     /* 周波数特性 */
-    for k in 0..N {
-        assert_close(X[k].re, 0.0);
+    for (k, item) in X.iter().enumerate() {
+        assert_close(item.re, 0.0);
         assert_close(
-            X[k].im,
+            item.im,
             match k {
                 4 => -16.0,
                 60 => 16.0,
@@ -354,13 +352,13 @@ fn verify_(X: Vec<Complex<f64>>) {
 
 #[allow(non_snake_case)]
 fn ex4_1() {
-    let X = foo_(Box::new(|_| 1.0));
+    let N = 64;
+    let X = dft(N, Box::new(|_| 1.0));
     verify_(X)
 }
 
 #[allow(non_snake_case)]
-fn foo_(func: Box<Fn(usize) -> f64>) -> Vec<Complex<f64>> {
-    let N = 64;
+fn dft(N: usize, func: Box<Fn(usize) -> f64>) -> Vec<Complex<f64>> {
     let mut x: Vec<Complex<f64>> = vec![Complex::new(0.0, 0.0); N];
     let mut X: Vec<Complex<f64>> = vec![Complex::new(0.0, 0.0); N];
 
@@ -395,12 +393,12 @@ fn ex4_2() {
     let mut w: Vec<c_double> = vec![0.0; N];
     safe_Hanning_window(&mut w); /* ハニング窓 */
 
-    let X = foo_(Box::new(move |n| w[n]));
+    let X = dft(N, Box::new(move |n| w[n]));
 
-    for k in 0..N {
-        assert_close(X[k].re, 0.0);
+    for (k, item) in X.iter().enumerate() {
+        assert_close(item.re, 0.0);
         assert_close(
-            X[k].im,
+            item.im,
             match k {
                 3 => 4.0,
                 4 => -8.0,
