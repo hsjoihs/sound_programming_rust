@@ -43,32 +43,28 @@ typedef struct
 #define READ_ARR(name, bit, length) int ## bit ## _t name[length]; fread((name), (bit)/8, (length), fp)
 #define READ(name, bit) int ## bit ## _t name; fread(&(name), (bit)/8, 1, fp)
 
-#define READING_HEADER   FILE *fp;\
-  fp = fopen(file_name, "rb");\
-\
-  READ_ARR(riff_chunk_ID, 8, 4);\
-  READ(riff_chunk_size, 32);\
-  READ_ARR(file_format_type, 8, 4);\
-  READ_ARR(fmt_chunk_ID, 8, 4);\
-  READ(fmt_chunk_size, 32);\
-  READ(wave_format_type,16);\
-  READ(channel,16);\
-  READ(samples_per_sec,32);\
-  READ(bytes_per_sec,32);\
-  READ(block_size,16);\
-  READ(bits_per_sample,16);\
-  READ_ARR(data_chunk_ID, 8, 4);\
-  READ(data_chunk_size, 32);\
-\
-  pcm->fs = samples_per_sec; /* 標本化周波数 */\
-  pcm->bits = bits_per_sample /* 量子化精度 */
 
+static int step_size_table[89] =
+  {
+    7, 8, 9, 10, 11, 12, 13, 14,
+    16, 17, 19, 21, 23, 25, 28, 31,
+    34, 37, 41, 45, 50, 55, 60, 66,
+    73, 80, 88, 97, 107, 118, 130, 143,
+    157, 173, 190, 209, 230, 253, 279, 307,
+    337, 371, 408, 449, 494, 544, 598, 658,
+    724, 796, 876, 963, 1060, 1166, 1282, 1411,
+    1552, 1707, 1878, 2066, 2272, 2499, 2749, 3024,
+    3327, 3660, 4026, 4428, 4871, 5358, 5894, 6484,
+    7132, 7845, 8630, 9493, 10442, 11487, 12635, 13899,
+    15289, 16818, 18500, 20350, 22385, 24623, 27086, 29794,
+    32767
+  };
 
-
-
-
-
-
+static int index_table[16] =
+  {
+    -1, -1, -1, -1, 2, 4, 6, 8,
+    -1, -1, -1, -1, 2, 4, 6, 8
+  };
 
 
 void wave_read_IMA_ADPCM_mono(MONO_PCM *pcm, const char *file_name)
@@ -99,27 +95,9 @@ void wave_read_IMA_ADPCM_mono(MONO_PCM *pcm, const char *file_name)
   unsigned char data;
   int n, sp, dp, offset, block, number_of_block, index, step_size;
   
-  static int index_table[16] =
-  {
-    -1, -1, -1, -1, 2, 4, 6, 8,
-    -1, -1, -1, -1, 2, 4, 6, 8
-  };
   
-  static int step_size_table[89] =
-  {
-    7, 8, 9, 10, 11, 12, 13, 14,
-    16, 17, 19, 21, 23, 25, 28, 31,
-    34, 37, 41, 45, 50, 55, 60, 66,
-    73, 80, 88, 97, 107, 118, 130, 143,
-    157, 173, 190, 209, 230, 253, 279, 307,
-    337, 371, 408, 449, 494, 544, 598, 658,
-    724, 796, 876, 963, 1060, 1166, 1282, 1411,
-    1552, 1707, 1878, 2066, 2272, 2499, 2749, 3024,
-    3327, 3660, 4026, 4428, 4871, 5358, 5894, 6484,
-    7132, 7845, 8630, 9493, 10442, 11487, 12635, 13899,
-    15289, 16818, 18500, 20350, 22385, 24623, 27086, 29794,
-    32767
-  };
+  
+  
   
   fp = fopen(file_name, "rb");
   
@@ -260,28 +238,8 @@ void wave_write_IMA_ADPCM_mono(const MONO_PCM_CONST *pcm, const char *file_name)
   unsigned char header[4];
   unsigned char data;
   int n, sp, d, dp, offset, block, number_of_block, index, step_size;
+ 
   
-  static int index_table[16] =
-  {
-    -1, -1, -1, -1, 2, 4, 6, 8,
-    -1, -1, -1, -1, 2, 4, 6, 8
-  };
-  
-  static int step_size_table[89] =
-  {
-    7, 8, 9, 10, 11, 12, 13, 14,
-    16, 17, 19, 21, 23, 25, 28, 31,
-    34, 37, 41, 45, 50, 55, 60, 66,
-    73, 80, 88, 97, 107, 118, 130, 143,
-    157, 173, 190, 209, 230, 253, 279, 307,
-    337, 371, 408, 449, 494, 544, 598, 658,
-    724, 796, 876, 963, 1060, 1166, 1282, 1411,
-    1552, 1707, 1878, 2066, 2272, 2499, 2749, 3024,
-    3327, 3660, 4026, 4428, 4871, 5358, 5894, 6484,
-    7132, 7845, 8630, 9493, 10442, 11487, 12635, 13899,
-    15289, 16818, 18500, 20350, 22385, 24623, 27086, 29794,
-    32767
-  };
   
   block_size = 256;
   samples_per_block = (block_size - 4) * 2 + 1;
