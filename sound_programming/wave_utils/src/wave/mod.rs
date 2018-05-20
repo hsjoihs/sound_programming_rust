@@ -232,7 +232,6 @@ pub fn wave_write_IMA_ADPCM_mono_safer3(path: &str, pcm: &MonoPcm) {
     let mut sp: i32 = 0;
     let mut d: i32;
     let mut dp: i32;
-    let mut offset: i32;
     let mut index: i32 = 0;
     let mut step_size: i32;
     let mut x: f64;
@@ -241,10 +240,10 @@ pub fn wave_write_IMA_ADPCM_mono_safer3(path: &str, pcm: &MonoPcm) {
     let mut c: u8; /* 4bitの圧縮データ */
     let mut data: u8 = 0;
     for block in 0..number_of_block {
-        offset = samples_per_block as i32 * block;
+        let offset: usize = samples_per_block as usize * block as usize;
 
         for n in 0..samples_per_block {
-            x = (pcm.s[offset as usize + n as usize] + 1.0) / 2.0 * 65536.0;
+            x = (pcm.s[offset + n as usize] + 1.0) / 2.0 * 65536.0;
             if x > 65535.0 {
                 x = 65535.0; /* クリッピング */
             } else if x < 0.0 {
