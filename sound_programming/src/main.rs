@@ -2,7 +2,6 @@ extern crate num_complex;
 extern crate rand;
 extern crate sound_programming;
 extern crate wave_utils;
-//use std::io::Write;
 use sound_programming::first::first;
 use sound_programming::mult;
 use sound_programming::second::second;
@@ -25,7 +24,6 @@ use wave_utils::wave::wave_write_8bit_stereo_safer3;
 use wave_utils::wave::wave_write_IMA_ADPCM_mono_safer3;
 use wave_utils::wave::wave_write_PCMA_mono_safer3;
 use wave_utils::wave::wave_write_PCMU_mono_safer3;
-//use std::io;
 
 fn third() {
     ex9_1();

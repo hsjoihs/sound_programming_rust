@@ -1,9 +1,8 @@
-use libc::c_double;
 use sinc;
 use std::f64::consts::PI;
 
 #[allow(non_snake_case)]
-pub fn safe_FIR_LPF(fe: c_double, J: usize, b: &mut [c_double], w: &mut [c_double]) {
+pub fn safe_FIR_LPF(fe: f64, J: usize, b: &mut [f64], w: &mut [f64]) {
     assert_eq!(J % 2, 0);
     assert_eq!(J + 1, b.len());
     assert_eq!(J + 1, w.len());
@@ -20,10 +19,10 @@ pub fn safe_FIR_LPF(fe: c_double, J: usize, b: &mut [c_double], w: &mut [c_doubl
 
 #[allow(non_snake_case)]
 pub fn safe_FIR_filtering(
-    x: &[c_double],
-    y: &mut [c_double],
+    x: &[f64],
+    y: &mut [f64],
     L: usize,
-    b: &mut [c_double],
+    b: &mut [f64],
     J: usize,
 ) {
     // check index here
@@ -40,7 +39,7 @@ pub fn safe_FIR_filtering(
 
 // not tested
 #[allow(non_snake_case)]
-pub fn safe_FIR_HPF(fe: c_double, J: usize, b: &mut [c_double], w: &mut [c_double]) {
+pub fn safe_FIR_HPF(fe: f64, J: usize, b: &mut [f64], w: &mut [f64]) {
     assert_eq!(J % 2, 0);
     assert_eq!(J + 1, b.len());
     assert_eq!(J + 1, w.len());
@@ -58,11 +57,11 @@ pub fn safe_FIR_HPF(fe: c_double, J: usize, b: &mut [c_double], w: &mut [c_doubl
 // not tested
 #[allow(non_snake_case)]
 pub fn safe_FIR_BPF(
-    fe1: c_double,
-    fe2: c_double,
+    fe1: f64,
+    fe2: f64,
     J: usize,
-    b: &mut [c_double],
-    w: &mut [c_double],
+    b: &mut [f64],
+    w: &mut [f64],
 ) {
     assert_eq!(J % 2, 0);
     assert_eq!(J + 1, b.len());
@@ -82,11 +81,11 @@ pub fn safe_FIR_BPF(
 // not tested
 #[allow(non_snake_case)]
 pub fn safe_FIR_BEF(
-    fe1: c_double,
-    fe2: c_double,
+    fe1: f64,
+    fe2: f64,
     J: usize,
-    b: &mut [c_double],
-    w: &mut [c_double],
+    b: &mut [f64],
+    w: &mut [f64],
 ) {
     assert_eq!(J % 2, 0);
     assert_eq!(J + 1, b.len());
@@ -105,7 +104,7 @@ pub fn safe_FIR_BEF(
 
 //not tested
 #[allow(non_snake_case)]
-pub fn safe_IIR_HPF(fc: c_double, Q: c_double, a: &mut [c_double], b: &mut [c_double]) {
+pub fn safe_IIR_HPF(fc: f64, Q: f64, a: &mut [f64], b: &mut [f64]) {
     assert_eq!(3, a.len());
     assert_eq!(3, b.len());
     let fc = (PI * fc).tan() / (2.0 * PI);
@@ -121,7 +120,7 @@ pub fn safe_IIR_HPF(fc: c_double, Q: c_double, a: &mut [c_double], b: &mut [c_do
 
 //not tested
 #[allow(non_snake_case)]
-pub fn safe_IIR_BPF(fc1: c_double, fc2: c_double, a: &mut [c_double], b: &mut [c_double]) {
+pub fn safe_IIR_BPF(fc1: f64, fc2: f64, a: &mut [f64], b: &mut [f64]) {
     assert_eq!(3, a.len());
     assert_eq!(3, b.len());
     let fc1 = (PI * fc1).tan() / (2.0 * PI);
@@ -138,7 +137,7 @@ pub fn safe_IIR_BPF(fc1: c_double, fc2: c_double, a: &mut [c_double], b: &mut [c
 
 //not tested
 #[allow(non_snake_case)]
-pub fn safe_IIR_BEF(fc1: c_double, fc2: c_double, a: &mut [c_double], b: &mut [c_double]) {
+pub fn safe_IIR_BEF(fc1: f64, fc2: f64, a: &mut [f64], b: &mut [f64]) {
     assert_eq!(3, a.len());
     assert_eq!(3, b.len());
     let fc1 = (PI * fc1).tan() / (2.0 * PI);
@@ -156,7 +155,7 @@ pub fn safe_IIR_BEF(fc1: c_double, fc2: c_double, a: &mut [c_double], b: &mut [c
 
 //not tested
 #[allow(non_snake_case)]
-pub fn safe_IIR_notch(fc: c_double, Q: c_double, a: &mut [c_double], b: &mut [c_double]) {
+pub fn safe_IIR_notch(fc: f64, Q: f64, a: &mut [f64], b: &mut [f64]) {
     assert_eq!(3, a.len());
     assert_eq!(3, b.len());
     let fc = (PI * fc).tan() / (2.0 * PI);
@@ -173,11 +172,11 @@ pub fn safe_IIR_notch(fc: c_double, Q: c_double, a: &mut [c_double], b: &mut [c_
 //not tested
 #[allow(non_snake_case)]
 pub fn safe_IIR_low_shelving(
-    fc: c_double,
-    Q: c_double,
-    g: c_double,
-    a: &mut [c_double],
-    b: &mut [c_double],
+    fc: f64,
+    Q: f64,
+    g: f64,
+    a: &mut [f64],
+    b: &mut [f64],
 ) {
     assert_eq!(3, a.len());
     assert_eq!(3, b.len());
@@ -197,11 +196,11 @@ pub fn safe_IIR_low_shelving(
 //not tested
 #[allow(non_snake_case)]
 pub fn safe_IIR_high_shelving(
-    fc: c_double,
-    Q: c_double,
-    g: c_double,
-    a: &mut [c_double],
-    b: &mut [c_double],
+    fc: f64,
+    Q: f64,
+    g: f64,
+    a: &mut [f64],
+    b: &mut [f64],
 ) {
     assert_eq!(3, a.len());
     assert_eq!(3, b.len());
@@ -219,11 +218,11 @@ pub fn safe_IIR_high_shelving(
 //not tested
 #[allow(non_snake_case)]
 pub fn safe_IIR_peaking(
-    fc: c_double,
-    Q: c_double,
-    g: c_double,
-    a: &mut [c_double],
-    b: &mut [c_double],
+    fc: f64,
+    Q: f64,
+    g: f64,
+    a: &mut [f64],
+    b: &mut [f64],
 ) {
     assert_eq!(3, a.len());
     assert_eq!(3, b.len());
@@ -239,7 +238,7 @@ pub fn safe_IIR_peaking(
 }
 
 #[allow(non_snake_case)]
-pub fn safe_IIR_LPF(fc: c_double, Q: c_double, a: &mut [c_double], b: &mut [c_double]) {
+pub fn safe_IIR_LPF(fc: f64, Q: f64, a: &mut [f64], b: &mut [f64]) {
     assert_eq!(3, a.len());
     assert_eq!(3, b.len());
     let fc = (PI * fc).tan() / (2.0 * PI);
@@ -256,11 +255,11 @@ pub fn safe_IIR_LPF(fc: c_double, Q: c_double, a: &mut [c_double], b: &mut [c_do
 
 #[allow(non_snake_case)]
 pub fn safe_IIR_filtering(
-    x: &[c_double],
-    y: &mut [c_double],
+    x: &[f64],
+    y: &mut [f64],
     L: usize,
-    a: &[c_double],
-    b: &[c_double],
+    a: &[f64],
+    b: &[f64],
     I: usize,
     J: usize,
 ) {
@@ -284,7 +283,7 @@ pub fn safe_IIR_filtering(
 }
 
 #[allow(non_snake_case)]
-pub fn safe_IIR_resonator(fc: c_double, Q: c_double, a: &mut [c_double], b: &mut [c_double]) {
+pub fn safe_IIR_resonator(fc: f64, Q: f64, a: &mut [f64], b: &mut [f64]) {
     assert_eq!(3, a.len());
     assert_eq!(3, b.len());
     let fc = (PI * fc).tan() / (2.0 * PI);

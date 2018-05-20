@@ -1,4 +1,3 @@
-extern crate libc;
 pub mod fft;
 pub mod filter;
 use std::f64::consts::PI;
