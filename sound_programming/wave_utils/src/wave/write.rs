@@ -65,37 +65,6 @@ where
     fp.write_i32::<LittleEndian>(data_chunk_size).unwrap();
     return fp;
 }
-/*
-
-
-  int16_t extra_size;
-  int8_t  fact_chunk_ID[4];
-  int32_t fact_chunk_size;
-  int32_t sample_length;
-  int8_t  data_chunk_ID[4];
-  int32_t data_chunk_size;
-  
- 
-  
-  static int16_t 
-  
-  
-
-  for (n = 0; n < pcm->length; n++)
-  {
- 
-  }
-  
-  if ((pcm->length % 2) == 1) /* 圧縮データの長さが奇数のとき */
-  {
-    c = 0;
-    fwrite(&c, 1, 1, fp); /* 0パディング */
-  }
-  
-  fclose(fp);
-}
-
-*/
 
 impl WaveData for PCMU {
     const MYSTERIOUS: i32 = 50;
