@@ -370,7 +370,25 @@ impl WaveData for i16 {
 
 impl WaveData for PCMA {
     fn convert_to_float(&self) -> f64 {
-        unimplemented!();
+        let PCMA(mut c) = *self; /* 8bitの圧縮データ */
+        c ^= 0xD5;
+        let sign: u8 = c & 0x80;
+        let exponent: u8 = (c >> 4) & 0x07;
+        let mantissa: u8 = c & 0x0F;
+        let magnitude: i32 = if exponent == 0 {
+            ((mantissa as i32) << 4) + 0x0008
+        } else {
+            (((mantissa as i32) << 4) + 0x0108) << (exponent - 1)
+        };
+
+        /* 16bitの音データ */
+        let s: i16 = if sign == 0x80 {
+            -(magnitude as i16)
+        } else {
+            magnitude as i16
+        };
+
+        s as f64 / 32768.0 /* 音データを-1以上1未満の範囲に正規化する */
     }
     const MYSTERIOUS: i32 = 50;
     const BYTE_NUM: i32 = 1;
