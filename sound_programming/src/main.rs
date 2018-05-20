@@ -1124,14 +1124,19 @@ fn ex11_3() {
         let tb = if t == ta as f64 { ta } else { ta + 1 };
         for m in (tb as i32 - N as i32 / 2)..=(ta as i32 + N as i32 / 2) {
             if m >= 0 && m < pcm0.length as i32 {
-                tmp += pcm0.s[m as usize] * sinc(PI * (t - m as f64))
-                    * (0.5 + 0.5 * (2.0 * PI * (t - m as f64) / (N * 2 + 1) as f64).cos());
+                tmp += pcm0.s[m as usize] * something(t, m, N);
             }
         }
 
         pcm1.s[o as usize] += tmp;
     }
     wave_write_16bit_mono_safer3("ex11_3.wav", &pcm1);
+}
+
+#[allow(non_snake_case)]
+fn something(t: f64, n: i32, N: usize) -> f64 {
+    sinc(PI * (t - n as f64))
+                    * (0.5 + 0.5 * (2.0 * PI * (t - n as f64) / (N * 2 + 1) as f64).cos())
 }
 
 #[allow(non_snake_case)]
@@ -1145,8 +1150,7 @@ fn generate_pulse_sequence(pcm: &mut MonoPcm, vco: f64, N: usize) {
 
         for n in (tb as i32 - N as i32 / 2)..=(ta as i32 + N as i32 / 2) {
             if n >= 0 && n < pcm.length as i32 {
-                pcm.s[n as usize] += sinc(PI * (t - n as f64))
-                    * (0.5 + 0.5 * (2.0 * PI * (t - n as f64) / (N * 2 + 1) as f64).cos());
+                pcm.s[n as usize] += something(t, n, N);
             }
         }
 
