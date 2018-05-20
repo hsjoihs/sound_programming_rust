@@ -49,7 +49,7 @@ where
     fp.write_i32::<LittleEndian>(bytes_per_sec).unwrap();
     fp.write_i16::<LittleEndian>(block_size).unwrap();
     fp.write_i16::<LittleEndian>(bits_per_sample).unwrap();
-    if U::CHUNK_SIZE > 16 {
+    if U::CHUNK_SIZE == 18 {
         let extra_size: i16 = 0;
         let fact_chunk_ID: [i8; 4] = ['f' as i8, 'a' as i8, 'c' as i8, 't' as i8];
         let fact_chunk_size: i32 = 4;

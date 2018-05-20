@@ -1,13 +1,13 @@
 extern crate byteorder;
+use wave::read::read_u8x4;
 use self::byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
-use MONO_PCM;
 use MONO_PCM_CONST;
 use MonoPcm;
 use StereoPcm;
 use libc::c_char;
-use std::mem;
-use std::slice::from_raw_parts_mut;
+use std::fs::File;
 use to_c_str;
+use wave::read::read_i8x4;
 use wave::write::Pcm;
 use wave::write::wave_write_header;
 
@@ -98,22 +98,120 @@ pub fn wave_read_16bit_stereo_safer3(path: &str) -> StereoPcm {
 #[link(name = "wave")]
 extern "C" {
 
-    fn wave_read_IMA_ADPCM_mono(pcm: *mut MONO_PCM, file_name: *const c_char);
     fn wave_write_IMA_ADPCM_mono(pcm: *const MONO_PCM_CONST, file_name: *const c_char);
 
 }
 
 #[allow(non_snake_case)]
 pub fn wave_read_IMA_ADPCM_mono_safer3(path: &str) -> MonoPcm {
-    unsafe {
-        let mut pcm: MONO_PCM = mem::uninitialized();
-        wave_read_IMA_ADPCM_mono(&mut pcm, to_c_str(path));
-        MonoPcm {
-            fs: pcm.fs as usize,
-            bits: pcm.bits,
-            length: pcm.length as usize,
-            s: from_raw_parts_mut(pcm.s, pcm.length as usize).to_vec(),
+    let step_size_table: [i32; 89] = [
+        7, 8, 9, 10, 11, 12, 13, 14, 16, 17, 19, 21, 23, 25, 28, 31, 34, 37, 41, 45, 50, 55, 60,
+        66, 73, 80, 88, 97, 107, 118, 130, 143, 157, 173, 190, 209, 230, 253, 279, 307, 337, 371,
+        408, 449, 494, 544, 598, 658, 724, 796, 876, 963, 1060, 1166, 1282, 1411, 1552, 1707, 1878,
+        2066, 2272, 2499, 2749, 3024, 3327, 3660, 4026, 4428, 4871, 5358, 5894, 6484, 7132, 7845,
+        8630, 9493, 10442, 11487, 12635, 13899, 15289, 16818, 18500, 20350, 22385, 24623, 27086,
+        29794, 32767,
+    ];
+    let index_table: [i32; 16] = [-1, -1, -1, -1, 2, 4, 6, 8, -1, -1, -1, -1, 2, 4, 6, 8];
+
+    let mut fp = File::open(path).expect("file not found");
+    let _riff_chunk_ID = read_i8x4(&mut fp);
+    let _riff_chunk_size = fp.read_i32::<LittleEndian>().unwrap();
+    let _file_format_type = read_i8x4(&mut fp);
+    let _fmt_chunk_ID = read_i8x4(&mut fp);
+    let _fmt_chunk_size = fp.read_i32::<LittleEndian>().unwrap();
+    let _wave_format_type = fp.read_i16::<LittleEndian>().unwrap();
+    let _channel = fp.read_i16::<LittleEndian>().unwrap();
+    let samples_per_sec = fp.read_i32::<LittleEndian>().unwrap();
+    let _bytes_per_sec = fp.read_i32::<LittleEndian>().unwrap();
+    let block_size = fp.read_i16::<LittleEndian>().unwrap();
+    let _bits_per_sample = fp.read_i16::<LittleEndian>().unwrap();
+
+    let _extra_size = fp.read_i16::<LittleEndian>().unwrap();
+    let samples_per_block = fp.read_i16::<LittleEndian>().unwrap();
+    let _fact_chunk_ID = read_i8x4(&mut fp);
+    let _fact_chunk_size = fp.read_i32::<LittleEndian>().unwrap();
+    let sample_length = fp.read_i32::<LittleEndian>().unwrap();
+    let _data_chunk_ID = read_i8x4(&mut fp);
+    let data_chunk_size = fp.read_i32::<LittleEndian>().unwrap();
+
+    let number_of_block: i32 = data_chunk_size / block_size as i32;
+
+    let pcm_fs = samples_per_sec; /* 標本化周波数 */
+    let pcm_length = sample_length; /* 音データの長さ */
+    let mut pcm_s = vec![0.0; pcm_length as usize]; /* メモリの確保 */
+
+    for block in 0..number_of_block {
+        let mut s: i16;
+        let mut index: i32 = 0;
+        let offset: i32 = samples_per_block as i32 * block as i32;
+        let mut c: u8;
+        let mut data: u8 = 0;
+        let mut step_size: i32;
+        let mut dp: i32;
+        let mut sp: i32 = 0;
+        let mut header: [u8;4];
+        for n in 0..samples_per_block {
+            if n == 0 {
+                header = read_u8x4(&mut fp);
+                sp = (((header[1] as i8) as i16) << 8) as i32 + header[0] as i32;
+                index = header[2] as i32;
+                s = sp as i16;
+            } else {
+                /* 4bitの圧縮データ */
+                c = if (n % 2) == 1 {
+                    data = fp.read_u8().unwrap(); /* 圧縮データの読み取り */
+
+                    (data & 0x0F) as u8 /* dataの下位4bit */
+                } else {
+                    ((data >> 4) & 0x0F) as u8 /* dataの上位4bit */
+                };
+
+                step_size = step_size_table[index as usize];
+
+                /* 伸張 */
+                dp = step_size >> 3;
+                if (c & 0x1) == 0x1 {
+                    dp += step_size >> 2;
+                }
+                if (c & 0x2) == 0x2 {
+                    dp += step_size >> 1;
+                }
+                if (c & 0x4) == 0x4 {
+                    dp += step_size;
+                }
+                if (c & 0x8) == 0x8 {
+                    sp -= dp;
+                } else {
+                    sp += dp;
+                }
+
+                if sp > 32767 {
+                    sp = 32767;
+                } else if sp < -32768 {
+                    sp = -32768;
+                }
+
+                index += index_table[c as usize];
+
+                if index < 0 {
+                    index = 0;
+                } else if index > 88 {
+                    index = 88;
+                }
+
+                s = sp as i16;
+            }
+
+            pcm_s[offset as usize + n as usize] = s as f64 / 32768.0; /* 音データを-1以上1未満の範囲に正規化する */
         }
+    }
+
+    MonoPcm {
+        fs: pcm_fs as usize,
+        bits: 16,
+        length: pcm_length as usize,
+        s: pcm_s,
     }
 }
 
@@ -173,7 +271,6 @@ pub fn wave_read_PCMU_mono_safer3(path: &str) -> MonoPcm {
     };
 }
 
-
 #[allow(non_snake_case)]
 pub fn wave_write_PCMU_mono_safer3(path: &str, pcm: &MonoPcm) {
     let mut fp = wave_write_header::<MonoPcm, PCMU>(path, pcm);
@@ -199,7 +296,7 @@ pub fn wave_read_PCMA_mono_safer3(path: &str) -> MonoPcm {
         let data = PCMA(fp.read_u8().unwrap());
         pcm_s[n] = data.convert_to_float(); /* 音データを-1以上1未満の範囲に正規化する */
     }
-    
+
     return MonoPcm {
         s: pcm_s,
         fs: pcm_fs as usize,
@@ -210,6 +307,9 @@ pub fn wave_read_PCMA_mono_safer3(path: &str) -> MonoPcm {
 
 struct PCMA(u8);
 struct PCMU(u8);
+
+#[allow(non_camel_case_types)]
+struct IMA_ADPCM {}
 
 #[allow(non_snake_case)]
 pub fn wave_write_PCMA_mono_safer3(path: &str, pcm: &MonoPcm) {
