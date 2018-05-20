@@ -21,6 +21,7 @@ where
     U: WaveData,
 {
     let channel_: i32 = T::CHANNEL;
+    let bits = U::BYTE_NUM * 8;
 
     let riff_chunk_ID: [i8; 4] = ['R' as i8, 'I' as i8, 'F' as i8, 'F' as i8];
     let riff_chunk_size: i32 = U::MYSTERIOUS + pcm.get_length() as i32 * U::BYTE_NUM * channel_;
@@ -30,9 +31,9 @@ where
     let wave_format_type: i16 = U::WAVE_FORMAT_TYPE;
     let channel: i16 = channel_ as i16;
     let samples_per_sec: i32 = pcm.get_fs() as i32; /* 標本化周波数 */
-    let bytes_per_sec: i32 = pcm.get_fs() as i32 * pcm.get_bits() / 8 * channel_;
-    let block_size: i16 = (pcm.get_bits() / 8) as i16 * channel;
-    let bits_per_sample: i16 = pcm.get_bits() as i16; /* 量子化精度 */
+    let bytes_per_sec: i32 = pcm.get_fs() as i32 * bits / 8 * channel_;
+    let block_size: i16 = (bits / 8) as i16 * channel;
+    let bits_per_sample: i16 = bits as i16; /* 量子化精度 */
     let data_chunk_ID: [i8; 4] = ['d' as i8, 'a' as i8, 't' as i8, 'a' as i8];
     let data_chunk_size: i32 = pcm.get_length() as i32 * U::BYTE_NUM * channel_;
 
@@ -67,7 +68,6 @@ where
 
 pub trait Pcm {
     fn get_fs(&self) -> usize;
-    fn get_bits(&self) -> i32;
     fn get_length(&self) -> usize;
     const CHANNEL: i32;
 }
@@ -75,9 +75,6 @@ pub trait Pcm {
 impl Pcm for MonoPcm {
     fn get_fs(&self) -> usize {
         self.fs
-    }
-    fn get_bits(&self) -> i32 {
-        self.bits
     }
     fn get_length(&self) -> usize {
         self.length
@@ -88,9 +85,6 @@ impl Pcm for MonoPcm {
 impl Pcm for StereoPcm {
     fn get_fs(&self) -> usize {
         self.fs
-    }
-    fn get_bits(&self) -> i32 {
-        self.bits
     }
     fn get_length(&self) -> usize {
         self.length
