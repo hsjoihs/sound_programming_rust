@@ -58,10 +58,10 @@ fn main() {
     if true {
         first();
     }
-    if false {
+    if true {
         second();
     }
-    if false {
+    if true {
         third();
     }
     ex11_7();
