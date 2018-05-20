@@ -43,6 +43,8 @@ fn third() {
     ex11_1();
     ex11_2();
     ex11_3();
+    ex11_4();
+
     ex11_7();
     ex11_8();
     ex11_9();
@@ -1104,7 +1106,7 @@ fn ex11_2() {
     wave_write_16bit_mono_safer3("ex11_2.wav", &pcm1);
 }
 
-#[allow(non_snake_case, unused_mut, unused_variables)]
+#[allow(non_snake_case)]
 fn ex11_3() {
     let pcm0 = wave_read_16bit_mono_safer3("ex11_sine_500hz.wav");
     let pitch = 2.0; /* 音の高さを2倍にする */
@@ -1115,28 +1117,14 @@ fn ex11_3() {
 
     let N = 128; /* ハニング窓のサイズ */
 
-    for o in 0..pcm1.length {
-        let mut t = pitch * o as f64;
-        let mut tmp = 0.0;
+    Hanning_something(&mut pcm1, &pcm0, pitch, N);
 
-        let ta = t as usize;
-
-        let tb = if t == ta as f64 { ta } else { ta + 1 };
-        for m in (tb as i32 - N as i32 / 2)..=(ta as i32 + N as i32 / 2) {
-            if m >= 0 && m < pcm0.length as i32 {
-                tmp += pcm0.s[m as usize] * something(t, m, N);
-            }
-        }
-
-        pcm1.s[o as usize] += tmp;
-    }
     wave_write_16bit_mono_safer3("ex11_3.wav", &pcm1);
 }
 
 #[allow(non_snake_case)]
 fn something(t: f64, n: i32, N: usize) -> f64 {
-    sinc(PI * (t - n as f64))
-                    * (0.5 + 0.5 * (2.0 * PI * (t - n as f64) / (N * 2 + 1) as f64).cos())
+    sinc(PI * (t - n as f64)) * (0.5 + 0.5 * (2.0 * PI * (t - n as f64) / (N * 2 + 1) as f64).cos())
 }
 
 #[allow(non_snake_case)]
@@ -1162,23 +1150,113 @@ fn generate_pulse_sequence(pcm: &mut MonoPcm, vco: f64, N: usize) {
     }
 }
 
-/*
+#[allow(non_snake_case, unused_mut, unused_variables)]
+fn ex11_4() {
+    let pcm0 = wave_read_16bit_mono_safer3("sine_1000hz.wav");
+    let rate = 2.0;
+    assert!(1.0 < rate);
 
+    let pcm1_fs = pcm0.fs; /* 標本化周波数 */
+    let pcm1_length = (pcm0.length as f64 / rate) as usize + 1; /* 音データの長さ */
+    let mut pcm1 = MonoPcm::new16(pcm1_fs, pcm1_length);
+
+    let template_size = mult(pcm1.fs, 0.01); /* 相関関数のサイズ */
+    let pmin = mult(pcm1.fs, 0.005); /* ピークの探索範囲の下限 */
+    let pmax = mult(pcm1.fs, 0.02); /* ピークの探索範囲の上限 */
+
+    let mut x = vec![0.0; template_size];
+    let mut y = vec![0.0; template_size];
+    let mut r = vec![0.0; pmax + 1];
+
+    let mut offset0 = 0;
+    let mut offset1 = 0;
+
+    while offset0 + pmax * 2 < pcm0.length {
+        for n in 0..template_size {
+            x[n] = pcm0.s[offset0 + n]; /* 本来の音データ */
+        }
+
+        let mut rmax = 0.0;
+        let mut p = pmin;
+        for m in pmin..=pmax {
+            for n in 0..template_size {
+                y[n] = pcm0.s[offset0 + m + n]; /* mサンプルずらした音データ */
+            }
+            r[m] = 0.0;
+            for n in 0..template_size {
+                r[m] += x[n] * y[n]; /* 相関関数 */
+            }
+            if r[m] > rmax {
+                rmax = r[m]; /* 相関関数のピーク */
+                p = m; /* 波形の周期 */
+            }
+        }
+
+        for n in 0..p {
+            pcm1.s[offset1 + n] = pcm0.s[offset0 + n] * (p - n) as f64 / p as f64; /* 単調減少の重み付け */
+            pcm1.s[offset1 + n] += pcm0.s[offset0 + p + n] * n as f64 / p as f64; /* 単調増加の重み付け */
+        }
+
+        let q = (p as f64 / (rate - 1.0) + 0.5) as usize;
+        for n in p..q {
+            if offset0 + p + n >= pcm0.length {
+                break;
+            }
+            pcm1.s[offset1 + n] = pcm0.s[offset0 + p + n];
+        }
+
+        offset0 += p + q; /* offset0の更新 */
+        offset1 += q; /* offset1の更新 */
+    }
+
+    let pitch = 1.0 / rate;
+
+    let mut pcm2 = MonoPcm::blank_copy(&pcm0);
+
+    let N = 128; /* ハニング窓のサイズ */
+    Hanning_something(&mut pcm2, &pcm1, pitch, N);
+
+    wave_write_16bit_mono_safer3("ex11_4.wav", &pcm2);
+}
+
+#[allow(non_snake_case)]
+fn Hanning_something(pcm1: &mut MonoPcm, pcm0: &MonoPcm, pitch: f64, N: usize) {
+    for o in 0..pcm1.length {
+        let mut t = pitch * o as f64;
+        let mut tmp = 0.0;
+
+        let ta = t as usize;
+
+        let tb = if t == ta as f64 { ta } else { ta + 1 };
+        for m in (tb as i32 - N as i32 / 2)..=(ta as i32 + N as i32 / 2) {
+            if m >= 0 && m < pcm0.length as i32 {
+                tmp += pcm0.s[m as usize] * something(t, m, N);
+            }
+        }
+
+        pcm1.s[o as usize] += tmp;
+    }
+}
+/*
 
 
 int main(void)
 {
-  MONO_PCM pcm0, pcm1;
-  int n, m, N, ta, tb;
-  double t, pitch;
+  MONO_PCM pcm0, pcm1, pcm2;
+  int n, m, template_size, pmin, pmax, p, q, offset0, offset1, N, ta, tb;
+  double rate, rmax, t, pitch, *x, *y, *r;
 
   
-  
+ 
   
   
   
   free(pcm0.s);
   free(pcm1.s);
+  free(pcm2.s);
+  free(x);
+  free(y);
+  free(r);
   
   return 0;
 }
