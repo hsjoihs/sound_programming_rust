@@ -2,63 +2,41 @@ extern crate byteorder;
 use MonoPcm;
 use StereoPcm;
 use std::fs::File;
-use std::io::Read;
-use std::mem;
-use std::slice::from_raw_parts;
 use self::byteorder::{LittleEndian, ReadBytesExt};
 
-macro_rules! READ_ARR {
-    ($fp:expr, $i:ident, $t:ty; $len:expr) => {
-        unsafe {
-            let mut buf = [0; mem::size_of::<$t>() * $len];
-            $fp.read(&mut buf).unwrap();
-            let slice = from_raw_parts(buf.as_ptr() as *const $t, $len);
-            for i in 0..$len {
-                $i[i] = slice[i];
-            }
-        }
-    };
+
+
+fn read_i8x4<T>(mut fp: T) -> [i8; 4] where T : byteorder::ReadBytesExt{
+    let mut arr = [0; 4];
+    for item in arr.iter_mut() {
+       *item = fp.read_i8().unwrap();
+    }
+    return arr
 }
 
 #[allow(non_snake_case)]
 fn foo(file_name: &str) -> (File, i32, i16, i32) {
     let mut fp = File::open(file_name).expect("file not found");
-    let mut riff_chunk_ID = [0; 4];
-    for item in riff_chunk_ID.iter_mut() {
-       *item = fp.read_i8().unwrap();
-    }
-    let mut riff_chunk_size = [0; 1];
-    READ_ARR!(fp, riff_chunk_size, i32; 1);
-    let mut file_format_type = [0; 4];
-    READ_ARR!(fp, file_format_type,i8 ; 4);
-    let mut fmt_chunk_ID = [0; 4];
-    READ_ARR!(fp, fmt_chunk_ID    ,i8 ; 4);
-    let mut fmt_chunk_size = [0; 1];
-    READ_ARR!(fp, fmt_chunk_size,  i32; 1);
-    let mut wave_format_type = [0; 1];
-    READ_ARR!(fp, wave_format_type,i16; 1);
-    let mut channel = [0; 1];
-    READ_ARR!(fp, channel,         i16; 1);
 
-
+    let _riff_chunk_ID = read_i8x4(&mut fp);
+    let _riff_chunk_size = fp.read_i32::<LittleEndian>().unwrap();
+    let _file_format_type = read_i8x4(&mut fp);
+    let _fmt_chunk_ID = read_i8x4(&mut fp);
+    let _fmt_chunk_size = fp.read_i32::<LittleEndian>().unwrap();
+    let _wave_format_type = fp.read_i16::<LittleEndian>().unwrap();
+    let _channel = fp.read_i16::<LittleEndian>().unwrap();
     let samples_per_sec = fp.read_i32::<LittleEndian>().unwrap();
-
-    let mut bytes_per_sec = [0; 1];
-    READ_ARR!(fp, bytes_per_sec,   i32; 1);
-    let mut block_size = [0; 1];
-    READ_ARR!(fp, block_size,      i16; 1);
-    let mut bits_per_sample = [0; 1];
-    READ_ARR!(fp, bits_per_sample, i16; 1);
-    let mut data_chunk_ID = [0; 4];
-    READ_ARR!(fp, data_chunk_ID,   i8 ; 4);
-    let mut data_chunk_size = [0; 1];
-    READ_ARR!(fp, data_chunk_size, i32; 1);
+    let _bytes_per_sec = fp.read_i32::<LittleEndian>().unwrap();
+    let _block_size = fp.read_i16::<LittleEndian>().unwrap();
+    let bits_per_sample = fp.read_i16::<LittleEndian>().unwrap();
+    let _data_chunk_ID = read_i8x4(&mut fp);
+    let data_chunk_size = fp.read_i32::<LittleEndian>().unwrap();
 
     return (
         fp,
         samples_per_sec,
-        bits_per_sample[0],
-        data_chunk_size[0],
+        bits_per_sample,
+        data_chunk_size,
     );
 }
 
@@ -69,9 +47,8 @@ pub fn wave_read_8bit_mono_safer3(path: &str) -> MonoPcm {
     let mut pcm_s = vec![0.0; pcm_length];
 
     for n in 0..pcm_length {
-        let mut data = [0; 1];
-        READ_ARR!(fp, data, u8; 1);
-        pcm_s[n] = (data[0] as f64 - 128.0) / 128.0; /* 音データを-1以上1未満の範囲に正規化する */
+        let data = fp.read_u8().unwrap();
+        pcm_s[n] = (data as f64 - 128.0) / 128.0; /* 音データを-1以上1未満の範囲に正規化する */
     }
 
     return MonoPcm {
@@ -91,12 +68,10 @@ pub fn wave_read_8bit_stereo_safer3(path: &str) -> StereoPcm {
     let mut pcm_sL = vec![0.0; pcm_length];
     let mut pcm_sR = vec![0.0; pcm_length];
     for n in 0..pcm_length {
-        let mut data = [0; 1];
-        READ_ARR!(fp, data, u8; 1);
-        pcm_sL[n] = (data[0] as f64 - 128.0) / 128.0; /* 音データを-1以上1未満の範囲に正規化する */
-        let mut data = [0; 1];
-        READ_ARR!(fp, data, i16; 1);
-        pcm_sR[n] = (data[0] as f64 - 128.0) / 128.0; /* 音データを-1以上1未満の範囲に正規化する */
+        let data = fp.read_u8().unwrap();
+        pcm_sL[n] = (data as f64 - 128.0) / 128.0; /* 音データを-1以上1未満の範囲に正規化する */
+        let data = fp.read_u8().unwrap();
+        pcm_sR[n] = (data as f64 - 128.0) / 128.0; /* 音データを-1以上1未満の範囲に正規化する */
     }
     return StereoPcm {
         s_l: pcm_sL,
@@ -113,9 +88,8 @@ pub fn wave_read_16bit_mono_safer3(path: &str) -> MonoPcm {
     let mut pcm_s = vec![0.0; pcm_length];
 
     for n in 0..pcm_length {
-        let mut data = [0; 1];
-        READ_ARR!(fp, data, i16; 1);
-        pcm_s[n] = (data[0] as f64) / 32768.0; /* 音データを-1以上1未満の範囲に正規化する */
+        let data = fp.read_i16::<LittleEndian>().unwrap();
+        pcm_s[n] = (data as f64) / 32768.0; /* 音データを-1以上1未満の範囲に正規化する */
     }
 
     return MonoPcm {
@@ -134,12 +108,10 @@ pub fn wave_read_16bit_stereo_safer3(path: &str) -> StereoPcm {
     let mut pcm_sL = vec![0.0; pcm_length];
     let mut pcm_sR = vec![0.0; pcm_length];
     for n in 0..pcm_length {
-        let mut data = [0; 1];
-        READ_ARR!(fp, data, i16; 1);
-        pcm_sL[n] = data[0] as f64 / 32768.0; /* 音データを-1以上1未満の範囲に正規化する */
-        let mut data = [0; 1];
-        READ_ARR!(fp, data, i16; 1);
-        pcm_sR[n] = data[0] as f64 / 32768.0; /* 音データを-1以上1未満の範囲に正規化する */
+        let data = fp.read_i16::<LittleEndian>().unwrap();
+        pcm_sL[n] = data as f64 / 32768.0; /* 音データを-1以上1未満の範囲に正規化する */
+        let data = fp.read_i16::<LittleEndian>().unwrap();
+        pcm_sR[n] = data as f64 / 32768.0; /* 音データを-1以上1未満の範囲に正規化する */
     }
 
     return StereoPcm {
