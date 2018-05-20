@@ -30,7 +30,7 @@ pub fn read_header(file_name: &str) -> (File, i32, i16, i32) {
 }
 
 #[allow(non_snake_case)]
-pub fn read_header2(file_name: &str, b: bool) -> (File, i32, i16, i32) {
+pub fn read_partial_header(file_name: &str) -> (File, i32, i16, i16) {
     let mut fp = File::open(file_name).expect("file not found");
 
     let _riff_chunk_ID = read_i8x4(&mut fp);
@@ -42,8 +42,15 @@ pub fn read_header2(file_name: &str, b: bool) -> (File, i32, i16, i32) {
     let _channel = fp.read_i16::<LittleEndian>().unwrap();
     let samples_per_sec = fp.read_i32::<LittleEndian>().unwrap();
     let _bytes_per_sec = fp.read_i32::<LittleEndian>().unwrap();
-    let _block_size = fp.read_i16::<LittleEndian>().unwrap();
+    let block_size = fp.read_i16::<LittleEndian>().unwrap();
     let bits_per_sample = fp.read_i16::<LittleEndian>().unwrap();
+    (fp, samples_per_sec, block_size, bits_per_sample)
+}
+
+#[allow(non_snake_case)]
+pub fn read_header2(file_name: &str, b: bool) -> (File, i32, i16, i32) {
+    let (mut fp, samples_per_sec, _block_size, bits_per_sample) = read_partial_header(file_name);
+
     if b {
         let _extra_size = fp.read_i16::<LittleEndian>().unwrap();
         let _fact_chunk_ID = read_i8x4(&mut fp);

@@ -1,13 +1,13 @@
 extern crate byteorder;
-use wave::read::read_u8x4;
 use self::byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use MONO_PCM_CONST;
 use MonoPcm;
 use StereoPcm;
 use libc::c_char;
-use std::fs::File;
 use to_c_str;
 use wave::read::read_i8x4;
+use wave::read::read_partial_header;
+use wave::read::read_u8x4;
 use wave::write::Pcm;
 use wave::write::wave_write_header;
 
@@ -102,31 +102,21 @@ extern "C" {
 
 }
 
+#[allow(non_upper_case_globals)]
+const step_size_table: [i32; 89] = [
+    7, 8, 9, 10, 11, 12, 13, 14, 16, 17, 19, 21, 23, 25, 28, 31, 34, 37, 41, 45, 50, 55, 60, 66,
+    73, 80, 88, 97, 107, 118, 130, 143, 157, 173, 190, 209, 230, 253, 279, 307, 337, 371, 408, 449,
+    494, 544, 598, 658, 724, 796, 876, 963, 1060, 1166, 1282, 1411, 1552, 1707, 1878, 2066, 2272,
+    2499, 2749, 3024, 3327, 3660, 4026, 4428, 4871, 5358, 5894, 6484, 7132, 7845, 8630, 9493,
+    10442, 11487, 12635, 13899, 15289, 16818, 18500, 20350, 22385, 24623, 27086, 29794, 32767,
+];
+
+#[allow(non_upper_case_globals)]
+const index_table: [i32; 16] = [-1, -1, -1, -1, 2, 4, 6, 8, -1, -1, -1, -1, 2, 4, 6, 8];
+
 #[allow(non_snake_case)]
 pub fn wave_read_IMA_ADPCM_mono_safer3(path: &str) -> MonoPcm {
-    let step_size_table: [i32; 89] = [
-        7, 8, 9, 10, 11, 12, 13, 14, 16, 17, 19, 21, 23, 25, 28, 31, 34, 37, 41, 45, 50, 55, 60,
-        66, 73, 80, 88, 97, 107, 118, 130, 143, 157, 173, 190, 209, 230, 253, 279, 307, 337, 371,
-        408, 449, 494, 544, 598, 658, 724, 796, 876, 963, 1060, 1166, 1282, 1411, 1552, 1707, 1878,
-        2066, 2272, 2499, 2749, 3024, 3327, 3660, 4026, 4428, 4871, 5358, 5894, 6484, 7132, 7845,
-        8630, 9493, 10442, 11487, 12635, 13899, 15289, 16818, 18500, 20350, 22385, 24623, 27086,
-        29794, 32767,
-    ];
-    let index_table: [i32; 16] = [-1, -1, -1, -1, 2, 4, 6, 8, -1, -1, -1, -1, 2, 4, 6, 8];
-
-    let mut fp = File::open(path).expect("file not found");
-    let _riff_chunk_ID = read_i8x4(&mut fp);
-    let _riff_chunk_size = fp.read_i32::<LittleEndian>().unwrap();
-    let _file_format_type = read_i8x4(&mut fp);
-    let _fmt_chunk_ID = read_i8x4(&mut fp);
-    let _fmt_chunk_size = fp.read_i32::<LittleEndian>().unwrap();
-    let _wave_format_type = fp.read_i16::<LittleEndian>().unwrap();
-    let _channel = fp.read_i16::<LittleEndian>().unwrap();
-    let samples_per_sec = fp.read_i32::<LittleEndian>().unwrap();
-    let _bytes_per_sec = fp.read_i32::<LittleEndian>().unwrap();
-    let block_size = fp.read_i16::<LittleEndian>().unwrap();
-    let _bits_per_sample = fp.read_i16::<LittleEndian>().unwrap();
-
+    let (mut fp, samples_per_sec, block_size, _bits_per_sample) = read_partial_header(path);
     let _extra_size = fp.read_i16::<LittleEndian>().unwrap();
     let samples_per_block = fp.read_i16::<LittleEndian>().unwrap();
     let _fact_chunk_ID = read_i8x4(&mut fp);
@@ -150,7 +140,7 @@ pub fn wave_read_IMA_ADPCM_mono_safer3(path: &str) -> MonoPcm {
         let mut step_size: i32;
         let mut dp: i32;
         let mut sp: i32 = 0;
-        let mut header: [u8;4];
+        let mut header: [u8; 4];
         for n in 0..samples_per_block {
             if n == 0 {
                 header = read_u8x4(&mut fp);
