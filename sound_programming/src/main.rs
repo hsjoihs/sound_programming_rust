@@ -495,10 +495,12 @@ fn ex5_2() {
     let a0 = 0.5; /* 振幅 */
     /* 周波数の時間エンベロープ */
     let f0 = linear(2500.0, 1500.0, pcm_length);
-    let g0 : Vec<f64> = (0..pcm_length).map(|n| {
-         f0[0] * n as f64
-            + (f0[pcm_length - 1] - f0[0]) * n as f64 * n as f64 / (pcm_length - 1) as f64 / 2.0
-    }).collect();
+    let g0: Vec<f64> = (0..pcm_length)
+        .map(|n| {
+            f0[0] * n as f64
+                + (f0[pcm_length - 1] - f0[0]) * n as f64 * n as f64 / (pcm_length - 1) as f64 / 2.0
+        })
+        .collect();
 
     wave_write_16bit_mono_safer3(
         "ex5_2.wav",
@@ -514,11 +516,11 @@ fn ex5_3() {
     let pcm_fs = 44100; /* 標本化周波数 */
     let pcm_length = (pcm_fs as f64 * 0.2) as usize; /* 音データの長さ */
     let a0 = 0.5; /* 振幅 */
-    
+
     /* 周波数の時間エンベロープ */
     let f0 = linear(2500.0, 1500.0, pcm_length);
     let mut g0 = vec![0.0; pcm_length];
-    
+
     for n in 0..pcm_length {
         g0[n] = f0[0] * n as f64
             + (f0[pcm_length - 1] - f0[0]) * n as f64 * n as f64 / (pcm_length - 1) as f64 / 2.0;
@@ -570,29 +572,36 @@ fn ex5_4() {
     wave_write_16bit_mono_safer3("ex5_4.wav", &pcm);
 }
 
+fn exponential_decay(
+    pcm_fs: usize,
+    amplitude: f64,
+    decay_factor: f64,
+    decay_time: f64,
+    length: usize,
+) -> Vec<f64> {
+    (0..length)
+        .map(|n| amplitude * (-decay_factor * n as f64 / (pcm_fs as f64 * decay_time)).exp())
+        .collect()
+}
+
 fn ex5_5() {
     let pcm_fs = 44100; /* 標本化周波数 */
     let pcm_length = pcm_fs * 4; /* 音データの長さ */
     let mut pcm = MonoPcm::new16(pcm_fs, pcm_length); /* 音データ */
 
-    let mut a0 = vec![0.0; pcm_length];
-    let mut a1 = vec![0.0; pcm_length];
-    let mut a2 = vec![0.0; pcm_length];
-    let mut a3 = vec![0.0; pcm_length];
-    let mut a4 = vec![0.0; pcm_length];
+    /* 時間エンベロープ */
+    let a0 = exponential_decay(pcm_fs, 1.0, 5.0, 4.0, pcm_length);
+    let a1 = exponential_decay(pcm_fs, 0.8, 5.0, 2.0, pcm_length);
+    let a2 = exponential_decay(pcm_fs, 0.6, 5.0, 1.0, pcm_length);
+    let a3 = exponential_decay(pcm_fs, 0.5, 5.0, 0.5, pcm_length);
+    let a4 = exponential_decay(pcm_fs, 0.4, 5.0, 0.2, pcm_length);
+
     let f0 = vec![440.0; pcm_length];
     let f1 = vec![880.0; pcm_length];
     let f2 = vec![1320.0; pcm_length];
     let f3 = vec![1760.0; pcm_length];
     let f4 = vec![2200.0; pcm_length];
-    /* 時間エンベロープ */
-    for n in 0..pcm_length {
-        a0[n] = 1.0 * (-5.0 * n as f64 / (pcm_fs as f64 * 4.0)).exp();
-        a1[n] = 0.8 * (-5.0 * n as f64 / (pcm_fs as f64 * 2.0)).exp();
-        a2[n] = 0.6 * (-5.0 * n as f64 / (pcm_fs as f64 * 1.0)).exp();
-        a3[n] = 0.5 * (-5.0 * n as f64 / (pcm_fs as f64 * 0.5)).exp();
-        a4[n] = 0.4 * (-5.0 * n as f64 / (pcm_fs as f64 * 0.2)).exp();
-    }
+
     /* 加算合成 */
     for n in 0..pcm_length {
         pcm.s[n] += a0[n] * (2.0 * PI * f0[n] * n as f64 / pcm_fs as f64).sin();
