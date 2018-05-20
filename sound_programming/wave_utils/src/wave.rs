@@ -140,8 +140,8 @@ extern "C" {
     pub fn wave_write_8bit_mono(pcm: *const MONO_PCM_CONST, file_name: *const c_char);
     pub fn wave_write_8bit_stereo(pcm: *const STEREO_PCM_CONST, file_name: *const c_char);
 
-    fn wave_write_16bit_stereo(pcm: *const STEREO_PCM_CONST, file_name: *const c_char);
-
+    /*fn wave_write_16bit_stereo(pcm: *const STEREO_PCM_CONST, file_name: *const c_char);
+    */
     fn wave_read_PCMA_mono(pcm: *mut MONO_PCM, file_name: *const c_char);
     fn wave_write_PCMA_mono(pcm: *const MONO_PCM_CONST, file_name: *const c_char);
     fn wave_read_IMA_ADPCM_mono(pcm: *mut MONO_PCM, file_name: *const c_char);
@@ -151,39 +151,13 @@ extern "C" {
 
 }
 
-#[allow(non_snake_case)]
-pub fn wave_write_16bit_mono_safer3(path: &str, pcm: &MonoPcm) {
-    let riff_chunk_ID: [i8; 4] = ['R' as i8, 'I' as i8, 'F' as i8, 'F' as i8];
-    let riff_chunk_size: i32 = 36 + pcm.length as i32 * 2;
-    let file_format_type: [i8; 4] = ['W' as i8, 'A' as i8, 'V' as i8, 'E' as i8];
-    let fmt_chunk_ID: [i8; 4] = ['f' as i8, 'm' as i8, 't' as i8, ' ' as i8];
-    let fmt_chunk_size: i32 = 16;
-    let wave_format_type: i16 = 1;
-    let channel: i16 = 1;
-    let samples_per_sec: i32 = pcm.fs as i32; /* 標本化周波数 */
-    let bytes_per_sec: i32 = pcm.fs as i32 * pcm.bits / 8;
-    let block_size: i16 = (pcm.bits / 8) as i16;
-    let bits_per_sample: i16 = pcm.bits as i16; /* 量子化精度 */
-    let data_chunk_ID: [i8; 4] = ['d' as i8, 'a' as i8, 't' as i8, 'a' as i8];
-    let data_chunk_size: i32 = (pcm.length * 2) as i32;
+trait WaveData {
+    fn convert_from_float(d: f64) -> Self;
+}
 
-    let mut fp = File::create(path).expect("file cannot be created");
-    write_i8x4(&mut fp, riff_chunk_ID);
-    fp.write_i32::<LittleEndian>(riff_chunk_size).unwrap();
-    write_i8x4(&mut fp, file_format_type);
-    write_i8x4(&mut fp, fmt_chunk_ID);
-    fp.write_i32::<LittleEndian>(fmt_chunk_size).unwrap();
-    fp.write_i16::<LittleEndian>(wave_format_type).unwrap();
-    fp.write_i16::<LittleEndian>(channel).unwrap();
-    fp.write_i32::<LittleEndian>(samples_per_sec).unwrap();
-    fp.write_i32::<LittleEndian>(bytes_per_sec).unwrap();
-    fp.write_i16::<LittleEndian>(block_size).unwrap();
-    fp.write_i16::<LittleEndian>(bits_per_sample).unwrap();
-    write_i8x4(&mut fp, data_chunk_ID);
-    fp.write_i32::<LittleEndian>(data_chunk_size).unwrap();
-
-    for n in 0..pcm.length {
-        let mut s = (pcm.s[n] as f64 + 1.0) / 2.0 * 65536.0;
+impl WaveData for i16 {
+    fn convert_from_float(d: f64) -> i16 {
+        let mut s = (d + 1.0) / 2.0 * 65536.0;
 
         if s > 65535.0 {
             s = 65535.0; /* クリッピング */
@@ -191,8 +165,7 @@ pub fn wave_write_16bit_mono_safer3(path: &str, pcm: &MonoPcm) {
             s = 0.0; /* クリッピング */
         }
 
-        let data = ((s + 0.5) as i32 - 32768) as i16; /* 四捨五入とオフセットの調節 */
-        fp.write_i16::<LittleEndian>(data).unwrap(); /* 音データの書き出し */
+        ((s + 0.5) as i32 - 32768) as i16 /* 四捨五入とオフセットの調節 */
     }
 }
 
@@ -278,29 +251,100 @@ pub fn wave_write_PCMA_mono_safer3(path: &str, pcm: &MonoPcm) {
 }
 
 #[allow(non_snake_case)]
-pub fn wave_write_16bit_stereo_safer2(path: &str, x: (&[f64], &[f64], usize, i32, usize)) {
-    let pcm1: STEREO_PCM_CONST = STEREO_PCM_CONST {
-        fs: x.2 as i32,
-        bits: x.3,
-        length: x.4 as i32,
-        sL: x.0.as_ptr(),
-        sR: x.1.as_ptr(),
-    };
-    unsafe {
-        wave_write_16bit_stereo(&pcm1, to_c_str(path));
+pub fn wave_write_16bit_stereo_safer3(path: &str, pcm: &StereoPcm) {
+    let mut fp = wave_write_16bit_header(path, pcm);
+    for n in 0..pcm.length {
+        fp.write_i16::<LittleEndian>(WaveData::convert_from_float(pcm.s_l[n]))
+            .unwrap(); /* 音データ（Lチャンネル）の書き出し */
+        fp.write_i16::<LittleEndian>(WaveData::convert_from_float(pcm.s_r[n]))
+            .unwrap(); /* 音データ（Rチャンネル）の書き出し */
     }
 }
 
-#[allow(non_snake_case)]
-pub fn wave_write_16bit_stereo_safer3(path: &str, pcm: &StereoPcm) {
-    let pcm1: STEREO_PCM_CONST = STEREO_PCM_CONST {
-        fs: pcm.fs as i32,
-        bits: pcm.bits,
-        length: pcm.length as i32,
-        sL: pcm.s_l.as_ptr(),
-        sR: pcm.s_r.as_ptr(),
-    };
-    unsafe {
-        wave_write_16bit_stereo(&pcm1, to_c_str(path));
+pub fn wave_write_16bit_mono_safer3(path: &str, pcm: &MonoPcm) {
+    let mut fp = wave_write_16bit_header(path, pcm);
+    for n in 0..pcm.get_length() {
+        fp.write_i16::<LittleEndian>(WaveData::convert_from_float(pcm.s[n]))
+            .unwrap(); /* 音データの書き出し */
     }
 }
+
+trait Pcm {
+    fn get_fs(&self) -> usize;
+    fn get_bits(&self) -> i32;
+    fn get_length(&self) -> usize;
+    const CHANNEL: i32;
+}
+
+impl Pcm for MonoPcm {
+    fn get_fs(&self) -> usize {
+        self.fs
+    }
+    fn get_bits(&self) -> i32 {
+        self.bits
+    }
+    fn get_length(&self) -> usize {
+        self.length
+    }
+    const CHANNEL: i32 = 1;
+}
+
+impl Pcm for StereoPcm {
+    fn get_fs(&self) -> usize {
+        self.fs
+    }
+    fn get_bits(&self) -> i32 {
+        self.bits
+    }
+    fn get_length(&self) -> usize {
+        self.length
+    }
+    const CHANNEL: i32 = 2;
+}
+
+#[allow(non_snake_case)]
+fn wave_write_16bit_header<T>(path: &str, pcm: &T) -> File
+where
+    T: Pcm,
+{
+    let channel_: i32 = T::CHANNEL;
+    let riff_chunk_ID: [i8; 4] = ['R' as i8, 'I' as i8, 'F' as i8, 'F' as i8];
+    let riff_chunk_size: i32 = 36 + pcm.get_length() as i32 * 2 * channel_;
+    let file_format_type: [i8; 4] = ['W' as i8, 'A' as i8, 'V' as i8, 'E' as i8];
+    let fmt_chunk_ID: [i8; 4] = ['f' as i8, 'm' as i8, 't' as i8, ' ' as i8];
+    let fmt_chunk_size: i32 = 16;
+    let wave_format_type: i16 = 1;
+    let channel: i16 = channel_ as i16;
+    let samples_per_sec: i32 = pcm.get_fs() as i32; /* 標本化周波数 */
+    let bytes_per_sec: i32 = pcm.get_fs() as i32 * pcm.get_bits() / 8 * channel_;
+    let block_size: i16 = (pcm.get_bits() / 8) as i16 * channel;
+    let bits_per_sample: i16 = pcm.get_bits() as i16; /* 量子化精度 */
+    let data_chunk_ID: [i8; 4] = ['d' as i8, 'a' as i8, 't' as i8, 'a' as i8];
+    let data_chunk_size: i32 = (pcm.get_length() * 2) as i32 * channel_;
+
+    let mut fp = File::create(path).expect("file cannot be created");
+    write_i8x4(&mut fp, riff_chunk_ID);
+    fp.write_i32::<LittleEndian>(riff_chunk_size).unwrap();
+    write_i8x4(&mut fp, file_format_type);
+    write_i8x4(&mut fp, fmt_chunk_ID);
+    fp.write_i32::<LittleEndian>(fmt_chunk_size).unwrap();
+    fp.write_i16::<LittleEndian>(wave_format_type).unwrap();
+    fp.write_i16::<LittleEndian>(channel).unwrap();
+    fp.write_i32::<LittleEndian>(samples_per_sec).unwrap();
+    fp.write_i32::<LittleEndian>(bytes_per_sec).unwrap();
+    fp.write_i16::<LittleEndian>(block_size).unwrap();
+    fp.write_i16::<LittleEndian>(bits_per_sample).unwrap();
+    write_i8x4(&mut fp, data_chunk_ID);
+    fp.write_i32::<LittleEndian>(data_chunk_size).unwrap();
+    return fp;
+}
+
+/*  
+  
+  
+  
+  fclose(fp);
+}
+
+
+*/
