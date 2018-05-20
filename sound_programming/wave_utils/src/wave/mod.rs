@@ -98,7 +98,6 @@ pub fn wave_read_16bit_stereo_safer3(path: &str) -> StereoPcm {
 #[link(name = "wave")]
 extern "C" {
 
-    fn wave_read_PCMA_mono(pcm: *mut MONO_PCM, file_name: *const c_char);
     fn wave_read_IMA_ADPCM_mono(pcm: *mut MONO_PCM, file_name: *const c_char);
     fn wave_write_IMA_ADPCM_mono(pcm: *const MONO_PCM_CONST, file_name: *const c_char);
 
@@ -192,16 +191,21 @@ pub fn wave_write_PCMU_mono_safer3(path: &str, pcm: &MonoPcm) {
 
 #[allow(non_snake_case)]
 pub fn wave_read_PCMA_mono_safer3(path: &str) -> MonoPcm {
-    unsafe {
-        let mut pcm: MONO_PCM = mem::uninitialized();
-        wave_read_PCMA_mono(&mut pcm, to_c_str(path));
-        MonoPcm {
-            fs: pcm.fs as usize,
-            bits: pcm.bits,
-            length: pcm.length as usize,
-            s: from_raw_parts_mut(pcm.s, pcm.length as usize).to_vec(),
-        }
+    let (mut fp, pcm_fs, _, data_chunk_size) = read::read_header2(path, true);
+    let pcm_length = data_chunk_size as usize;
+    let mut pcm_s = vec![0.0; pcm_length];
+
+    for n in 0..pcm_length {
+        let data = PCMA(fp.read_u8().unwrap());
+        pcm_s[n] = data.convert_to_float(); /* 音データを-1以上1未満の範囲に正規化する */
     }
+    
+    return MonoPcm {
+        s: pcm_s,
+        fs: pcm_fs as usize,
+        bits: 16 as i32,
+        length: pcm_length as usize,
+    };
 }
 
 struct PCMA(u8);
