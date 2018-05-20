@@ -42,6 +42,7 @@ fn third() {
     ex10_6();
     ex11_1();
     ex11_2();
+    ex11_3();
     ex11_7();
     ex11_8();
     ex11_9();
@@ -623,30 +624,6 @@ fn ex9_10() {
 }
 
 #[allow(non_snake_case)]
-fn generate_pulse_sequence(pcm: &mut MonoPcm, vco: f64, N: usize) {
-    let t0 = pcm.fs as f64 / vco; /* 基本周期 */
-    let mut t = 0.0;
-    while t < pcm.length as f64 {
-        let ta = t as usize;
-
-        let tb = if t == ta as f64 { ta } else { ta + 1 };
-
-        for n in (tb as i32 - N as i32 / 2)..=(ta as i32 + N as i32 / 2) {
-            if n >= 0 && n < pcm.length as i32 {
-                pcm.s[n as usize] += sinc(PI * (t - n as f64))
-                    * (0.5 + 0.5 * (2.0 * PI * (t - n as f64) / (N * 2 + 1) as f64).cos());
-            }
-        }
-
-        t += t0;
-    }
-
-    for n in 0..pcm.length {
-        pcm.s[n] -= 1.0 / t0 as f64;
-    }
-}
-
-#[allow(non_snake_case)]
 fn ex9_11() {
     let pcm0_fs = 44100; /* 標本化周波数 */
     let pcm0_length = pcm0_fs * 4; /* 音データの長さ */
@@ -1060,7 +1037,7 @@ fn ex11_1() {
     wave_write_16bit_mono_safer3("ex11_1.wav", &pcm1);
 }
 
-#[allow(non_snake_case, unused_mut, unused_variables)]
+#[allow(non_snake_case)]
 fn ex11_2() {
     let pcm0 = wave_read_16bit_mono_safer3("sine_1s.wav");
     let rate = 0.5;
@@ -1106,8 +1083,11 @@ fn ex11_2() {
             pcm1.s[offset1 + n] = pcm0.s[offset0 + n];
         }
         for n in 0..p {
-            pcm1.s[offset1 + p + n] = pcm0.s[offset0 + p + n] * (p - n) as f64 / p as f64; /* 単調減少の重みづけ */
-            pcm1.s[offset1 + p + n] += pcm0.s[offset0 + n] * n as f64 / p as f64; /* 単調増加の重みづけ */
+            /* 単調減少の重みづけ */
+            pcm1.s[offset1 + p + n] = pcm0.s[offset0 + p + n] * (p - n) as f64 / p as f64;
+
+            /* 単調増加の重みづけ */
+            pcm1.s[offset1 + p + n] += pcm0.s[offset0 + n] * n as f64 / p as f64;
         }
 
         let q = (p as f64 * rate / (1.0 - rate) + 0.5) as usize;
@@ -1123,7 +1103,82 @@ fn ex11_2() {
     }
     wave_write_16bit_mono_safer3("ex11_2.wav", &pcm1);
 }
+
+#[allow(non_snake_case, unused_mut, unused_variables)]
+fn ex11_3() {
+    let pcm0 = wave_read_16bit_mono_safer3("ex11_sine_500hz.wav");
+    let pitch = 2.0; /* 音の高さを2倍にする */
+
+    let pcm1_fs = pcm0.fs; /* 標本化周波数 */
+    let pcm1_length = (pcm0.length as f64 / pitch) as usize; /* 音データの長さ */
+    let mut pcm1 = MonoPcm::new16(pcm1_fs, pcm1_length);
+
+    let N = 128; /* ハニング窓のサイズ */
+
+    for o in 0..pcm1.length {
+        let mut t = pitch * o as f64;
+        let mut tmp = 0.0;
+
+        let ta = t as usize;
+
+        let tb = if t == ta as f64 { ta } else { ta + 1 };
+        for m in (tb as i32 - N as i32 / 2)..=(ta as i32 + N as i32 / 2) {
+            if m >= 0 && m < pcm0.length as i32 {
+                tmp += pcm0.s[m as usize] * sinc(PI * (t - m as f64))
+                    * (0.5 + 0.5 * (2.0 * PI * (t - m as f64) / (N * 2 + 1) as f64).cos());
+            }
+        }
+
+        pcm1.s[o as usize] += tmp;
+    }
+    wave_write_16bit_mono_safer3("ex11_3.wav", &pcm1);
+}
+
+#[allow(non_snake_case)]
+fn generate_pulse_sequence(pcm: &mut MonoPcm, vco: f64, N: usize) {
+    let t0 = pcm.fs as f64 / vco; /* 基本周期 */
+    let mut t = 0.0;
+    while t < pcm.length as f64 {
+        let ta = t as usize;
+
+        let tb = if t == ta as f64 { ta } else { ta + 1 };
+
+        for n in (tb as i32 - N as i32 / 2)..=(ta as i32 + N as i32 / 2) {
+            if n >= 0 && n < pcm.length as i32 {
+                pcm.s[n as usize] += sinc(PI * (t - n as f64))
+                    * (0.5 + 0.5 * (2.0 * PI * (t - n as f64) / (N * 2 + 1) as f64).cos());
+            }
+        }
+
+        t += t0;
+    }
+
+    for n in 0..pcm.length {
+        pcm.s[n] -= 1.0 / t0 as f64;
+    }
+}
+
 /*
+
+
+
+int main(void)
+{
+  MONO_PCM pcm0, pcm1;
+  int n, m, N, ta, tb;
+  double t, pitch;
+
+  
+  
+  
+  
+  
+  free(pcm0.s);
+  free(pcm1.s);
+  
+  return 0;
+}
+
 
 */
 
