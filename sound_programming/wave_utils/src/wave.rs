@@ -140,8 +140,6 @@ extern "C" {
     pub fn wave_write_8bit_mono(pcm: *const MONO_PCM_CONST, file_name: *const c_char);
     pub fn wave_write_8bit_stereo(pcm: *const STEREO_PCM_CONST, file_name: *const c_char);
 
-    /*fn wave_write_16bit_stereo(pcm: *const STEREO_PCM_CONST, file_name: *const c_char);
-     */
     fn wave_read_PCMA_mono(pcm: *mut MONO_PCM, file_name: *const c_char);
     fn wave_write_PCMA_mono(pcm: *const MONO_PCM_CONST, file_name: *const c_char);
     fn wave_read_IMA_ADPCM_mono(pcm: *mut MONO_PCM, file_name: *const c_char);
@@ -153,6 +151,22 @@ extern "C" {
 
 trait WaveData {
     fn convert_from_float(d: f64) -> Self;
+    const BYTE_NUM: i32;
+}
+
+impl WaveData for u8 {
+    fn convert_from_float(d: f64) -> u8 {
+        let mut s = (d + 1.0) / 2.0 * 256.0;
+
+        if s > 255.0 {
+            s = 255.0; /* クリッピング */
+        } else if s < 0.0 {
+            s = 0.0; /* クリッピング */
+        }
+
+        ((s + 0.5) as i32) as u8 /* 四捨五入 */
+    }
+    const BYTE_NUM: i32 = 1;
 }
 
 impl WaveData for i16 {
@@ -167,6 +181,7 @@ impl WaveData for i16 {
 
         ((s + 0.5) as i32 - 32768) as i16 /* 四捨五入とオフセットの調節 */
     }
+    const BYTE_NUM: i32 = 2;
 }
 
 #[allow(non_snake_case)]
@@ -198,14 +213,14 @@ pub fn wave_write_IMA_ADPCM_mono_safer3(path: &str, pcm: &MonoPcm) {
 
 #[allow(non_snake_case)]
 pub fn wave_write_8bit_mono_safer3(path: &str, pcm: &MonoPcm) {
-    let pcm1: MONO_PCM_CONST = MONO_PCM_CONST {
-        fs: pcm.fs as i32,
-        bits: pcm.bits,
-        length: pcm.length as i32,
-        s: pcm.s.as_ptr(),
-    };
-    unsafe {
-        wave_write_8bit_mono(&pcm1, to_c_str(path));
+    let mut fp = wave_write_header::<MonoPcm, u8>(path, pcm);
+    for n in 0..pcm.get_length() {
+        fp.write_u8(WaveData::convert_from_float(pcm.s[n])).unwrap(); /* 音データの書き出し */
+    }
+    if (pcm.length % 2) == 1 {
+        /* 音データの長さが奇数のとき */
+
+        fp.write_u8(0).unwrap(); /* 0パディング */
     }
 }
 
@@ -279,7 +294,7 @@ pub fn wave_write_PCMA_mono_safer3(path: &str, pcm: &MonoPcm) {
 
 #[allow(non_snake_case)]
 pub fn wave_write_16bit_stereo_safer3(path: &str, pcm: &StereoPcm) {
-    let mut fp = wave_write_16bit_header(path, pcm);
+    let mut fp = wave_write_header::<StereoPcm, i16>(path, pcm);
     for n in 0..pcm.length {
         fp.write_i16::<LittleEndian>(WaveData::convert_from_float(pcm.s_l[n]))
             .unwrap(); /* 音データ（Lチャンネル）の書き出し */
@@ -289,7 +304,7 @@ pub fn wave_write_16bit_stereo_safer3(path: &str, pcm: &StereoPcm) {
 }
 
 pub fn wave_write_16bit_mono_safer3(path: &str, pcm: &MonoPcm) {
-    let mut fp = wave_write_16bit_header(path, pcm);
+    let mut fp = wave_write_header::<MonoPcm, i16>(path, pcm);
     for n in 0..pcm.get_length() {
         fp.write_i16::<LittleEndian>(WaveData::convert_from_float(pcm.s[n]))
             .unwrap(); /* 音データの書き出し */
@@ -330,13 +345,15 @@ impl Pcm for StereoPcm {
 }
 
 #[allow(non_snake_case)]
-fn wave_write_16bit_header<T>(path: &str, pcm: &T) -> File
+fn wave_write_header<T, U>(path: &str, pcm: &T) -> File
 where
     T: Pcm,
+    U: WaveData,
 {
     let channel_: i32 = T::CHANNEL;
+
     let riff_chunk_ID: [i8; 4] = ['R' as i8, 'I' as i8, 'F' as i8, 'F' as i8];
-    let riff_chunk_size: i32 = 36 + pcm.get_length() as i32 * 2 * channel_;
+    let riff_chunk_size: i32 = 36 + pcm.get_length() as i32 * U::BYTE_NUM * channel_;
     let file_format_type: [i8; 4] = ['W' as i8, 'A' as i8, 'V' as i8, 'E' as i8];
     let fmt_chunk_ID: [i8; 4] = ['f' as i8, 'm' as i8, 't' as i8, ' ' as i8];
     let fmt_chunk_size: i32 = 16;
@@ -347,7 +364,7 @@ where
     let block_size: i16 = (pcm.get_bits() / 8) as i16 * channel;
     let bits_per_sample: i16 = pcm.get_bits() as i16; /* 量子化精度 */
     let data_chunk_ID: [i8; 4] = ['d' as i8, 'a' as i8, 't' as i8, 'a' as i8];
-    let data_chunk_size: i32 = (pcm.get_length() * 2) as i32 * channel_;
+    let data_chunk_size: i32 = pcm.get_length() as i32 * U::BYTE_NUM * channel_;
 
     let mut fp = File::create(path).expect("file cannot be created");
     write_i8x4(&mut fp, riff_chunk_ID);
@@ -366,12 +383,3 @@ where
     return fp;
 }
 
-/*  
-  
-  
-  
-  fclose(fp);
-}
-
-
-*/
