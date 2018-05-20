@@ -18,13 +18,7 @@ pub fn safe_FIR_LPF(fe: f64, J: usize, b: &mut [f64], w: &mut [f64]) {
 }
 
 #[allow(non_snake_case)]
-pub fn safe_FIR_filtering(
-    x: &[f64],
-    y: &mut [f64],
-    L: usize,
-    b: &mut [f64],
-    J: usize,
-) {
+pub fn safe_FIR_filtering(x: &[f64], y: &mut [f64], L: usize, b: &mut [f64], J: usize) {
     // check index here
     assert_eq!(J + 1, b.len());
 
@@ -56,13 +50,7 @@ pub fn safe_FIR_HPF(fe: f64, J: usize, b: &mut [f64], w: &mut [f64]) {
 
 // not tested
 #[allow(non_snake_case)]
-pub fn safe_FIR_BPF(
-    fe1: f64,
-    fe2: f64,
-    J: usize,
-    b: &mut [f64],
-    w: &mut [f64],
-) {
+pub fn safe_FIR_BPF(fe1: f64, fe2: f64, J: usize, b: &mut [f64], w: &mut [f64]) {
     assert_eq!(J % 2, 0);
     assert_eq!(J + 1, b.len());
     assert_eq!(J + 1, w.len());
@@ -80,13 +68,7 @@ pub fn safe_FIR_BPF(
 
 // not tested
 #[allow(non_snake_case)]
-pub fn safe_FIR_BEF(
-    fe1: f64,
-    fe2: f64,
-    J: usize,
-    b: &mut [f64],
-    w: &mut [f64],
-) {
+pub fn safe_FIR_BEF(fe1: f64, fe2: f64, J: usize, b: &mut [f64], w: &mut [f64]) {
     assert_eq!(J % 2, 0);
     assert_eq!(J + 1, b.len());
     assert_eq!(J + 1, w.len());
@@ -171,13 +153,7 @@ pub fn safe_IIR_notch(fc: f64, Q: f64, a: &mut [f64], b: &mut [f64]) {
 
 //not tested
 #[allow(non_snake_case)]
-pub fn safe_IIR_low_shelving(
-    fc: f64,
-    Q: f64,
-    g: f64,
-    a: &mut [f64],
-    b: &mut [f64],
-) {
+pub fn safe_IIR_low_shelving(fc: f64, Q: f64, g: f64, a: &mut [f64], b: &mut [f64]) {
     assert_eq!(3, a.len());
     assert_eq!(3, b.len());
     let fc = (PI * fc).tan() / (2.0 * PI);
@@ -195,13 +171,7 @@ pub fn safe_IIR_low_shelving(
 
 //not tested
 #[allow(non_snake_case)]
-pub fn safe_IIR_high_shelving(
-    fc: f64,
-    Q: f64,
-    g: f64,
-    a: &mut [f64],
-    b: &mut [f64],
-) {
+pub fn safe_IIR_high_shelving(fc: f64, Q: f64, g: f64, a: &mut [f64], b: &mut [f64]) {
     assert_eq!(3, a.len());
     assert_eq!(3, b.len());
     let fc = (PI * fc).tan() / (2.0 * PI);
@@ -217,13 +187,7 @@ pub fn safe_IIR_high_shelving(
 
 //not tested
 #[allow(non_snake_case)]
-pub fn safe_IIR_peaking(
-    fc: f64,
-    Q: f64,
-    g: f64,
-    a: &mut [f64],
-    b: &mut [f64],
-) {
+pub fn safe_IIR_peaking(fc: f64, Q: f64, g: f64, a: &mut [f64], b: &mut [f64]) {
     assert_eq!(3, a.len());
     assert_eq!(3, b.len());
     let fc = (PI * fc).tan() / (2.0 * PI);
