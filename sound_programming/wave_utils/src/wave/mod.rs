@@ -110,12 +110,23 @@ const index_table: [i32; 16] = [-1, -1, -1, -1, 2, 4, 6, 8, -1, -1, -1, -1, 2, 4
 #[allow(non_snake_case)]
 pub fn wave_read_IMA_ADPCM_mono_safer3(path: &str) -> MonoPcm {
     let (mut fp, samples_per_sec, block_size, _bits_per_sample) = read_partial_header(path);
-    let _extra_size = fp.read_i16::<LittleEndian>().unwrap();
+
+    {
+        let extra_size = fp.read_i16::<LittleEndian>().unwrap();
+        assert_eq!(extra_size, 2);
+    }
     let samples_per_block = fp.read_i16::<LittleEndian>().unwrap();
-    let _fact_chunk_ID = read_i8x4(&mut fp);
+    {
+        let fact_chunk_ID = read_i8x4(&mut fp);
+        assert_eq!(fact_chunk_ID, ['f' as i8, 'a' as i8, 'c' as i8, 't' as i8]);
+    }
     let _fact_chunk_size = fp.read_i32::<LittleEndian>().unwrap();
     let sample_length = fp.read_i32::<LittleEndian>().unwrap();
-    let _data_chunk_ID = read_i8x4(&mut fp);
+
+    {
+        let data_chunk_ID = read_i8x4(&mut fp);
+        assert_eq!(data_chunk_ID, ['d' as i8, 'a' as i8, 't' as i8, 'a' as i8]);
+    }
     let data_chunk_size = fp.read_i32::<LittleEndian>().unwrap();
 
     let number_of_block: i32 = data_chunk_size / block_size as i32;

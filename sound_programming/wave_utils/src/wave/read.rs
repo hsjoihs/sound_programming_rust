@@ -52,12 +52,21 @@ pub fn read_header2(file_name: &str, b: bool) -> (File, i32, i16, i32) {
     let (mut fp, samples_per_sec, _block_size, bits_per_sample) = read_partial_header(file_name);
 
     if b {
-        let _extra_size = fp.read_i16::<LittleEndian>().unwrap();
-        let _fact_chunk_ID = read_i8x4(&mut fp);
+        {
+            let extra_size = fp.read_i16::<LittleEndian>().unwrap();
+            assert_eq!(extra_size, 0);
+        }
+        {
+            let fact_chunk_ID = read_i8x4(&mut fp);
+            assert_eq!(fact_chunk_ID, ['f' as i8, 'a' as i8, 'c' as i8, 't' as i8]);
+        }
         let _fact_chunk_size = fp.read_i32::<LittleEndian>().unwrap();
         let _sample_length = fp.read_i32::<LittleEndian>().unwrap();
     }
-    let _data_chunk_ID = read_i8x4(&mut fp);
+    {
+        let data_chunk_ID = read_i8x4(&mut fp);
+        assert_eq!(data_chunk_ID, ['d' as i8, 'a' as i8, 't' as i8, 'a' as i8]);
+    }
     let data_chunk_size = fp.read_i32::<LittleEndian>().unwrap();
 
     return (fp, samples_per_sec, bits_per_sample, data_chunk_size);
