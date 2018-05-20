@@ -44,6 +44,7 @@ fn third() {
     ex11_2();
     ex11_3();
     ex11_4();
+    ex11_5();
 
     ex11_7();
     ex11_8();
@@ -1219,6 +1220,78 @@ fn ex11_4() {
     wave_write_16bit_mono_safer3("ex11_4.wav", &pcm2);
 }
 
+#[allow(non_snake_case, unused_mut, unused_variables)]
+fn ex11_5() {
+    let pcm0 = wave_read_16bit_mono_safer3("ex11_sine_500hz.wav");
+    let rate = 0.5;
+    assert!(0.5 <= rate && rate < 1.0);
+
+    let pcm1_fs = pcm0.fs; /* 標本化周波数 */
+    let pcm1_length = (pcm0.length as f64 / rate) as usize + 1; /* 音データの長さ */
+    let mut pcm1 = MonoPcm::new16(pcm1_fs, pcm1_length);
+
+    let template_size = mult(pcm1.fs, 0.01); /* 相関関数のサイズ */
+    let pmin = mult(pcm1.fs, 0.005); /* ピークの探索範囲の下限 */
+    let pmax = mult(pcm1.fs, 0.02); /* ピークの探索範囲の上限 */
+
+    let mut x = vec![0.0; template_size];
+    let mut y = vec![0.0; template_size];
+    let mut r = vec![0.0; pmax + 1];
+
+    let mut offset0 = 0;
+    let mut offset1 = 0;
+
+    while offset0 + pmax * 2 < pcm0.length {
+        for n in 0..template_size {
+            x[n] = pcm0.s[offset0 + n]; /* 本来の音データ */
+        }
+
+        let mut rmax = 0.0;
+        let mut p = pmin;
+        for m in pmin..=pmax {
+            for n in 0..template_size {
+                y[n] = pcm0.s[offset0 + m + n]; /* mサンプルずらした音データ */
+            }
+            r[m] = 0.0;
+            for n in 0..template_size {
+                r[m] += x[n] * y[n]; /* 相関関数 */
+            }
+            if r[m] > rmax {
+                rmax = r[m]; /* 相関関数のピーク */
+                p = m; /* 波形の周期 */
+            }
+        }
+
+        for n in 0..p {
+            pcm1.s[offset1 + n] = pcm0.s[offset0 + n];
+        }
+        for n in 0..p {
+            /* 単調減少の重み付け */
+            pcm1.s[offset1 + p + n] = pcm0.s[offset0 + p + n] * (p - n) as f64 / p as f64;
+
+            /* 単調増加の重み付け */
+            pcm1.s[offset1 + p + n] += pcm0.s[offset0 + n] * n as f64 / p as f64;
+        }
+
+        let q = (p as f64 * rate / (1.0 - rate) + 0.5) as usize;
+        for n in p..q {
+            if offset0 + n >= pcm0.length {
+                break;
+            }
+            pcm1.s[offset1 + p + n] = pcm0.s[offset0 + n];
+        }
+
+        offset0 += q; /* offset0の更新 */
+        offset1 += p + q; /* offset1の更新 */
+    }
+
+    let pitch = 1.0 / rate;
+    let mut pcm2 = MonoPcm::blank_copy(&pcm0);
+    let N = 128; /* ハニング窓のサイズ */
+    Hanning_something(&mut pcm2, &pcm1, pitch, N);
+    wave_write_16bit_mono_safer3("ex11_5.wav", &pcm2);
+}
+
 #[allow(non_snake_case)]
 fn Hanning_something(pcm1: &mut MonoPcm, pcm0: &MonoPcm, pitch: f64, N: usize) {
     for o in 0..pcm1.length {
@@ -1237,32 +1310,6 @@ fn Hanning_something(pcm1: &mut MonoPcm, pcm0: &MonoPcm, pitch: f64, N: usize) {
         pcm1.s[o as usize] += tmp;
     }
 }
-/*
-
-
-int main(void)
-{
-  MONO_PCM pcm0, pcm1, pcm2;
-  int n, m, template_size, pmin, pmax, p, q, offset0, offset1, N, ta, tb;
-  double rate, rmax, t, pitch, *x, *y, *r;
-
-  
- 
-  
-  
-  
-  free(pcm0.s);
-  free(pcm1.s);
-  free(pcm2.s);
-  free(x);
-  free(y);
-  free(r);
-  
-  return 0;
-}
-
-
-*/
 
 #[allow(non_snake_case)]
 fn ex11_7() {
