@@ -3,21 +3,20 @@ extern crate rand;
 extern crate wave_utils;
 use std::f64::consts::PI;
 use wave_utils::MonoPcm;
-use wave_utils::c_double;
 
 pub mod first;
 pub mod second;
 
-fn sine_wave(pcm: &mut MonoPcm, f0: c_double, a: c_double, offset: usize, duration: usize) {
+fn sine_wave(pcm: &mut MonoPcm, f0: f64, a: f64, offset: usize, duration: usize) {
     /* サイン波 */
-    let mut s: Vec<c_double> = (0..duration)
+    let mut s: Vec<f64> = (0..duration)
         .map(|n| (2.0 * PI * f0 * (n as f64) / (pcm.fs as f64)).sin() * a)
         .collect();
 
     /* フェード処理 */
     for n in 0..(pcm.fs as f64 * 0.01).ceil() as usize {
-        s[n] *= n as c_double / (pcm.fs as f64 * 0.01);
-        s[duration - n - 1] *= n as c_double / (pcm.fs as f64 * 0.01);
+        s[n] *= n as f64 / (pcm.fs as f64 * 0.01);
+        s[duration - n - 1] *= n as f64 / (pcm.fs as f64 * 0.01);
     }
 
     for n in 0..duration as usize {

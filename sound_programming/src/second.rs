@@ -6,7 +6,6 @@ use mult;
 use num_complex::Complex;
 use rand::Rng;
 use wave_utils::MonoPcm;
-use wave_utils::c_double;
 use wave_utils::fft::safe_FFT_;
 use wave_utils::fft::safe_IFFT_;
 use wave_utils::filter::safe_FIR_LPF;
@@ -347,7 +346,7 @@ fn ex8_5() {
     wave_write_16bit_mono_safer3("ex8_5.wav", &pcm);
 }
 
-fn square_wave(pcm: &mut MonoPcm, f0: c_double, gain: c_double, offset: usize, duration: usize) {
+fn square_wave(pcm: &mut MonoPcm, f0: f64, gain: f64, offset: usize, duration: usize) {
     let mut s = vec![0.0; duration];
     /* 矩形波 */
     let t0 = (pcm.fs as f64 / f0) as usize; /* 基本周期 */
@@ -374,7 +373,7 @@ fn square_wave(pcm: &mut MonoPcm, f0: c_double, gain: c_double, offset: usize, d
     }
 }
 
-fn triangle_wave(pcm: &mut MonoPcm, f0: c_double, gain: c_double, offset: usize, duration: usize) {
+fn triangle_wave(pcm: &mut MonoPcm, f0: f64, gain: f64, offset: usize, duration: usize) {
     let mut s = vec![0.0; duration];
     /* 三角波 */
     let t0 = (pcm.fs as f64 / f0) as usize; /* 基本周期 */
@@ -398,7 +397,7 @@ fn triangle_wave(pcm: &mut MonoPcm, f0: c_double, gain: c_double, offset: usize,
     }
 }
 
-fn white_noise(pcm: &mut MonoPcm, gain: c_double, offset: usize, duration: usize) {
+fn white_noise(pcm: &mut MonoPcm, gain: f64, offset: usize, duration: usize) {
     let mut s = vec![0.0; duration];
     let mut rng = rand::thread_rng();
     /* 白色雑音 */

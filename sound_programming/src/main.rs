@@ -8,7 +8,6 @@ use sound_programming::mult;
 use sound_programming::second::second;
 use std::f64::consts::PI;
 use wave_utils::MonoPcm;
-use wave_utils::c_double;
 use wave_utils::filter::safe_IIR_LPF;
 use wave_utils::safe_ADSR;
 use wave_utils::sinc;
@@ -851,8 +850,8 @@ fn ex10_4() {
     let pcm_length = pcm_fs * 4; /* 音データの長さ */
     let mut pcm = MonoPcm::new16(pcm_fs, pcm_length);
 
-    let mut ac: Vec<c_double> = vec![0.0; pcm_length];
-    let mut am: Vec<c_double> = vec![0.0; pcm_length];
+    let mut ac: Vec<f64> = vec![0.0; pcm_length];
+    let mut am: Vec<f64> = vec![0.0; pcm_length];
 
     /* キャリア振幅 */
     let gate = pcm_fs * 4;

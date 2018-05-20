@@ -1,20 +1,15 @@
 extern crate libc;
 pub mod fft;
 pub mod filter;
-pub use libc::c_char;
-pub use libc::c_double;
-pub use libc::c_int;
 use std::f64::consts::PI;
-use std::ffi::CString;
-use std::slice::from_raw_parts_mut;
 pub mod wave;
 
 #[allow(non_snake_case)]
 pub fn safe_ADSR(
-    e: &mut [c_double],
+    e: &mut [f64],
     A: usize,
     D: usize,
-    S: c_double,
+    S: f64,
     R: usize,
     gate: usize,
     duration: usize,
@@ -92,23 +87,13 @@ pub struct StereoPcm {
 }
 
 #[allow(non_snake_case)]
-pub unsafe fn Hanning_window(w: *mut c_double, N: c_int) {
-    let w_slice = from_raw_parts_mut(w, N as usize);
-    safe_Hanning_window(w_slice);
-}
-
-#[allow(non_snake_case)]
-pub fn safe_Hanning_window(w_slice: &mut [c_double]) {
+pub fn safe_Hanning_window(w_slice: &mut [f64]) {
     let N = w_slice.len();
     for n in 0..N as usize {
         w_slice[n] = 0.5 - 0.5 * (2.0 * PI * (n as f64 + if N % 2 == 0 { 0.0 } else { 0.5 })
             / (N as f64))
             .cos();
     }
-}
-
-pub fn to_c_str(a: &str) -> *mut i8 {
-    CString::new(a).unwrap().into_raw()
 }
 
 pub fn sinc(x: f64) -> f64 {

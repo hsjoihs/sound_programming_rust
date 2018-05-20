@@ -8,7 +8,6 @@ use rand::Rng;
 use sine_wave;
 use std::f64::consts::PI;
 use wave_utils::MonoPcm;
-use wave_utils::c_double;
 use wave_utils::fft::safe_FFT_;
 use wave_utils::fft::safe_IFFT_;
 use wave_utils::filter::safe_FIR_LPF;
@@ -324,7 +323,7 @@ fn ex4_1() {
 #[allow(non_snake_case)]
 fn ex4_2() {
     let N = 64;
-    let mut w: Vec<c_double> = vec![0.0; N];
+    let mut w: Vec<f64> = vec![0.0; N];
     safe_Hanning_window(&mut w); /* ハニング窓 */
 
     let X = dft(N, Box::new(move |n| w[n]));
@@ -636,7 +635,7 @@ fn ex6_4() {
 
     let mut b_ = vec![Complex::new(0.0, 0.0); N];
 
-    let mut w: Vec<c_double> = vec![0.0; N];
+    let mut w: Vec<f64> = vec![0.0; N];
     safe_Hanning_window(&mut w); /* ハニング窓 */
 
     let number_of_frame = (pcm0.length as usize - N / 2) / (N / 2); /* フレームの数 */
