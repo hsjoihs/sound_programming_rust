@@ -13,13 +13,13 @@ use wave_utils::filter::safe_IIR_LPF;
 use wave_utils::safe_ADSR;
 use wave_utils::sinc;
 use wave_utils::wave::wave_read_16bit_mono_safer3;
-use wave_utils::wave_read_IMA_ADPCM_mono_safer3;
-use wave_utils::wave_read_PCMA_mono_safer3;
-use wave_utils::wave_read_PCMU_mono_safer3;
-use wave_utils::wave_write_16bit_mono_safer3;
-use wave_utils::wave_write_IMA_ADPCM_mono_safer3;
-use wave_utils::wave_write_PCMA_mono_safer3;
-use wave_utils::wave_write_PCMU_mono_safer3;
+use wave_utils::wave::wave_read_IMA_ADPCM_mono_safer3;
+use wave_utils::wave::wave_read_PCMA_mono_safer3;
+use wave_utils::wave::wave_read_PCMU_mono_safer3;
+use wave_utils::wave::wave_write_16bit_mono_safer3;
+use wave_utils::wave::wave_write_IMA_ADPCM_mono_safer3;
+use wave_utils::wave::wave_write_PCMA_mono_safer3;
+use wave_utils::wave::wave_write_PCMU_mono_safer3;
 //use std::io;
 
 fn third() {
@@ -46,9 +46,6 @@ fn third() {
     ex11_4();
     ex11_5();
     ex11_6();
-    ex11_7();
-    ex11_8();
-    ex11_9();
 }
 
 fn main() {
@@ -61,6 +58,9 @@ fn main() {
     if false {
         third();
     }
+    ex11_7();
+    ex11_8();
+    ex11_9();
 }
 
 fn ex9_1() {

@@ -1,9 +1,15 @@
 extern crate byteorder;
+use to_c_str;
+use std::slice::from_raw_parts_mut;
+use STEREO_PCM_CONST;
+use MONO_PCM;
+use MONO_PCM_CONST;
+use libc::c_char;
 use MonoPcm;
 use StereoPcm;
 use std::fs::File;
 use self::byteorder::{LittleEndian, ReadBytesExt};
-
+use std::mem;
 
 
 fn read_i8x4<T>(mut fp: T) -> [i8; 4] where T : byteorder::ReadBytesExt{
@@ -121,4 +127,145 @@ pub fn wave_read_16bit_stereo_safer3(path: &str) -> StereoPcm {
         bits: pcm_bits as i32,
         length: pcm_length as usize,
     };
+}
+
+#[link(name = "wave")]
+extern "C" {
+    pub fn wave_write_8bit_mono(pcm: *const MONO_PCM_CONST, file_name: *const c_char);
+    pub fn wave_write_8bit_stereo(pcm: *const STEREO_PCM_CONST, file_name: *const c_char);
+
+    fn wave_write_16bit_mono(pcm: *const MONO_PCM_CONST, file_name: *const c_char);
+    fn wave_write_16bit_stereo(pcm: *const STEREO_PCM_CONST, file_name: *const c_char);
+
+    fn wave_read_PCMA_mono(pcm: *mut MONO_PCM, file_name: *const c_char);
+    fn wave_write_PCMA_mono(pcm: *const MONO_PCM_CONST, file_name: *const c_char);
+    fn wave_read_IMA_ADPCM_mono(pcm: *mut MONO_PCM, file_name: *const c_char);
+    fn wave_write_IMA_ADPCM_mono(pcm: *const MONO_PCM_CONST, file_name: *const c_char);
+    fn wave_read_PCMU_mono(pcm: *mut MONO_PCM, file_name: *const c_char);
+    fn wave_write_PCMU_mono(pcm: *const MONO_PCM_CONST, file_name: *const c_char);
+
+}
+
+
+
+#[allow(non_snake_case)]
+pub fn wave_write_16bit_mono_safer3(path: &str, pcm: &MonoPcm) {
+    let pcm1: MONO_PCM_CONST = MONO_PCM_CONST {
+        fs: pcm.fs as i32,
+        bits: pcm.bits,
+        length: pcm.length as i32,
+        s: pcm.s.as_ptr(),
+    };
+    unsafe {
+        wave_write_16bit_mono(&pcm1, to_c_str(path));
+    }
+}
+
+#[allow(non_snake_case)]
+pub fn wave_read_IMA_ADPCM_mono_safer3(path: &str) -> MonoPcm {
+    unsafe {
+        let mut pcm: MONO_PCM = mem::uninitialized();
+        wave_read_IMA_ADPCM_mono(&mut pcm, to_c_str(path));
+        MonoPcm {
+            fs: pcm.fs as usize,
+            bits: pcm.bits,
+            length: pcm.length as usize,
+            s: from_raw_parts_mut(pcm.s, pcm.length as usize).to_vec(),
+        }
+    }
+}
+
+#[allow(non_snake_case)]
+pub fn wave_write_IMA_ADPCM_mono_safer3(path: &str, pcm: &MonoPcm) {
+    let pcm1: MONO_PCM_CONST = MONO_PCM_CONST {
+        fs: pcm.fs as i32,
+        bits: pcm.bits,
+        length: pcm.length as i32,
+        s: pcm.s.as_ptr(),
+    };
+    unsafe {
+        wave_write_IMA_ADPCM_mono(&pcm1, to_c_str(path));
+    }
+}
+
+#[allow(non_snake_case)]
+pub fn wave_read_PCMU_mono_safer3(path: &str) -> MonoPcm {
+    unsafe {
+        let mut pcm: MONO_PCM = mem::uninitialized();
+        wave_read_PCMU_mono(&mut pcm, to_c_str(path));
+        MonoPcm {
+            fs: pcm.fs as usize,
+            bits: pcm.bits,
+            length: pcm.length as usize,
+            s: from_raw_parts_mut(pcm.s, pcm.length as usize).to_vec(),
+        }
+    }
+}
+
+#[allow(non_snake_case)]
+pub fn wave_write_PCMU_mono_safer3(path: &str, pcm: &MonoPcm) {
+    let pcm1: MONO_PCM_CONST = MONO_PCM_CONST {
+        fs: pcm.fs as i32,
+        bits: pcm.bits,
+        length: pcm.length as i32,
+        s: pcm.s.as_ptr(),
+    };
+    unsafe {
+        wave_write_PCMU_mono(&pcm1, to_c_str(path));
+    }
+}
+
+#[allow(non_snake_case)]
+pub fn wave_read_PCMA_mono_safer3(path: &str) -> MonoPcm {
+    unsafe {
+        let mut pcm: MONO_PCM = mem::uninitialized();
+        wave_read_PCMA_mono(&mut pcm, to_c_str(path));
+        MonoPcm {
+            fs: pcm.fs as usize,
+            bits: pcm.bits,
+            length: pcm.length as usize,
+            s: from_raw_parts_mut(pcm.s, pcm.length as usize).to_vec(),
+        }
+    }
+}
+
+#[allow(non_snake_case)]
+pub fn wave_write_PCMA_mono_safer3(path: &str, pcm: &MonoPcm) {
+    let pcm1: MONO_PCM_CONST = MONO_PCM_CONST {
+        fs: pcm.fs as i32,
+        bits: pcm.bits,
+        length: pcm.length as i32,
+        s: pcm.s.as_ptr(),
+    };
+    unsafe {
+        wave_write_PCMA_mono(&pcm1, to_c_str(path));
+    }
+}
+
+#[allow(non_snake_case)]
+pub fn wave_write_16bit_stereo_safer2(path: &str, x: (&[f64], &[f64], usize, i32, usize)) {
+    let pcm1: STEREO_PCM_CONST = STEREO_PCM_CONST {
+        fs: x.2 as i32,
+        bits: x.3,
+        length: x.4 as i32,
+        sL: x.0.as_ptr(),
+        sR: x.1.as_ptr(),
+    };
+    unsafe {
+        wave_write_16bit_stereo(&pcm1, to_c_str(path));
+    }
+}
+
+#[allow(non_snake_case)]
+pub fn wave_write_16bit_stereo_safer3(path: &str, pcm: &StereoPcm) {
+    let pcm1: STEREO_PCM_CONST = STEREO_PCM_CONST {
+        fs: pcm.fs as i32,
+        bits: pcm.bits,
+        length: pcm.length as i32,
+        sL: pcm.s_l.as_ptr(),
+        sR: pcm.s_r.as_ptr(),
+    };
+    unsafe {
+        wave_write_16bit_stereo(&pcm1, to_c_str(path));
+    }
 }

@@ -15,7 +15,7 @@ use wave_utils::filter::safe_IIR_filtering;
 use wave_utils::filter::safe_IIR_resonator;
 use wave_utils::safe_Hanning_window;
 use wave_utils::wave::wave_read_16bit_mono_safer3;
-use wave_utils::wave_write_16bit_mono_safer3;
+use wave_utils::wave::wave_write_16bit_mono_safer3;
 
 pub fn second() {
     ex7_1();
