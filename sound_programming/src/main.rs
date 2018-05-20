@@ -38,7 +38,7 @@ fn former_half() {
     ex3_3();
     ex3_4();
     if false {
-        ex3_5(); //slow
+        ex3_5(); // slow and random
     }
     ex4_1();
     ex4_2();
@@ -82,7 +82,7 @@ fn latter_half() {
 }
 
 fn main() {
-    if true {
+    if false {
         former_half();
     }
     if true {
@@ -309,6 +309,7 @@ fn ex3_4() {
     wave_write_16bit_mono_safer3("ex3_4.wav", &pcm);
 }
 
+// slow and random; omitted from the test
 fn ex3_5() {
     let f0 = 1.0; /* 基本周波数 */
 
@@ -623,7 +624,7 @@ fn ex5_5() {
 }
 
 #[allow(non_snake_case)]
-fn determine_J(delta : f64) -> usize{
+fn determine_J(delta: f64) -> usize {
     let mut J = (3.1 / delta + 0.5) as usize - 1; /* 遅延器の数 */
     if J % 2 == 1 {
         J += 1; /* J+1が奇数になるように調整する */
@@ -640,7 +641,6 @@ fn ex6_1() {
     let fe = 1000.0 / pcm0.fs as f64; /* エッジ周波数 */
     let delta = 1000.0 / pcm0.fs as f64; /* 遷移帯域幅 */
     let J = determine_J(delta); /* 遅延器の数 */
-    
 
     let mut b = vec![0.0; J + 1];
     let mut w = vec![0.0; J + 1];
@@ -688,9 +688,6 @@ fn ex6_3() {
     let L: usize = 128; /* フレームの長さ */
     let N = 256; /* DFTのサイズ */
 
-    let mut y = vec![Complex::new(0.0, 0.0); N];
-    let mut b_ = vec![Complex::new(0.0, 0.0); N];
-
     let number_of_frame = pcm0.length as usize / L; /* フレームの数 */
     for frame in 0..number_of_frame {
         let offset = (L * frame) as usize;
@@ -703,19 +700,14 @@ fn ex6_3() {
         safe_FFT_(&mut x);
 
         /* B(k) */
-        for m in 0..N {
-            b_[m].re = 0.0;
-            b_[m].im = 0.0;
-        }
+        let mut b_ = vec![Complex::new(0.0, 0.0); N];
         for m in 0..=J {
             b_[m].re = b[m];
         }
         safe_FFT_(&mut b_);
 
         /* フィルタリング */
-        for k in 0..N {
-            y[k] = x[k] * b_[k];
-        }
+        let mut y: Vec<_> = (0..N).map(|k| x[k] * b_[k]).collect();
         safe_IFFT_(&mut y);
 
         /* オーバーラップアド */
@@ -736,8 +728,6 @@ fn ex6_4() {
 
     let mut pcm1 = MonoPcm::blank_copy(&pcm0);
 
-    let mut x = vec![Complex::new(0.0, 0.0); N];
-    let mut y = vec![Complex::new(0.0, 0.0); N];
     let mut b_ = vec![Complex::new(0.0, 0.0); N];
 
     let mut w: Vec<c_double> = vec![0.0; N];
@@ -749,9 +739,9 @@ fn ex6_4() {
         let offset = N / 2 * frame;
 
         /* X(n) */
-        for n in 0..N {
-            x[n] = Complex::new(pcm0.s[offset + n] * w[n], 0.0);
-        }
+        let mut x: Vec<_> = (0..N)
+            .map(|n| Complex::new(pcm0.s[offset + n] * w[n], 0.0))
+            .collect();
         safe_FFT_(&mut x);
 
         /* B(k) */
@@ -768,19 +758,18 @@ fn ex6_4() {
         }
 
         /* フィルタリング */
-        for k in 0..N {
-            y[k] = x[k] * b_[k];
-        }
+        let mut y: Vec<_> = (0..N).map(|k| x[k] * b_[k]).collect();
         safe_IFFT_(&mut y);
 
         /* オーバーラップアド */
-        for n in 0..N {
-            pcm1.s[offset + n] += y[n].re;
+        for (n, item) in y.iter().enumerate() {
+            pcm1.s[offset + n] += item.re;
         }
     }
     wave_write_16bit_mono_safer3("ex6_4.wav", &pcm1);
 }
 
+// slooooow; omitted from the test
 #[allow(non_snake_case)]
 fn ex6_5() {
     let pcm0 = wave_read_16bit_mono_safer3("drum.wav");
@@ -919,6 +908,7 @@ fn ex7_3() {
     wave_write_16bit_mono_safer3("ex7_3.wav", &pcm1);
 }
 
+// slow; omitted from the test
 #[allow(non_snake_case)]
 fn ex7_4() {
     let pcm0 = wave_read_16bit_mono_safer3("synth.wav");
@@ -1074,6 +1064,7 @@ fn ex8_3() {
     wave_write_16bit_mono_safer3("ex8_3.wav", &pcm);
 }
 
+// random; omitted from the test
 fn ex8_4() {
     let pcm_fs = 44100; /* 標本化周波数 */
     let pcm_length = pcm_fs * 1; /* 音データの長さ */
@@ -1088,6 +1079,7 @@ fn ex8_4() {
     wave_write_16bit_mono_safer3("ex8_4.wav", &pcm);
 }
 
+// random; omitted from the test
 fn ex8_5() {
     let pcm_fs = 44100; /* 標本化周波数 */
     let pcm_length = pcm_fs * 8; /* 音データの長さ */
@@ -1187,6 +1179,7 @@ fn white_noise(pcm: &mut MonoPcm, gain: c_double, offset: usize, duration: usize
     }
 }
 
+// random; omitted from the test
 fn ex8_6() {
     let pcm_fs = 44100; /* 標本化周波数 */
     let pcm_length = 7000 * 16; /* 音データの長さ */
