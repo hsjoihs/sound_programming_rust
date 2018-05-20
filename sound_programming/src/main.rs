@@ -55,16 +55,18 @@ fn main() {
     if true {
         first();
     }
-    if false {
+    if true {
         second();
     }
     if false {
         third();
     }
-    ex11_7();
-    ex11_8();
-    ex11_9();
-    eightbit();
+    if false{
+        ex11_7();
+        ex11_8();
+        ex11_9();
+        eightbit();
+    }
 }
 
 fn eightbit() {

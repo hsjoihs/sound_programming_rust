@@ -8,13 +8,13 @@ use rand::Rng;
 use sine_wave;
 use std::f64::consts::PI;
 use wave_utils::MonoPcm;
+use wave_utils::create_Hanning_window;
 use wave_utils::fft::safe_FFT_;
 use wave_utils::fft::safe_IFFT_;
 use wave_utils::filter::safe_FIR_LPF;
 use wave_utils::filter::safe_FIR_filtering;
 use wave_utils::filter::safe_IIR_LPF;
 use wave_utils::filter::safe_IIR_filtering;
-use wave_utils::safe_Hanning_window;
 use wave_utils::wave::wave_read_16bit_mono_safer3;
 use wave_utils::wave::wave_read_16bit_stereo_safer3;
 use wave_utils::wave::wave_write_16bit_mono_safer3;
@@ -323,8 +323,7 @@ fn ex4_1() {
 #[allow(non_snake_case)]
 fn ex4_2() {
     let N = 64;
-    let mut w: Vec<f64> = vec![0.0; N];
-    safe_Hanning_window(&mut w); /* ハニング窓 */
+    let w = create_Hanning_window(N); /* ハニング窓 */
 
     let X = dft(N, Box::new(move |n| w[n]));
 
@@ -548,8 +547,7 @@ fn ex6_1() {
     let J = determine_J(delta); /* 遅延器の数 */
 
     let mut b = vec![0.0; J + 1];
-    let mut w = vec![0.0; J + 1];
-    safe_Hanning_window(&mut w); /* ハニング窓 */
+    let mut w = create_Hanning_window(J + 1); /* ハニング窓 */
 
     safe_FIR_LPF(fe, J, &mut b, &mut w); /* FIRフィルタの設計 */
     safe_FIR_filtering(&pcm0.s, &mut pcm1.s, pcm1.length, &mut b, J);
@@ -586,8 +584,7 @@ fn ex6_3() {
     let J = determine_J(delta); /* 遅延器の数 */
 
     let mut b = vec![0.0; J + 1];
-    let mut w = vec![0.0; J + 1];
-    safe_Hanning_window(&mut w); /* ハニング窓 */
+    let mut w = create_Hanning_window(J + 1); /* ハニング窓 */
     safe_FIR_LPF(fe, J, &mut b, &mut w); /* FIRフィルタの設計 */
 
     let L: usize = 128; /* フレームの長さ */
@@ -635,8 +632,7 @@ fn ex6_4() {
 
     let mut b_ = vec![Complex::new(0.0, 0.0); N];
 
-    let mut w: Vec<f64> = vec![0.0; N];
-    safe_Hanning_window(&mut w); /* ハニング窓 */
+    let w: Vec<f64> = create_Hanning_window(N); /* ハニング窓 */
 
     let number_of_frame = (pcm0.length as usize - N / 2) / (N / 2); /* フレームの数 */
 

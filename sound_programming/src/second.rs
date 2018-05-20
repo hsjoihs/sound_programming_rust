@@ -6,13 +6,13 @@ use mult;
 use num_complex::Complex;
 use rand::Rng;
 use wave_utils::MonoPcm;
+use wave_utils::create_Hanning_window;
 use wave_utils::fft::safe_FFT_;
 use wave_utils::fft::safe_IFFT_;
 use wave_utils::filter::safe_FIR_LPF;
 use wave_utils::filter::safe_IIR_LPF;
 use wave_utils::filter::safe_IIR_filtering;
 use wave_utils::filter::safe_IIR_resonator;
-use wave_utils::safe_Hanning_window;
 use wave_utils::wave::wave_read_16bit_mono_safer3;
 use wave_utils::wave::wave_write_16bit_mono_safer3;
 
@@ -168,8 +168,7 @@ fn ex7_4() {
 
     let N = 1024; /* DFTのサイズ */
 
-    let mut w = vec![0.0; N];
-    safe_Hanning_window(&mut w); /* ハニング窓 */
+    let w = create_Hanning_window(N); /* ハニング窓 */
     let number_of_frame = (pcm0.length - N / 2) / (N / 2); /* フレームの数 */
     let band_width = 8;
     let number_of_band = N / 2 / band_width;
@@ -610,9 +609,7 @@ fn ex8_10() {
     let delta = 0.1 / ratio as f64; /* 遷移帯域幅 */
     let J = determine_J(delta); /* 遅延器の数 */
     let mut b = vec![0.0; J + 1];
-    let mut w = vec![0.0; J + 1];
-
-    safe_Hanning_window(&mut w); /* ハニング窓 */
+    let mut w = create_Hanning_window(J + 1); /* ハニング窓 */
     safe_FIR_LPF(fe, J, &mut b, &mut w); /* FIRフィルタの設計 */
 
     /* フィルタリング */
@@ -700,8 +697,7 @@ fn ex8_12() {
     let delta = 0.1 / ratio as f64; /* 遷移帯域幅 */
     let J = determine_J(delta); /* 遅延器の数 */
     let mut b = vec![0.0; J + 1];
-    let mut w = vec![0.0; J + 1];
-    safe_Hanning_window(&mut w); /* ハニング窓 */
+    let mut w = create_Hanning_window(J + 1); /* ハニング窓 */
     safe_FIR_LPF(fe, J, &mut b, &mut w); /* FIRフィルタの設計 */
     for n in 0..pcm1.length {
         for m in 0..=J {

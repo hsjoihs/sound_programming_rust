@@ -86,13 +86,13 @@ pub struct StereoPcm {
 }
 
 #[allow(non_snake_case)]
-pub fn safe_Hanning_window(w_slice: &mut [f64]) {
-    let N = w_slice.len();
-    for n in 0..N as usize {
-        w_slice[n] = 0.5 - 0.5 * (2.0 * PI * (n as f64 + if N % 2 == 0 { 0.0 } else { 0.5 })
-            / (N as f64))
-            .cos();
-    }
+pub fn create_Hanning_window(N: usize) -> Vec<f64> {
+    (0..N)
+        .map(|n| {
+            0.5 - 0.5 * (2.0 * PI * (n as f64 + if N % 2 == 0 { 0.0 } else { 0.5 }) / (N as f64))
+                .cos()
+        })
+        .collect()
 }
 
 pub fn sinc(x: f64) -> f64 {
