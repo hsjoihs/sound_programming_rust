@@ -128,21 +128,17 @@ pub fn wave_read_IMA_ADPCM_mono_safer3(path: &str) -> MonoPcm {
         let mut s: i16;
         let mut index: i32 = 0;
         let offset: i32 = samples_per_block as i32 * block as i32;
-        let mut c: u8;
         let mut data: u8 = 0;
-        let mut step_size: i32;
-        let mut dp: i32;
         let mut sp: i32 = 0;
-        let mut header: [u8; 4];
         for n in 0..samples_per_block {
             if n == 0 {
-                header = read_u8x4(&mut fp);
+                let header = read_u8x4(&mut fp);
                 sp = (((header[1] as i8) as i16) << 8) as i32 + header[0] as i32;
                 index = header[2] as i32;
                 s = sp as i16;
             } else {
                 /* 4bitの圧縮データ */
-                c = if (n % 2) == 1 {
+                let mut c: u8 = if (n % 2) == 1 {
                     data = fp.read_u8().unwrap(); /* 圧縮データの読み取り */
 
                     (data & 0x0F) as u8 /* dataの下位4bit */
@@ -150,10 +146,10 @@ pub fn wave_read_IMA_ADPCM_mono_safer3(path: &str) -> MonoPcm {
                     ((data >> 4) & 0x0F) as u8 /* dataの上位4bit */
                 };
 
-                step_size = step_size_table[index as usize];
+                let mut step_size: i32 = step_size_table[index as usize];
 
                 /* 伸張 */
-                dp = step_size >> 3;
+                let mut dp: i32 = step_size >> 3;
                 if (c & 0x1) == 0x1 {
                     dp += step_size >> 2;
                 }
