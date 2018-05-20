@@ -56,10 +56,10 @@ fn main() {
     if false {
         first();
     }
-    if false {
+    if true {
         second();
     }
-    if true {
+    if false {
         third();
     }
     if false {

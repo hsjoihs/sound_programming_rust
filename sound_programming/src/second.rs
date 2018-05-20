@@ -573,23 +573,12 @@ fn ex8_10() {
     let pcm0_fs = 192000; /* 標本化周波数 */
     let _pcm0_bits = 16; /* 量子化精度 */
     let pcm0_length = pcm0_fs * 2; /* 音データの長さ */
-    let mut pcm0_s = vec![0.0; pcm0_length];
 
     /* 基本周波数 */
     let f0 = linear(500.0, 3500.0, pcm0_length);
 
     /* ノコギリ波 */
-    let mut t0 = (pcm0_fs as f64 / f0[0]) as usize; /* 基本周期 */
-    let mut m = 0;
-    for n in 0..pcm0_length {
-        pcm0_s[n] = 1.0 - 2.0 * m as f64 / t0 as f64;
-
-        m += 1;
-        if m >= t0 {
-            t0 = (pcm0_fs as f64 / f0[n]) as usize; /* 基本周期 */
-            m = 0;
-        }
-    }
+    let pcm0_s = sawtooth_with_varying_freq(pcm0_fs, pcm0_length, &f0);
 
     let pcm1_fs = 8000; /* 標本化周波数 */
     let pcm1_length = pcm1_fs * 2; /* 音データの長さ */
@@ -620,27 +609,12 @@ fn ex8_11() {
 
     let mut pcm0 = MonoPcm::new16(pcm0_fs, pcm0_length);
 
-    let mut f0 = vec![0.0; pcm0_length];
-
     /* 基本周波数 */
-    f0[0] = 500.0;
-    f0[pcm0_length - 1] = 3500.0;
-    for n in 0..pcm0_length {
-        f0[n] = f0[0] + (f0[pcm0_length - 1] - f0[0]) * n as f64 / (pcm0_length - 1) as f64;
-    }
+    let f0 = linear(500.0, 3500.0, pcm0_length);
+
     /* ノコギリ波 */
-    let mut t0 = (pcm0_fs as f64 / f0[0]) as usize; /* 基本周期 */
+    pcm0.s = sawtooth_with_varying_freq(pcm0_fs, pcm0_length, &f0);
 
-    let mut m = 0;
-    for n in 0..pcm0_length {
-        pcm0.s[n] = 1.0 - 2.0 * m as f64 / t0 as f64;
-
-        m += 1;
-        if m >= t0 {
-            t0 = (pcm0_fs as f64 / f0[n]) as usize; /* 基本周期 */
-            m = 0;
-        }
-    }
     let pcm1_fs = 8000; /* 標本化周波数 */
     let pcm1_length = pcm1_fs * 2; /* 音データの長さ */
     let mut pcm1 = MonoPcm::new16(pcm1_fs, pcm1_length);
@@ -656,31 +630,35 @@ fn ex8_11() {
     wave_write_16bit_mono_safer3("ex8_11.wav", &pcm1);
 }
 
+fn sawtooth_with_varying_freq(pcm0_fs: usize, pcm0_length: usize, f0: &[f64]) -> Vec<f64> {
+    assert!(f0.len() >= pcm0_length);
+    let mut pcm0_s = vec![0.0; pcm0_length];
+
+    /* ノコギリ波 */
+    let mut t0 = (pcm0_fs as f64 / f0[0]) as usize; /* 基本周期 */
+    let mut m = 0;
+    for n in 0..pcm0_length {
+        pcm0_s[n] = 1.0 - 2.0 * m as f64 / t0 as f64;
+
+        m += 1;
+        if m >= t0 {
+            t0 = (pcm0_fs as f64 / f0[n]) as usize; /* 基本周期 */
+            m = 0;
+        }
+    }
+    pcm0_s
+}
+
 #[allow(non_snake_case)]
 fn ex8_12() {
     let mut pcm0 = MonoPcm::new16(192000, 192000 * 2);
 
-    let mut f0 = vec![0.0; pcm0.length];
     /* 基本周波数 */
-    f0[0] = 500.0;
-    f0[pcm0.length - 1] = 3500.0;
-    for n in 0..pcm0.length {
-        f0[n] = f0[0] + (f0[pcm0.length - 1] - f0[0]) * n as f64 / (pcm0.length - 1) as f64;
-    }
-    {
-        /* ノコギリ波 */
-        let mut t0 = (pcm0.fs as f64 / f0[0]) as usize; /* 基本周期 */
-        let mut m = 0;
-        for n in 0..pcm0.length {
-            pcm0.s[n] = 1.0 - 2.0 * m as f64 / t0 as f64;
+    let f0 = linear(500.0, 3500.0, pcm0.length);
 
-            m += 1;
-            if m >= t0 {
-                t0 = (pcm0.fs as f64 / f0[n]) as usize; /* 基本周期 */
-                m = 0;
-            }
-        }
-    }
+    /* ノコギリ波 */
+    pcm0.s = sawtooth_with_varying_freq(pcm0.fs, pcm0.length, &f0);
+
     let mut pcm1 = MonoPcm::new16(8000, 8000 * 2);
     let ratio = pcm0.fs / pcm1.fs; /* ダウンサンプリングのレシオ */
     let fe = 0.45 / ratio as f64; /* エッジ周波数 */
