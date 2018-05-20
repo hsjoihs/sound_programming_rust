@@ -91,42 +91,6 @@ pub struct StereoPcm {
     pub s_r: Vec<f64>,
 }
 
-#[repr(C)]
-pub struct MONO_PCM {
-    pub fs: c_int,        /* 標本化周波数 */
-    pub bits: c_int,      /* 量子化精度 */
-    pub length: c_int,    /* 音データの長さ */
-    pub s: *mut c_double, /* 音データ */
-}
-
-#[repr(C)]
-pub struct MONO_PCM_CONST {
-    pub fs: c_int,          /* 標本化周波数 */
-    pub bits: c_int,        /* 量子化精度 */
-    pub length: c_int,      /* 音データの長さ */
-    pub s: *const c_double, /* 音データ */
-}
-
-#[allow(non_snake_case)]
-#[repr(C)]
-pub struct STEREO_PCM {
-    pub fs: c_int,         /* 標本化周波数 */
-    pub bits: c_int,       /* 量子化精度 */
-    pub length: c_int,     /* 音データの長さ */
-    pub sL: *mut c_double, /* 音データ（Lチャンネル） */
-    pub sR: *mut c_double, /* 音データ（Rチャンネル） */
-}
-
-#[allow(non_snake_case)]
-#[repr(C)]
-pub struct STEREO_PCM_CONST {
-    pub fs: c_int,           /* 標本化周波数 */
-    pub bits: c_int,         /* 量子化精度 */
-    pub length: c_int,       /* 音データの長さ */
-    pub sL: *const c_double, /* 音データ（Lチャンネル） */
-    pub sR: *const c_double, /* 音データ（Rチャンネル） */
-}
-
 #[allow(non_snake_case)]
 pub unsafe fn Hanning_window(w: *mut c_double, N: c_int) {
     let w_slice = from_raw_parts_mut(w, N as usize);
