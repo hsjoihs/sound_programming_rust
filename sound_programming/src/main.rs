@@ -415,13 +415,14 @@ fn ex4_2() {
 #[allow(non_snake_case)]
 fn ex4_3() {
     let N = 64;
-    let mut x: Vec<Complex<f64>> = vec![Complex::new(0.0, 0.0); N];
     let pcm_s = wave_read_16bit_mono_safer3("sine_500hz.wav").s;
 
-    /* 波形 */
-    for n in 0..N {
-        x[n] = Complex::new(pcm_s[n], 0.0); /* x(n)の虚数部 */
-    }
+    let mut x: Vec<Complex<f64>> = (0..N)
+        .map(|n| {
+            /* 波形 */
+            Complex::new(pcm_s[n], 0.0) /* x(n)の実数部と虚数部 */
+        })
+        .collect();
 
     safe_FFT_(&mut x); /* FFTの計算結果はxに上書きされる */
 }
@@ -437,8 +438,8 @@ fn ex4_4() {
 
         /* 基本音を含む音 */
         for i in 1..=44 {
-            for n in 0..pcm0_length {
-                pcm0.s[n] += (2.0 * PI * i as f64 * f0 * n as f64 / pcm0_fs as f64).sin();
+            for (n, item) in pcm0.s.iter_mut().enumerate() {
+                *item += (2.0 * PI * i as f64 * f0 * n as f64 / pcm0_fs as f64).sin();
             }
         }
 
@@ -452,8 +453,8 @@ fn ex4_4() {
         let f0 = 500.0; /* 基本周波数 */
         /* 基本音を含まない音 */
         for i in 2..=44 {
-            for n in 0..pcm1_length {
-                pcm1.s[n] += (2.0 * PI * i as f64 * f0 * n as f64 / pcm1_fs as f64).sin();
+            for (n, item) in pcm1.s.iter_mut().enumerate() {
+                *item += (2.0 * PI * i as f64 * f0 * n as f64 / pcm1_fs as f64).sin();
             }
         }
         pcm1.mult_constant_gain(0.01);
@@ -467,13 +468,13 @@ fn ex5_1() {
     let pcm_length = pcm_fs * 4; /* 音データの長さ */
     let mut pcm = MonoPcm::new16(pcm_fs, pcm_length); /* 音データ */
 
-    let mut a0 = vec![0.0; pcm_length];
     /* 振幅の時間エンベロープ */
-    a0[0] = 0.5;
-    a0[pcm_length - 1] = 0.0;
-    for n in 0..pcm_length {
-        a0[n] = a0[0] + (a0[pcm_length - 1] - a0[0]) * n as f64 / (pcm_length - 1) as f64;
-    }
+    let initial_v = 0.5; /* a0[0] = 0.5; */
+    let final_v = 0.0; /* a0[pcm_length - 1] = 0.0; */
+    let a0: Vec<f64> = (0..pcm_length)
+        .map(|n| initial_v + (final_v - initial_v) * n as f64 / (pcm_length - 1) as f64)
+        .collect();
+
     let f0 = 500.0; /* 周波数 */
     for n in 0..pcm_length {
         pcm.s[n] = a0[n] * (2.0 * PI * f0 * n as f64 / pcm_fs as f64).sin();
