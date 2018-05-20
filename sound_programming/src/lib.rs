@@ -42,3 +42,14 @@ pub fn determine_J(delta: f64) -> usize {
     }
     return J;
 }
+
+pub fn lfo(
+    pcm: &MonoPcm,
+    center: f64,
+    am: f64, /* LFOの振幅 */
+    fm: f64, /* LFOの周波数 */
+) -> Vec<f64> {
+    (0..pcm.length)
+        .map(|n| center + am * (2.0 * PI * fm * n as f64 / pcm.fs as f64).sin())
+        .collect()
+}

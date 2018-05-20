@@ -3,6 +3,7 @@ extern crate rand;
 extern crate sound_programming;
 extern crate wave_utils;
 use sound_programming::first::first;
+use sound_programming::lfo;
 use sound_programming::mult;
 use sound_programming::second::second;
 use std::f64::consts::PI;
@@ -118,16 +119,12 @@ fn ex9_1() {
         }
     }
 
-    let mut vca = vec![0.0; pcm_length];
-
-    /* 時間エンベロープ */
-    vca[0] = 1.0;
-    let am = 0.2; /* LFOの振幅 */
-    let fm = 2.0; /* LFOの周波数 */
-    /* LFO */
-    for n in 0..pcm_length {
-        vca[n] = vca[0] + am * (2.0 * PI * fm * n as f64 / pcm.fs as f64).sin();
-    }
+    let vca = lfo(
+        &pcm,
+        1.0,
+        0.2, /* LFOの振幅 */
+        2.0, /* LFOの周波数 */
+    );
 
     let gain = 0.1; /* ゲイン */
 
@@ -142,15 +139,12 @@ fn ex9_2() {
     let pcm_fs = 44100; /* 標本化周波数 */
     let pcm_length = pcm_fs * 2; /* 音データの長さ */
     let mut pcm = MonoPcm::new16(pcm_fs, pcm_length);
-    let mut vco = vec![0.0; pcm_length];
-    /* 時間エンベロープ */
-    vco[0] = 500.0; /* Hz */
-    let am = 100.0; /* LFOの振幅 */
-    let fm = 2.0; /* LFOの周波数 */
-    /* LFO */
-    for n in 0..pcm.length {
-        vco[n] = vco[0] + am * (2.0 * PI * fm * n as f64 / pcm.fs as f64).sin();
-    }
+    let vco = lfo(
+        &pcm,
+        500.0, /* Hz */
+        100.0, /* LFOの振幅 */
+        2.0,   /* LFOの周波数 */
+    );
 
     /* ノコギリ波 */
     let mut t0 = (pcm.fs as f64 / vco[0]) as usize; /* 基本周期 */
@@ -189,16 +183,12 @@ fn ex9_3() {
         }
     }
 
-    let mut vcf = vec![0.0; pcm0.length];
-
-    /* 時間エンベロープ */
-    vcf[0] = 1000.0; /* Hz */
-    let am = 800.0; /* LFOの振幅 */
-    let fm = 2.0; /* LFOの周波数 */
-    /* LFO */
-    for n in 0..pcm0.length {
-        vcf[n] = vcf[0] + am * (2.0 * PI * fm * n as f64 / pcm0.fs as f64).sin();
-    }
+    let vcf = lfo(
+        &pcm0,
+        1000.0, /* Hz */
+        800.0,  /* LFOの振幅 */
+        2.0,    /* LFOの周波数 */
+    );
 
     let Q = 5.0; /* レゾナンス */
     let I = 2; /* 遅延器の数 */
