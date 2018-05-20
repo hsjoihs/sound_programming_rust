@@ -3,7 +3,6 @@ use self::byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use MONO_PCM;
 use MONO_PCM_CONST;
 use MonoPcm;
-use STEREO_PCM_CONST;
 use StereoPcm;
 use libc::c_char;
 use std::fs::File;
@@ -137,8 +136,6 @@ pub fn wave_read_16bit_stereo_safer3(path: &str) -> StereoPcm {
 
 #[link(name = "wave")]
 extern "C" {
-    pub fn wave_write_8bit_mono(pcm: *const MONO_PCM_CONST, file_name: *const c_char);
-    pub fn wave_write_8bit_stereo(pcm: *const STEREO_PCM_CONST, file_name: *const c_char);
 
     fn wave_read_PCMA_mono(pcm: *mut MONO_PCM, file_name: *const c_char);
     fn wave_write_PCMA_mono(pcm: *const MONO_PCM_CONST, file_name: *const c_char);
@@ -226,15 +223,12 @@ pub fn wave_write_8bit_mono_safer3(path: &str, pcm: &MonoPcm) {
 
 #[allow(non_snake_case)]
 pub fn wave_write_8bit_stereo_safer3(path: &str, pcm: &StereoPcm) {
-    let pcm1: STEREO_PCM_CONST = STEREO_PCM_CONST {
-        fs: pcm.fs as i32,
-        bits: pcm.bits,
-        length: pcm.length as i32,
-        sL: pcm.s_l.as_ptr(),
-        sR: pcm.s_r.as_ptr(),
-    };
-    unsafe {
-        wave_write_8bit_stereo(&pcm1, to_c_str(path));
+    let mut fp = wave_write_header::<StereoPcm, u8>(path, pcm);
+    for n in 0..pcm.length {
+        fp.write_u8(WaveData::convert_from_float(pcm.s_l[n]))
+            .unwrap(); /* 音データ（Lチャンネル）の書き出し */
+        fp.write_u8(WaveData::convert_from_float(pcm.s_r[n]))
+            .unwrap(); /* 音データ（Rチャンネル）の書き出し */
     }
 }
 
@@ -382,4 +376,3 @@ where
     fp.write_i32::<LittleEndian>(data_chunk_size).unwrap();
     return fp;
 }
-
