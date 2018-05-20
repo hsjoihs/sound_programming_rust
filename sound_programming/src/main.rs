@@ -1433,7 +1433,8 @@ fn ex11_7() {
 
 #[allow(non_snake_case)]
 fn ex11_8() {
-    let pcm0 = wave_read_16bit_mono_safer3("vocal.wav");
+    let mut pcm0 = wave_read_16bit_mono_safer3("vocal.wav");
+    pcm0.bits = 8;
     wave_write_PCMA_mono_safer3("pcma.wav", &pcm0);
     let pcm1 = wave_read_PCMA_mono_safer3("pcma.wav");
     wave_write_16bit_mono_safer3("ex11_8_pcm.wav", &pcm1);

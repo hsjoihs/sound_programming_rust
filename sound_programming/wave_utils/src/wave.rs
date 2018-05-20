@@ -138,7 +138,6 @@ pub fn wave_read_16bit_stereo_safer3(path: &str) -> StereoPcm {
 extern "C" {
 
     fn wave_read_PCMA_mono(pcm: *mut MONO_PCM, file_name: *const c_char);
-    fn wave_write_PCMA_mono(pcm: *const MONO_PCM_CONST, file_name: *const c_char);
     fn wave_read_IMA_ADPCM_mono(pcm: *mut MONO_PCM, file_name: *const c_char);
     fn wave_write_IMA_ADPCM_mono(pcm: *const MONO_PCM_CONST, file_name: *const c_char);
     fn wave_read_PCMU_mono(pcm: *mut MONO_PCM, file_name: *const c_char);
@@ -149,6 +148,9 @@ extern "C" {
 trait WaveData {
     fn convert_from_float(d: f64) -> Self;
     const BYTE_NUM: i32;
+    const MYSTERIOUS: i32;
+    const CHUNK_SIZE: i32;
+    const WAVE_FORMAT_TYPE: i16;
 }
 
 impl WaveData for u8 {
@@ -164,6 +166,9 @@ impl WaveData for u8 {
         ((s + 0.5) as i32) as u8 /* 四捨五入 */
     }
     const BYTE_NUM: i32 = 1;
+    const MYSTERIOUS: i32 = 36;
+    const CHUNK_SIZE: i32 = 16;
+    const WAVE_FORMAT_TYPE: i16 = 1;
 }
 
 impl WaveData for i16 {
@@ -179,6 +184,52 @@ impl WaveData for i16 {
         ((s + 0.5) as i32 - 32768) as i16 /* 四捨五入とオフセットの調節 */
     }
     const BYTE_NUM: i32 = 2;
+    const MYSTERIOUS: i32 = 36;
+    const CHUNK_SIZE: i32 = 16;
+    const WAVE_FORMAT_TYPE: i16 = 1;
+}
+
+impl WaveData for PCMA {
+    const MYSTERIOUS: i32 = 50;
+    const BYTE_NUM: i32 = 1;
+    const CHUNK_SIZE: i32 = 18;
+    const WAVE_FORMAT_TYPE: i16 = 6;
+    fn convert_from_float(d: f64) -> PCMA {
+        let mut x: f64 = (d + 1.0) / 2.0 * 65536.0;
+        let level: [i16; 8] = [
+            0x00FF, 0x01FF, 0x03FF, 0x07FF, 0x0FFF, 0x1FFF, 0x3FFF, 0x7FFF
+        ];
+
+        if x > 65535.0 {
+            x = 65535.0; /* クリッピング */
+        } else if x < 0.0 {
+            x = 0.0; /* クリッピング */
+        }
+
+        let s = ((x + 0.5) as i32 - 32768) as i16; /* 四捨五入とオフセットの調節 */
+
+        let (mut magnitude, sign): (i32,u8) = if s < 0 { (-s as i32, 0x80) } else { (s as i32, 0x00) };
+
+        if magnitude > 32767 {
+            magnitude = 0x7FFF;
+        }
+
+        let mut exponent = 0 as u8;
+        while exponent < 8 {
+            if magnitude <= level[exponent as usize] as i32 {
+                break;
+            }
+            exponent += 1;
+        }
+
+        let mantissa :u8 = if exponent == 0 {
+            (magnitude >> 4) & 0x0F
+        } else {
+            (magnitude >> (exponent + 3)) & 0x0F
+        } as u8;
+
+        PCMA((sign | (exponent << 4) | mantissa) ^ 0xD5)
+    }
 }
 
 #[allow(non_snake_case)]
@@ -273,16 +324,22 @@ pub fn wave_read_PCMA_mono_safer3(path: &str) -> MonoPcm {
     }
 }
 
+struct PCMA(u8);
+
 #[allow(non_snake_case)]
 pub fn wave_write_PCMA_mono_safer3(path: &str, pcm: &MonoPcm) {
-    let pcm1: MONO_PCM_CONST = MONO_PCM_CONST {
-        fs: pcm.fs as i32,
-        bits: pcm.bits,
-        length: pcm.length as i32,
-        s: pcm.s.as_ptr(),
-    };
-    unsafe {
-        wave_write_PCMA_mono(&pcm1, to_c_str(path));
+
+    /* BUGGY!!!!! */
+    let mut fp = wave_write_header::<MonoPcm, PCMA>(path, pcm);
+
+    for n in 0..pcm.get_length() {
+        let PCMA(dat) = WaveData::convert_from_float(pcm.s[n]);
+        fp.write_u8(dat).unwrap(); /* 音データの書き出し */
+    }
+    if (pcm.length % 2) == 1 {
+        /* 音データの長さが奇数のとき */
+
+        fp.write_u8(0).unwrap(); /* 0パディング */
     }
 }
 
@@ -347,11 +404,11 @@ where
     let channel_: i32 = T::CHANNEL;
 
     let riff_chunk_ID: [i8; 4] = ['R' as i8, 'I' as i8, 'F' as i8, 'F' as i8];
-    let riff_chunk_size: i32 = 36 + pcm.get_length() as i32 * U::BYTE_NUM * channel_;
+    let riff_chunk_size: i32 = U::MYSTERIOUS + pcm.get_length() as i32 * U::BYTE_NUM * channel_;
     let file_format_type: [i8; 4] = ['W' as i8, 'A' as i8, 'V' as i8, 'E' as i8];
     let fmt_chunk_ID: [i8; 4] = ['f' as i8, 'm' as i8, 't' as i8, ' ' as i8];
-    let fmt_chunk_size: i32 = 16;
-    let wave_format_type: i16 = 1;
+    let fmt_chunk_size: i32 = U::CHUNK_SIZE;
+    let wave_format_type: i16 = U::WAVE_FORMAT_TYPE;
     let channel: i16 = channel_ as i16;
     let samples_per_sec: i32 = pcm.get_fs() as i32; /* 標本化周波数 */
     let bytes_per_sec: i32 = pcm.get_fs() as i32 * pcm.get_bits() / 8 * channel_;
@@ -372,6 +429,18 @@ where
     fp.write_i32::<LittleEndian>(bytes_per_sec).unwrap();
     fp.write_i16::<LittleEndian>(block_size).unwrap();
     fp.write_i16::<LittleEndian>(bits_per_sample).unwrap();
+    if U::CHUNK_SIZE > 16 {
+        let extra_size: i16 = 0;
+        let fact_chunk_ID: [i8; 4] = ['f' as i8, 'a' as i8, 'c' as i8, 't' as i8];
+        let fact_chunk_size: i32 = 4;
+        let sample_length: i32 = pcm.get_length() as i32;
+
+        fp.write_i16::<LittleEndian>(extra_size).unwrap();
+        write_i8x4(&mut fp, fact_chunk_ID);
+        fp.write_i32::<LittleEndian>(fact_chunk_size).unwrap();
+        fp.write_i32::<LittleEndian>(sample_length).unwrap();
+    }
+
     write_i8x4(&mut fp, data_chunk_ID);
     fp.write_i32::<LittleEndian>(data_chunk_size).unwrap();
     return fp;
