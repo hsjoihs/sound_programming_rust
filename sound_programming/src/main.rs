@@ -930,9 +930,6 @@ fn ex7_4() {
 
     let N = 1024; /* DFTのサイズ */
 
-    let mut x = vec![Complex::new(0.0, 0.0); N];
-    let mut y = vec![Complex::new(0.0, 0.0); N];
-    let mut b_ = vec![Complex::new(0.0, 0.0); N];
     let mut w = vec![0.0; N];
     safe_Hanning_window(&mut w); /* ハニング窓 */
     let number_of_frame = (pcm0.length - N / 2) / (N / 2); /* フレームの数 */
@@ -942,21 +939,19 @@ fn ex7_4() {
     for frame in 0..number_of_frame {
         let offset = N / 2 * frame;
         /* X(n) */
-        for n in 0..N {
-            x[n] = Complex::new(pcm0.s[offset + n] * w[n], 0.0);
-        }
+        let mut x: Vec<_> = (0..N)
+            .map(|n| Complex::new(pcm0.s[offset + n] * w[n], 0.0))
+            .collect();
         safe_FFT_(&mut x);
 
         /* B(k) */
-        for n in 0..N {
-            b_[n].re = pcm1.s[offset + n] * w[n];
-            b_[n].im = 0.0;
-        }
+        let mut b_: Vec<_> = (0..N)
+            .map(|n| Complex::new(pcm1.s[offset + n] * w[n], 0.0))
+            .collect();
         safe_FFT_(&mut b_);
 
-        for k in 0..N {
-            b_[k].re = b_[k].norm_sqr().sqrt();
-            b_[k].im = 0.0;
+        for item in b_.iter_mut() {
+            *item = Complex::new(item.norm_sqr().sqrt(), 0.0);
         }
 
         for band in 0..number_of_band {
@@ -977,16 +972,13 @@ fn ex7_4() {
         }
 
         /* フィルタリング */
-
-        for k in 0..N {
-            y[k] = x[k] * b_[k];
-        }
+        let mut y: Vec<_> = (0..N).map(|k| x[k] * b_[k]).collect();
         safe_IFFT_(&mut y);
 
         let offset = N / 2 * frame;
         /* オーバーラップアド */
-        for n in 0..N {
-            pcm2.s[offset + n] += y[n].re;
+        for (n,item) in y.iter().enumerate() {
+            pcm2.s[offset + n] += item.re;
         }
     }
     wave_write_16bit_mono_safer3("ex7_4.wav", &pcm2);
