@@ -66,6 +66,13 @@ impl MonoPcm {
         }
     }
 
+    pub fn mult_varying_gain(&mut self, vec: &[f64], gain: f64) {
+        assert!(vec.len() >= self.length);
+        for n in 0..self.length {
+            self.s[n] *= vec[n] * gain
+        }
+    }
+
     pub fn new16_fn(fs: usize, length: usize, mut fun: Box<FnMut(usize) -> f64>) -> Self {
         MonoPcm {
             fs,

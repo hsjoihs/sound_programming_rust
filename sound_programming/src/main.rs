@@ -53,13 +53,13 @@ fn third() {
 }
 
 fn main() {
-    if true {
+    if false {
         first();
     }
-    if true {
+    if false {
         second();
     }
-    if false {
+    if true {
         third();
     }
     if false {
@@ -128,9 +128,7 @@ fn ex9_1() {
 
     let gain = 0.1; /* ゲイン */
 
-    for n in 0..pcm.length {
-        pcm.s[n] *= vca[n] * gain;
-    }
+    pcm.mult_varying_gain(&vca, gain);
 
     wave_write_16bit_mono_safer3("ex9_1.wav", &pcm);
 }
@@ -271,9 +269,8 @@ fn ex9_4() {
     let R = 0;
     safe_ADSR(&mut vca, A, D, S, R, gate, duration);
     let gain = 0.1; /* ゲイン */
-    for n in 0..pcm1.length {
-        pcm1.s[n] *= vca[n] * gain;
-    }
+    pcm1.mult_varying_gain(&vca, gain);
+
     /* フェード処理 */
     for n in 0..(pcm1.fs as f64 * 0.01).ceil() as usize {
         pcm1.s[n] *= n as f64 / (pcm1.fs as f64 * 0.01);
@@ -336,9 +333,7 @@ fn ex9_5() {
     safe_ADSR(&mut vca, A, D, S, R, gate, duration);
 
     let gain = 0.1; /* ゲイン */
-    for n in 0..pcm1.length {
-        pcm1.s[n] *= vca[n] * gain;
-    }
+    pcm1.mult_varying_gain(&vca, gain);
 
     /* フェード処理 */
     for n in 0..(pcm1.fs as f64 * 0.01).ceil() as usize {
@@ -416,9 +411,8 @@ fn ex9_6() {
 
     let gain = 0.1; /* ゲイン */
 
-    for n in 0..pcm1.length {
-        pcm1.s[n] *= vca[n] * gain;
-    }
+    pcm1.mult_varying_gain(&vca, gain);
+
     /* フェード処理 */
     for n in 0..(pcm1.fs as f64 * 0.01).ceil() as usize {
         pcm1.s[n] *= n as f64 / (pcm1.fs as f64 * 0.01);
@@ -512,9 +506,7 @@ fn ex9_7() {
     safe_ADSR(&mut vca, A, D, S, R, gate, duration);
 
     let gain = 0.9; /* ゲイン */
-    for n in 0..pcm1.length {
-        pcm1.s[n] *= vca[n] * gain;
-    }
+    pcm1.mult_varying_gain(&vca, gain);
 
     /* フェード処理 */
     for n in 0..(pcm1.fs as f64 * 0.01).ceil() as usize {
@@ -706,9 +698,7 @@ fn ex9_11() {
     safe_ADSR(&mut vca, A, D, S, R, gate, duration);
     let gain = 0.1; /* ゲイン */
 
-    for n in 0..pcm1.length {
-        pcm1.s[n] *= vca[n] * gain;
-    }
+    pcm1.mult_varying_gain(&vca, gain);
 
     let pcm2_fs = 44100; /* 標本化周波数 */
     let pcm2_length = pcm2_fs * 4; /* 音データの長さ */
@@ -758,9 +748,7 @@ fn ex9_11() {
     safe_ADSR(&mut vca, A, D, S, R, gate, duration);
     let gain = 0.1; /* ゲイン */
 
-    for n in 0..pcm3.length {
-        pcm3.s[n] *= vca[n] * gain;
-    }
+    pcm3.mult_varying_gain(&vca, gain);
 
     /* デチューン */
     for n in 0..pcm3.length {
