@@ -209,6 +209,19 @@ pub fn wave_write_8bit_mono_safer3(path: &str, pcm: &MonoPcm) {
     }
 }
 
+#[allow(non_snake_case)]
+pub fn wave_write_8bit_stereo_safer3(path: &str, pcm: &StereoPcm) {
+    let pcm1: STEREO_PCM_CONST = STEREO_PCM_CONST {
+        fs: pcm.fs as i32,
+        bits: pcm.bits,
+        length: pcm.length as i32,
+        sL: pcm.s_l.as_ptr(),
+        sR: pcm.s_r.as_ptr(),
+    };
+    unsafe {
+        wave_write_8bit_stereo(&pcm1, to_c_str(path));
+    }
+}
 
 #[allow(non_snake_case)]
 pub fn wave_read_PCMU_mono_safer3(path: &str) -> MonoPcm {
