@@ -1,9 +1,11 @@
+extern crate byteorder;
 use MonoPcm;
 use StereoPcm;
 use std::fs::File;
 use std::io::Read;
 use std::mem;
 use std::slice::from_raw_parts;
+use self::byteorder::{LittleEndian, ReadBytesExt};
 
 macro_rules! READ_ARR {
     ($fp:expr, $i:ident, $t:ty; $len:expr) => {
@@ -22,7 +24,9 @@ macro_rules! READ_ARR {
 fn foo(file_name: &str) -> (File, i32, i16, i32) {
     let mut fp = File::open(file_name).expect("file not found");
     let mut riff_chunk_ID = [0; 4];
-    READ_ARR!(fp, riff_chunk_ID,   i8 ; 4);
+    for item in riff_chunk_ID.iter_mut() {
+       *item = fp.read_i8().unwrap();
+    }
     let mut riff_chunk_size = [0; 1];
     READ_ARR!(fp, riff_chunk_size, i32; 1);
     let mut file_format_type = [0; 4];
@@ -35,8 +39,10 @@ fn foo(file_name: &str) -> (File, i32, i16, i32) {
     READ_ARR!(fp, wave_format_type,i16; 1);
     let mut channel = [0; 1];
     READ_ARR!(fp, channel,         i16; 1);
-    let mut samples_per_sec = [0; 1];
-    READ_ARR!(fp, samples_per_sec, i32; 1);
+
+
+    let samples_per_sec = fp.read_i32::<LittleEndian>().unwrap();
+
     let mut bytes_per_sec = [0; 1];
     READ_ARR!(fp, bytes_per_sec,   i32; 1);
     let mut block_size = [0; 1];
@@ -50,7 +56,7 @@ fn foo(file_name: &str) -> (File, i32, i16, i32) {
 
     return (
         fp,
-        samples_per_sec[0],
+        samples_per_sec,
         bits_per_sample[0],
         data_chunk_size[0],
     );

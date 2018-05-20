@@ -52,13 +52,13 @@ fn third() {
 }
 
 fn main() {
-    if false {
+    if true {
         first();
     }
     if false {
         second();
     }
-    if true {
+    if false {
         third();
     }
 }
