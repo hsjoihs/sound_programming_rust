@@ -13,7 +13,6 @@ where
     return arr;
 }
 
-
 #[allow(non_snake_case)]
 pub fn read_header(file_name: &str) -> (File, i32, i16, i32) {
     let mut fp = File::open(file_name).expect("file not found");

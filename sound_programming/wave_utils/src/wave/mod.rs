@@ -1,6 +1,4 @@
 extern crate byteorder;
-use wave::write::wave_write_header;
-use wave::write::Pcm;
 use self::byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use MONO_PCM;
 use MONO_PCM_CONST;
@@ -10,11 +8,11 @@ use libc::c_char;
 use std::mem;
 use std::slice::from_raw_parts_mut;
 use to_c_str;
+use wave::write::Pcm;
+use wave::write::wave_write_header;
 
 mod read;
 mod write;
-
-
 
 pub fn wave_read_8bit_mono_safer3(path: &str) -> MonoPcm {
     let (mut fp, pcm_fs, pcm_bits, data_chunk_size) = read::read_header(path);
@@ -104,7 +102,6 @@ extern "C" {
     fn wave_read_IMA_ADPCM_mono(pcm: *mut MONO_PCM, file_name: *const c_char);
     fn wave_write_IMA_ADPCM_mono(pcm: *const MONO_PCM_CONST, file_name: *const c_char);
     fn wave_read_PCMU_mono(pcm: *mut MONO_PCM, file_name: *const c_char);
-    fn wave_write_PCMU_mono(pcm: *const MONO_PCM_CONST, file_name: *const c_char);
 
 }
 
@@ -139,7 +136,8 @@ pub fn wave_write_IMA_ADPCM_mono_safer3(path: &str, pcm: &MonoPcm) {
 pub fn wave_write_8bit_mono_safer3(path: &str, pcm: &MonoPcm) {
     let mut fp = wave_write_header::<MonoPcm, u8>(path, pcm);
     for n in 0..pcm.get_length() {
-        fp.write_u8(write::WaveData::convert_from_float(pcm.s[n])).unwrap(); /* 音データの書き出し */
+        fp.write_u8(write::WaveData::convert_from_float(pcm.s[n]))
+            .unwrap(); /* 音データの書き出し */
     }
     if (pcm.length % 2) == 1 {
         /* 音データの長さが奇数のとき */
@@ -175,14 +173,16 @@ pub fn wave_read_PCMU_mono_safer3(path: &str) -> MonoPcm {
 
 #[allow(non_snake_case)]
 pub fn wave_write_PCMU_mono_safer3(path: &str, pcm: &MonoPcm) {
-    let pcm1: MONO_PCM_CONST = MONO_PCM_CONST {
-        fs: pcm.fs as i32,
-        bits: pcm.bits,
-        length: pcm.length as i32,
-        s: pcm.s.as_ptr(),
-    };
-    unsafe {
-        wave_write_PCMU_mono(&pcm1, to_c_str(path));
+    let mut fp = wave_write_header::<MonoPcm, PCMU>(path, pcm);
+
+    for n in 0..pcm.get_length() {
+        let PCMU(dat) = write::WaveData::convert_from_float(pcm.s[n]);
+        fp.write_u8(dat).unwrap(); /* 音データの書き出し */
+    }
+    if (pcm.length % 2) == 1 {
+        /* 音データの長さが奇数のとき */
+
+        fp.write_u8(0).unwrap(); /* 0パディング */
     }
 }
 
@@ -201,11 +201,10 @@ pub fn wave_read_PCMA_mono_safer3(path: &str) -> MonoPcm {
 }
 
 struct PCMA(u8);
+struct PCMU(u8);
 
 #[allow(non_snake_case)]
 pub fn wave_write_PCMA_mono_safer3(path: &str, pcm: &MonoPcm) {
-
-    /* BUGGY!!!!! */
     let mut fp = wave_write_header::<MonoPcm, PCMA>(path, pcm);
 
     for n in 0..pcm.get_length() {
@@ -237,6 +236,3 @@ pub fn wave_write_16bit_mono_safer3(path: &str, pcm: &MonoPcm) {
             .unwrap(); /* 音データの書き出し */
     }
 }
-
-
-

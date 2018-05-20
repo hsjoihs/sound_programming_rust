@@ -1,9 +1,10 @@
 extern crate byteorder;
+use self::byteorder::{LittleEndian, WriteBytesExt};
 use MonoPcm;
 use StereoPcm;
-use wave::PCMA;
-use self::byteorder::{LittleEndian, WriteBytesExt};
 use std::fs::File;
+use wave::PCMA;
+use wave::PCMU;
 
 fn write_i8x4<T>(mut fp: T, arr: [i8; 4])
 where
@@ -64,7 +65,92 @@ where
     fp.write_i32::<LittleEndian>(data_chunk_size).unwrap();
     return fp;
 }
+/*
 
+
+  int16_t extra_size;
+  int8_t  fact_chunk_ID[4];
+  int32_t fact_chunk_size;
+  int32_t sample_length;
+  int8_t  data_chunk_ID[4];
+  int32_t data_chunk_size;
+  
+ 
+  
+  static int16_t 
+  
+  
+
+  for (n = 0; n < pcm->length; n++)
+  {
+ 
+  }
+  
+  if ((pcm->length % 2) == 1) /* 圧縮データの長さが奇数のとき */
+  {
+    c = 0;
+    fwrite(&c, 1, 1, fp); /* 0パディング */
+  }
+  
+  fclose(fp);
+}
+
+*/
+
+impl WaveData for PCMU {
+    const MYSTERIOUS: i32 = 50;
+    const BYTE_NUM: i32 = 1;
+    const CHUNK_SIZE: i32 = 18;
+    const WAVE_FORMAT_TYPE: i16 = 7;
+    fn convert_from_float(d: f64) -> Self {
+        let mut x: f64;
+        let s: i16; /* 16bitの音データ */
+        let c: u8; /* 8bitの圧縮データ */
+        let sign: u8;
+        let mut exponent: u8;
+        let mantissa: u8;
+        let mut magnitude: i32;
+        let level: [i16; 8] = [
+            0x00FF, 0x01FF, 0x03FF, 0x07FF, 0x0FFF, 0x1FFF, 0x3FFF, 0x7FFF
+        ];
+
+        x = (d + 1.0) / 2.0 * 65536.0;
+
+        if x > 65535.0 {
+            x = 65535.0; /* クリッピング */
+        } else if x < 0.0 {
+            x = 0.0; /* クリッピング */
+        }
+
+        s = ((x + 0.5) as i32 - 32768) as i16; /* 四捨五入とオフセットの調節 */
+
+        if s < 0 {
+            magnitude = -s as i32;
+            sign = 0x80;
+        } else {
+            magnitude = s as i32;
+            sign = 0x00;
+        }
+
+        magnitude += 0x84;
+        if magnitude > 32767 {
+            magnitude = 0x7FFF;
+        }
+        exponent = 0;
+        while exponent < 8 {
+            if magnitude <= level[exponent as usize] as i32 {
+                break;
+            }
+            exponent += 1;
+        }
+
+        mantissa = ((magnitude >> (exponent + 3)) & 0x0F) as u8;
+
+        c = !(sign | (exponent << 4) | mantissa);
+
+        PCMU(c) /* 圧縮データの書き出し */
+    }
+}
 
 pub trait WaveData {
     fn convert_from_float(d: f64) -> Self;
@@ -129,7 +215,11 @@ impl WaveData for PCMA {
 
         let s = ((x + 0.5) as i32 - 32768) as i16; /* 四捨五入とオフセットの調節 */
 
-        let (mut magnitude, sign): (i32,u8) = if s < 0 { (-s as i32, 0x80) } else { (s as i32, 0x00) };
+        let (mut magnitude, sign): (i32, u8) = if s < 0 {
+            (-s as i32, 0x80)
+        } else {
+            (s as i32, 0x00)
+        };
 
         if magnitude > 32767 {
             magnitude = 0x7FFF;
@@ -143,7 +233,7 @@ impl WaveData for PCMA {
             exponent += 1;
         }
 
-        let mantissa :u8 = if exponent == 0 {
+        let mantissa: u8 = if exponent == 0 {
             (magnitude >> 4) & 0x0F
         } else {
             (magnitude >> (exponent + 3)) & 0x0F
