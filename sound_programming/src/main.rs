@@ -462,6 +462,12 @@ fn ex4_4() {
     }
 }
 
+fn linear(initial_v: f64, final_v: f64, length: usize) -> Vec<f64> {
+    (0..length)
+        .map(|n| initial_v + (final_v - initial_v) * n as f64 / (length - 1) as f64)
+        .collect()
+}
+
 #[allow(non_snake_case)]
 fn ex5_1() {
     let pcm_fs = 44100; /* 標本化周波数 */
@@ -471,9 +477,7 @@ fn ex5_1() {
     /* 振幅の時間エンベロープ */
     let initial_v = 0.5; /* a0[0] = 0.5; */
     let final_v = 0.0; /* a0[pcm_length - 1] = 0.0; */
-    let a0: Vec<f64> = (0..pcm_length)
-        .map(|n| initial_v + (final_v - initial_v) * n as f64 / (pcm_length - 1) as f64)
-        .collect();
+    let a0 = linear(initial_v, final_v, pcm_length);
 
     let f0 = 500.0; /* 周波数 */
     for n in 0..pcm_length {
@@ -489,18 +493,12 @@ fn ex5_2() {
     let pcm_length = pcm_fs * 4; /* 音データの長さ */
 
     let a0 = 0.5; /* 振幅 */
-    let mut f0 = vec![0.0; pcm_length];
-    let mut g0 = vec![0.0; pcm_length];
     /* 周波数の時間エンベロープ */
-    f0[0] = 2500.0;
-    f0[pcm_length - 1] = 1500.0;
-    for n in 0..pcm_length {
-        f0[n] = f0[0] + (f0[pcm_length - 1] - f0[0]) * n as f64 / (pcm_length - 1) as f64;
-    }
-    for n in 0..pcm_length {
-        g0[n] = f0[0] * n as f64
-            + (f0[pcm_length - 1] - f0[0]) * n as f64 * n as f64 / (pcm_length - 1) as f64 / 2.0;
-    }
+    let f0 = linear(2500.0, 1500.0, pcm_length);
+    let g0 : Vec<f64> = (0..pcm_length).map(|n| {
+         f0[0] * n as f64
+            + (f0[pcm_length - 1] - f0[0]) * n as f64 * n as f64 / (pcm_length - 1) as f64 / 2.0
+    }).collect();
 
     wave_write_16bit_mono_safer3(
         "ex5_2.wav",
@@ -516,14 +514,11 @@ fn ex5_3() {
     let pcm_fs = 44100; /* 標本化周波数 */
     let pcm_length = (pcm_fs as f64 * 0.2) as usize; /* 音データの長さ */
     let a0 = 0.5; /* 振幅 */
-    let mut f0 = vec![0.0; pcm_length];
-    let mut g0 = vec![0.0; pcm_length];
+    
     /* 周波数の時間エンベロープ */
-    f0[0] = 2500.0;
-    f0[pcm_length - 1] = 1500.0;
-    for n in 0..pcm_length {
-        f0[n] = f0[0] + (f0[pcm_length - 1] - f0[0]) * n as f64 / (pcm_length - 1) as f64;
-    }
+    let f0 = linear(2500.0, 1500.0, pcm_length);
+    let mut g0 = vec![0.0; pcm_length];
+    
     for n in 0..pcm_length {
         g0[n] = f0[0] * n as f64
             + (f0[pcm_length - 1] - f0[0]) * n as f64 * n as f64 / (pcm_length - 1) as f64 / 2.0;
