@@ -136,7 +136,7 @@ pub fn wave_write_IMA_ADPCM_mono_safer3(path: &str, pcm: &MonoPcm) {
 pub fn wave_write_8bit_mono_safer3(path: &str, pcm: &MonoPcm) {
     let mut fp = wave_write_header::<MonoPcm, u8>(path, pcm);
     for n in 0..pcm.get_length() {
-        fp.write_u8(write::WaveData::convert_from_float(pcm.s[n]))
+        fp.write_u8(WaveData::convert_from_float(pcm.s[n]))
             .unwrap(); /* 音データの書き出し */
     }
     if (pcm.length % 2) == 1 {
@@ -150,9 +150,9 @@ pub fn wave_write_8bit_mono_safer3(path: &str, pcm: &MonoPcm) {
 pub fn wave_write_8bit_stereo_safer3(path: &str, pcm: &StereoPcm) {
     let mut fp = wave_write_header::<StereoPcm, u8>(path, pcm);
     for n in 0..pcm.length {
-        fp.write_u8(write::WaveData::convert_from_float(pcm.s_l[n]))
+        fp.write_u8(WaveData::convert_from_float(pcm.s_l[n]))
             .unwrap(); /* 音データ（Lチャンネル）の書き出し */
-        fp.write_u8(write::WaveData::convert_from_float(pcm.s_r[n]))
+        fp.write_u8(WaveData::convert_from_float(pcm.s_r[n]))
             .unwrap(); /* 音データ（Rチャンネル）の書き出し */
     }
 }
@@ -176,7 +176,7 @@ pub fn wave_write_PCMU_mono_safer3(path: &str, pcm: &MonoPcm) {
     let mut fp = wave_write_header::<MonoPcm, PCMU>(path, pcm);
 
     for n in 0..pcm.get_length() {
-        let PCMU(dat) = write::WaveData::convert_from_float(pcm.s[n]);
+        let PCMU(dat) = WaveData::convert_from_float(pcm.s[n]);
         fp.write_u8(dat).unwrap(); /* 音データの書き出し */
     }
     if (pcm.length % 2) == 1 {
@@ -208,7 +208,7 @@ pub fn wave_write_PCMA_mono_safer3(path: &str, pcm: &MonoPcm) {
     let mut fp = wave_write_header::<MonoPcm, PCMA>(path, pcm);
 
     for n in 0..pcm.get_length() {
-        let PCMA(dat) = write::WaveData::convert_from_float(pcm.s[n]);
+        let PCMA(dat) = WaveData::convert_from_float(pcm.s[n]);
         fp.write_u8(dat).unwrap(); /* 音データの書き出し */
     }
     if (pcm.length % 2) == 1 {
@@ -222,9 +222,9 @@ pub fn wave_write_PCMA_mono_safer3(path: &str, pcm: &MonoPcm) {
 pub fn wave_write_16bit_stereo_safer3(path: &str, pcm: &StereoPcm) {
     let mut fp = wave_write_header::<StereoPcm, i16>(path, pcm);
     for n in 0..pcm.length {
-        fp.write_i16::<LittleEndian>(write::WaveData::convert_from_float(pcm.s_l[n]))
+        fp.write_i16::<LittleEndian>(WaveData::convert_from_float(pcm.s_l[n]))
             .unwrap(); /* 音データ（Lチャンネル）の書き出し */
-        fp.write_i16::<LittleEndian>(write::WaveData::convert_from_float(pcm.s_r[n]))
+        fp.write_i16::<LittleEndian>(WaveData::convert_from_float(pcm.s_r[n]))
             .unwrap(); /* 音データ（Rチャンネル）の書き出し */
     }
 }
@@ -232,7 +232,155 @@ pub fn wave_write_16bit_stereo_safer3(path: &str, pcm: &StereoPcm) {
 pub fn wave_write_16bit_mono_safer3(path: &str, pcm: &MonoPcm) {
     let mut fp = wave_write_header::<MonoPcm, i16>(path, pcm);
     for n in 0..pcm.get_length() {
-        fp.write_i16::<LittleEndian>(write::WaveData::convert_from_float(pcm.s[n]))
+        fp.write_i16::<LittleEndian>(WaveData::convert_from_float(pcm.s[n]))
             .unwrap(); /* 音データの書き出し */
     }
 }
+
+
+impl WaveData for PCMU {
+    const MYSTERIOUS: i32 = 50;
+    const BYTE_NUM: i32 = 1;
+    const CHUNK_SIZE: i32 = 18;
+    const WAVE_FORMAT_TYPE: i16 = 7;
+    fn convert_from_float(d: f64) -> Self {
+        let mut x: f64;
+        let s: i16; /* 16bitの音データ */
+        let c: u8; /* 8bitの圧縮データ */
+        let sign: u8;
+        let mut exponent: u8;
+        let mantissa: u8;
+        let mut magnitude: i32;
+        let level: [i16; 8] = [
+            0x00FF, 0x01FF, 0x03FF, 0x07FF, 0x0FFF, 0x1FFF, 0x3FFF, 0x7FFF
+        ];
+
+        x = (d + 1.0) / 2.0 * 65536.0;
+
+        if x > 65535.0 {
+            x = 65535.0; /* クリッピング */
+        } else if x < 0.0 {
+            x = 0.0; /* クリッピング */
+        }
+
+        s = ((x + 0.5) as i32 - 32768) as i16; /* 四捨五入とオフセットの調節 */
+
+        if s < 0 {
+            magnitude = -s as i32;
+            sign = 0x80;
+        } else {
+            magnitude = s as i32;
+            sign = 0x00;
+        }
+
+        magnitude += 0x84;
+        if magnitude > 32767 {
+            magnitude = 0x7FFF;
+        }
+        exponent = 0;
+        while exponent < 8 {
+            if magnitude <= level[exponent as usize] as i32 {
+                break;
+            }
+            exponent += 1;
+        }
+
+        mantissa = ((magnitude >> (exponent + 3)) & 0x0F) as u8;
+
+        c = !(sign | (exponent << 4) | mantissa);
+
+        PCMU(c) /* 圧縮データの書き出し */
+    }
+}
+
+pub trait WaveData {
+    fn convert_from_float(d: f64) -> Self;
+    const BYTE_NUM: i32;
+    const MYSTERIOUS: i32;
+    const CHUNK_SIZE: i32;
+    const WAVE_FORMAT_TYPE: i16;
+}
+
+impl WaveData for u8 {
+    fn convert_from_float(d: f64) -> u8 {
+        let mut s = (d + 1.0) / 2.0 * 256.0;
+
+        if s > 255.0 {
+            s = 255.0; /* クリッピング */
+        } else if s < 0.0 {
+            s = 0.0; /* クリッピング */
+        }
+
+        ((s + 0.5) as i32) as u8 /* 四捨五入 */
+    }
+    const BYTE_NUM: i32 = 1;
+    const MYSTERIOUS: i32 = 36;
+    const CHUNK_SIZE: i32 = 16;
+    const WAVE_FORMAT_TYPE: i16 = 1;
+}
+
+impl WaveData for i16 {
+    fn convert_from_float(d: f64) -> i16 {
+        let mut s = (d + 1.0) / 2.0 * 65536.0;
+
+        if s > 65535.0 {
+            s = 65535.0; /* クリッピング */
+        } else if s < 0.0 {
+            s = 0.0; /* クリッピング */
+        }
+
+        ((s + 0.5) as i32 - 32768) as i16 /* 四捨五入とオフセットの調節 */
+    }
+    const BYTE_NUM: i32 = 2;
+    const MYSTERIOUS: i32 = 36;
+    const CHUNK_SIZE: i32 = 16;
+    const WAVE_FORMAT_TYPE: i16 = 1;
+}
+
+impl WaveData for PCMA {
+    const MYSTERIOUS: i32 = 50;
+    const BYTE_NUM: i32 = 1;
+    const CHUNK_SIZE: i32 = 18;
+    const WAVE_FORMAT_TYPE: i16 = 6;
+    fn convert_from_float(d: f64) -> PCMA {
+        let mut x: f64 = (d + 1.0) / 2.0 * 65536.0;
+        let level: [i16; 8] = [
+            0x00FF, 0x01FF, 0x03FF, 0x07FF, 0x0FFF, 0x1FFF, 0x3FFF, 0x7FFF
+        ];
+
+        if x > 65535.0 {
+            x = 65535.0; /* クリッピング */
+        } else if x < 0.0 {
+            x = 0.0; /* クリッピング */
+        }
+
+        let s = ((x + 0.5) as i32 - 32768) as i16; /* 四捨五入とオフセットの調節 */
+
+        let (mut magnitude, sign): (i32, u8) = if s < 0 {
+            (-s as i32, 0x80)
+        } else {
+            (s as i32, 0x00)
+        };
+
+        if magnitude > 32767 {
+            magnitude = 0x7FFF;
+        }
+
+        let mut exponent = 0 as u8;
+        while exponent < 8 {
+            if magnitude <= level[exponent as usize] as i32 {
+                break;
+            }
+            exponent += 1;
+        }
+
+        let mantissa: u8 = if exponent == 0 {
+            (magnitude >> 4) & 0x0F
+        } else {
+            (magnitude >> (exponent + 3)) & 0x0F
+        } as u8;
+
+        PCMA((sign | (exponent << 4) | mantissa) ^ 0xD5)
+    }
+}
+
