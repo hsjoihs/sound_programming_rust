@@ -2,6 +2,7 @@ extern crate num_complex;
 extern crate rand;
 
 use determine_J;
+use linear;
 use mult;
 use num_complex::Complex;
 use rand::Rng;
@@ -548,14 +549,7 @@ fn ex8_9() {
     let pcm_length = pcm_fs * 2; /* 音データの長さ */
     let mut pcm = MonoPcm::new16(pcm_fs, pcm_length);
 
-    let mut f0 = vec![0.0; pcm_length];
-
-    /* 基本周波数 */
-    f0[0] = 500.0;
-    f0[pcm_length - 1] = 3500.0;
-    for n in 0..pcm_length {
-        f0[n] = f0[0] + (f0[pcm_length - 1] - f0[0]) * n as f64 / (pcm_length - 1) as f64;
-    }
+    let f0 = linear(500.0, 3500.0, pcm_length);
 
     /* ノコギリ波 */
     let mut t0 = (pcm_fs as f64 / f0[0]) as usize; /* 基本周期 */
