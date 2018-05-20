@@ -603,12 +603,12 @@ fn ex5_5() {
     let f4 = vec![2200.0; pcm_length];
 
     /* 加算合成 */
-    for n in 0..pcm_length {
-        pcm.s[n] += a0[n] * (2.0 * PI * f0[n] * n as f64 / pcm_fs as f64).sin();
-        pcm.s[n] += a1[n] * (2.0 * PI * f1[n] * n as f64 / pcm_fs as f64).sin();
-        pcm.s[n] += a2[n] * (2.0 * PI * f2[n] * n as f64 / pcm_fs as f64).sin();
-        pcm.s[n] += a3[n] * (2.0 * PI * f3[n] * n as f64 / pcm_fs as f64).sin();
-        pcm.s[n] += a4[n] * (2.0 * PI * f4[n] * n as f64 / pcm_fs as f64).sin();
+    for (n, item) in pcm.s.iter_mut().enumerate() {
+        *item += a0[n] * (2.0 * PI * f0[n] * n as f64 / pcm_fs as f64).sin();
+        *item += a1[n] * (2.0 * PI * f1[n] * n as f64 / pcm_fs as f64).sin();
+        *item += a2[n] * (2.0 * PI * f2[n] * n as f64 / pcm_fs as f64).sin();
+        *item += a3[n] * (2.0 * PI * f3[n] * n as f64 / pcm_fs as f64).sin();
+        *item += a4[n] * (2.0 * PI * f4[n] * n as f64 / pcm_fs as f64).sin();
     }
 
     pcm.mult_constant_gain(0.1);
@@ -623,6 +623,15 @@ fn ex5_5() {
 }
 
 #[allow(non_snake_case)]
+fn determine_J(delta : f64) -> usize{
+    let mut J = (3.1 / delta + 0.5) as usize - 1; /* 遅延器の数 */
+    if J % 2 == 1 {
+        J += 1; /* J+1が奇数になるように調整する */
+    }
+    return J;
+}
+
+#[allow(non_snake_case)]
 fn ex6_1() {
     let pcm0 = wave_read_16bit_mono_safer3("sine_500hz_3500hz.wav");
 
@@ -630,11 +639,8 @@ fn ex6_1() {
 
     let fe = 1000.0 / pcm0.fs as f64; /* エッジ周波数 */
     let delta = 1000.0 / pcm0.fs as f64; /* 遷移帯域幅 */
-
-    let mut J = (3.1 / delta + 0.5) as usize - 1; /* 遅延器の数 */
-    if J % 2 == 1 {
-        J += 1; /* J+1が奇数になるように調整する */
-    }
+    let J = determine_J(delta); /* 遅延器の数 */
+    
 
     let mut b = vec![0.0; J + 1];
     let mut w = vec![0.0; J + 1];
@@ -672,10 +678,7 @@ fn ex6_3() {
     let fe = 1000.0 / pcm0.fs as f64; /* エッジ周波数 */
     let delta = 1000.0 / pcm0.fs as f64; /* 遷移帯域幅 */
 
-    let mut J = (3.1 / delta + 0.5) as usize - 1; /* 遅延器の数 */
-    if J % 2 == 1 {
-        J += 1; /* J+1が奇数になるように調整する */
-    }
+    let J = determine_J(delta); /* 遅延器の数 */
 
     let mut b = vec![0.0; J + 1];
     let mut w = vec![0.0; J + 1];
@@ -1379,10 +1382,7 @@ fn ex8_10() {
     let ratio = pcm0_fs / pcm1_fs; /* ダウンサンプリングのレシオ */
     let fe = 0.45 / ratio as f64; /* エッジ周波数 */
     let delta = 0.1 / ratio as f64; /* 遷移帯域幅 */
-    let mut J = (3.1 / delta + 0.5) as usize - 1; /* 遅延器の数 */
-    if J % 2 == 1 {
-        J += 1; /* J+1が奇数になるように調整する */
-    }
+    let J = determine_J(delta); /* 遅延器の数 */
     let mut b = vec![0.0; J + 1];
     let mut w = vec![0.0; J + 1];
 
@@ -1472,10 +1472,7 @@ fn ex8_12() {
     let ratio = pcm0.fs / pcm1.fs; /* ダウンサンプリングのレシオ */
     let fe = 0.45 / ratio as f64; /* エッジ周波数 */
     let delta = 0.1 / ratio as f64; /* 遷移帯域幅 */
-    let mut J = (3.1 / delta + 0.5) as usize - 1; /* 遅延器の数 */
-    if J % 2 == 1 {
-        J += 1; /* J+1が奇数になるように調整する */
-    }
+    let J = determine_J(delta); /* 遅延器の数 */
     let mut b = vec![0.0; J + 1];
     let mut w = vec![0.0; J + 1];
     safe_Hanning_window(&mut w); /* ハニング窓 */
