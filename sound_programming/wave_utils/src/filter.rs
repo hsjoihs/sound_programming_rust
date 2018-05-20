@@ -1,16 +1,6 @@
 use libc::c_double;
-use libc::c_int;
 use sinc;
 use std::f64::consts::PI;
-
-#[link(name = "fir_filter")]
-extern "C" {
-    //pub fn FIR_LPF(fe: c_double, J: c_int, b: *mut c_double, w: *mut c_double);
-    pub fn FIR_HPF(fe: c_double, J: c_int, b: *mut c_double, w: *mut c_double);
-    pub fn FIR_BPF(fe1: c_double, fe2: c_double, J: c_int, b: *mut c_double, w: *mut c_double);
-    pub fn FIR_BEF(fe1: c_double, fe2: c_double, J: c_int, b: *mut c_double, w: *mut c_double);
-//*pub*/ fn FIR_filtering(x: *const c_double, y: *mut c_double, L: c_int, b: *mut c_double, J: c_int);
-}
 
 #[allow(non_snake_case)]
 pub fn safe_FIR_LPF(fe: c_double, J: usize, b: &mut [c_double], w: &mut [c_double]) {
