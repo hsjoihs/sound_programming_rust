@@ -239,6 +239,9 @@ pub fn wave_write_16bit_mono_safer3(path: &str, pcm: &MonoPcm) {
 
 
 impl WaveData for PCMU {
+    fn convert_to_float(&self) -> f64 {
+        unimplemented!();
+    }
     const MYSTERIOUS: i32 = 50;
     const BYTE_NUM: i32 = 1;
     const CHUNK_SIZE: i32 = 18;
@@ -295,9 +298,7 @@ impl WaveData for PCMU {
 
 pub trait WaveData {
     fn convert_from_float(d: f64) -> Self;
-    fn convert_to_float(&self) -> f64 {
-        0.0
-    }
+    fn convert_to_float(&self) -> f64;
     const BYTE_NUM: i32;
     const MYSTERIOUS: i32;
     const CHUNK_SIZE: i32;
@@ -347,6 +348,9 @@ impl WaveData for i16 {
 }
 
 impl WaveData for PCMA {
+    fn convert_to_float(&self) -> f64 {
+        unimplemented!();
+    }
     const MYSTERIOUS: i32 = 50;
     const BYTE_NUM: i32 = 1;
     const CHUNK_SIZE: i32 = 18;
