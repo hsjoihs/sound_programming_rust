@@ -28,7 +28,7 @@ use sound_programming::wave_write_PCMA_mono_safer3;
 use sound_programming::wave_write_PCMU_mono_safer3;
 use std::f64::consts::PI;
 //use std::io;
-fn former_half() {
+fn first() {
     ex1_1();
     ex1_2();
     ex2_1();
@@ -58,13 +58,11 @@ fn former_half() {
     }
 }
 
-fn latter_half() {
+fn second() {
     ex7_1();
     ex7_2();
     ex7_3();
-    if false {
-        ex7_4(); // slow
-    }
+    ex7_4();
     ex8_1();
     ex8_2();
     ex8_3();
@@ -81,13 +79,7 @@ fn latter_half() {
     ex8_12();
 }
 
-fn main() {
-    if false {
-        former_half();
-    }
-    if true {
-        latter_half();
-    }
+fn third(){
     ex9_1();
     ex9_2();
     ex9_3();
@@ -108,6 +100,18 @@ fn main() {
     ex11_7();
     ex11_8();
     ex11_9();
+}
+
+fn main() {
+    if false {
+        first();
+    }
+    if true {
+        second();
+    }
+    if false{
+        third();
+    }
 }
 
 fn ex1_1() {
@@ -911,7 +915,6 @@ fn ex7_3() {
     wave_write_16bit_mono_safer3("ex7_3.wav", &pcm1);
 }
 
-// slow; omitted from the test
 #[allow(non_snake_case)]
 fn ex7_4() {
     let pcm0 = wave_read_16bit_mono_safer3("synth.wav");
