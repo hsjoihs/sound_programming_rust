@@ -811,13 +811,28 @@ fn ex7_1() {
     let I = 2; /* 遅延器の数 */
     let J = 2; /* 遅延器の数 */
 
-    let pcm1_length = pcm0.length; /* 音データの長さ */
     let mut pcm1 = MonoPcm::blank_copy(&pcm0);
 
     let mut a = [0.0; 3];
     let mut b = [0.0; 3];
 
-    for n in 0..pcm1_length as usize {
+    filter_with_IIR_LPF(&pcm0, &mut pcm1, Q, I, J, &fc, &mut a, &mut b);
+
+    wave_write_16bit_mono_safer3("ex7_1.wav", &pcm1);
+}
+
+#[allow(non_snake_case)]
+fn filter_with_IIR_LPF(
+    pcm0: &MonoPcm,
+    pcm1: &mut MonoPcm,
+    Q: f64,
+    I: usize,
+    J: usize,
+    fc: &[f64],
+    mut a: &mut [f64],
+    mut b: &mut [f64],
+) {
+    for n in 0..pcm1.length as usize {
         safe_IIR_LPF(fc[n] / pcm1.fs as f64, Q, &mut a, &mut b); /* IIRフィルタの設計 */
 
         for m in 0..=J {
@@ -831,7 +846,6 @@ fn ex7_1() {
             }
         }
     }
-    wave_write_16bit_mono_safer3("ex7_1.wav", &pcm1);
 }
 
 #[allow(non_snake_case)]
@@ -850,19 +864,8 @@ fn ex7_2() {
 
     let mut pcm1 = MonoPcm::blank_copy(&pcm0); /* 音データ */
 
-    for n in 0..pcm1.length as usize {
-        safe_IIR_LPF(fc[n] / pcm1.fs as f64, Q, &mut a, &mut b); /* IIRフィルタの設計 */
-        for m in 0..=J {
-            if n >= m {
-                pcm1.s[n] += b[m] * pcm0.s[n - m];
-            }
-        }
-        for m in 1..=I {
-            if n >= m {
-                pcm1.s[n] += -a[m] * pcm1.s[n - m];
-            }
-        }
-    }
+    filter_with_IIR_LPF(&pcm0, &mut pcm1, Q, I, J, &fc, &mut a, &mut b);
+
     wave_write_16bit_mono_safer3("ex7_2.wav", &pcm1);
 }
 
