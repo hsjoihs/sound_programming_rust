@@ -42,7 +42,6 @@ pub fn safe_ADSR(
     }
 }
 
-
 #[derive(Clone)]
 pub struct MonoPcm {
     pub fs: usize,
@@ -128,8 +127,6 @@ pub struct STEREO_PCM_CONST {
     pub sR: *const c_double, /* 音データ（Rチャンネル） */
 }
 
-
-
 #[allow(non_snake_case)]
 pub unsafe fn Hanning_window(w: *mut c_double, N: c_int) {
     let w_slice = from_raw_parts_mut(w, N as usize);
@@ -149,7 +146,6 @@ pub fn safe_Hanning_window(w_slice: &mut [c_double]) {
 pub fn to_c_str(a: &str) -> *mut i8 {
     CString::new(a).unwrap().into_raw()
 }
-
 
 pub fn sinc(x: f64) -> f64 {
     if x == 0.0 {
