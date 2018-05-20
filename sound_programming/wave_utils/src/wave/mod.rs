@@ -157,7 +157,7 @@ pub fn wave_write_8bit_stereo_safer3(path: &str, pcm: &StereoPcm) {
 
 #[allow(non_snake_case)]
 pub fn wave_read_PCMU_mono_safer3(path: &str) -> MonoPcm {
-    let (mut fp, pcm_fs, pcm_bits, data_chunk_size) = read::read_header2(path, true);
+    let (mut fp, pcm_fs, _, data_chunk_size) = read::read_header2(path, true);
     let pcm_length = data_chunk_size as usize;
     let mut pcm_s = vec![0.0; pcm_length];
 
@@ -169,7 +169,7 @@ pub fn wave_read_PCMU_mono_safer3(path: &str) -> MonoPcm {
     return MonoPcm {
         s: pcm_s,
         fs: pcm_fs as usize,
-        bits: pcm_bits as i32,
+        bits: 16 as i32,
         length: pcm_length as usize,
     };
 }

@@ -1425,18 +1425,15 @@ fn ex11_6() {
 
 #[allow(non_snake_case)]
 fn ex11_7() {
-    let mut pcm0 = wave_read_16bit_mono_safer3("vocal.wav");
-    pcm0.bits = 8;
+    let pcm0 = wave_read_16bit_mono_safer3("vocal.wav");
     wave_write_PCMU_mono_safer3("pcmu.wav", &pcm0);
-    let mut pcm1 = wave_read_PCMU_mono_safer3("pcmu.wav");
-    pcm1.bits = 16;
+    let pcm1 = wave_read_PCMU_mono_safer3("pcmu.wav");
     wave_write_16bit_mono_safer3("ex11_7_pcm.wav", &pcm1);
 }
 
 #[allow(non_snake_case)]
 fn ex11_8() {
-    let mut pcm0 = wave_read_16bit_mono_safer3("vocal.wav");
-    pcm0.bits = 8;
+    let pcm0 = wave_read_16bit_mono_safer3("vocal.wav");
     wave_write_PCMA_mono_safer3("pcma.wav", &pcm0);
     let pcm1 = wave_read_PCMA_mono_safer3("pcma.wav");
     wave_write_16bit_mono_safer3("ex11_8_pcm.wav", &pcm1);
