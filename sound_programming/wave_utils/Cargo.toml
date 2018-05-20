@@ -7,5 +7,3 @@ authors = ["hsjoihs <hs.ioling.hs@gmail.com>"]
 num-complex = "0.1"
 byteorder = "1.2.3"
 
-[build-dependencies]
-cc = "1.0"

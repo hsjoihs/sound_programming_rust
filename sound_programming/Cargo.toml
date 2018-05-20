@@ -8,5 +8,3 @@ rand = "0.4.0"
 num-complex = "0.1"
 wave_utils = { path = "wave_utils" }
 
-[build-dependencies]
-cc = "1.0"
