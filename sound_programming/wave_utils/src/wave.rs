@@ -197,6 +197,20 @@ pub fn wave_write_IMA_ADPCM_mono_safer3(path: &str, pcm: &MonoPcm) {
 }
 
 #[allow(non_snake_case)]
+pub fn wave_write_8bit_mono_safer3(path: &str, pcm: &MonoPcm) {
+    let pcm1: MONO_PCM_CONST = MONO_PCM_CONST {
+        fs: pcm.fs as i32,
+        bits: pcm.bits,
+        length: pcm.length as i32,
+        s: pcm.s.as_ptr(),
+    };
+    unsafe {
+        wave_write_8bit_mono(&pcm1, to_c_str(path));
+    }
+}
+
+
+#[allow(non_snake_case)]
 pub fn wave_read_PCMU_mono_safer3(path: &str) -> MonoPcm {
     unsafe {
         let mut pcm: MONO_PCM = mem::uninitialized();

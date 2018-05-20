@@ -3,6 +3,7 @@ extern crate rand;
 extern crate sound_programming;
 extern crate wave_utils;
 //use std::io::Write;
+use wave_utils::wave::wave_write_8bit_mono_safer3;
 use sound_programming::first::first;
 use sound_programming::mult;
 use sound_programming::second::second;
@@ -61,6 +62,15 @@ fn main() {
     ex11_7();
     ex11_8();
     ex11_9();
+    eightbit();
+}
+
+fn eightbit() {
+    let pcm0 = wave_read_16bit_mono_safer3("ex1_1_a.wav"); /* 音データの入力 */
+    let mut pcm1 = pcm0.clone(); /* 音データのコピー */
+    pcm1.bits = 8;
+
+    wave_write_8bit_mono_safer3("ex1_1_8bit.wav", &pcm1); /* 音データの出力 */
 }
 
 fn ex9_1() {
