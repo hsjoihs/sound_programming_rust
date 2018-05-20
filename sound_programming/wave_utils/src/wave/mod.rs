@@ -21,7 +21,7 @@ pub fn wave_read_8bit_mono_safer3(path: &str) -> MonoPcm {
 
     for n in 0..pcm_length {
         let data = fp.read_u8().unwrap();
-        pcm_s[n] = (data as f64 - 128.0) / 128.0; /* 音データを-1以上1未満の範囲に正規化する */
+        pcm_s[n] = data.convert_to_float(); /* 音データを-1以上1未満の範囲に正規化する */
     }
 
     return MonoPcm {
@@ -41,9 +41,9 @@ pub fn wave_read_8bit_stereo_safer3(path: &str) -> StereoPcm {
     let mut pcm_sR = vec![0.0; pcm_length];
     for n in 0..pcm_length {
         let data = fp.read_u8().unwrap();
-        pcm_sL[n] = (data as f64 - 128.0) / 128.0; /* 音データを-1以上1未満の範囲に正規化する */
+        pcm_sL[n] = data.convert_to_float(); /* 音データを-1以上1未満の範囲に正規化する */
         let data = fp.read_u8().unwrap();
-        pcm_sR[n] = (data as f64 - 128.0) / 128.0; /* 音データを-1以上1未満の範囲に正規化する */
+        pcm_sR[n] = data.convert_to_float(); /* 音データを-1以上1未満の範囲に正規化する */
     }
     return StereoPcm {
         s_l: pcm_sL,
@@ -61,7 +61,7 @@ pub fn wave_read_16bit_mono_safer3(path: &str) -> MonoPcm {
 
     for n in 0..pcm_length {
         let data = fp.read_i16::<LittleEndian>().unwrap();
-        pcm_s[n] = (data as f64) / 32768.0; /* 音データを-1以上1未満の範囲に正規化する */
+        pcm_s[n] = data.convert_to_float(); /* 音データを-1以上1未満の範囲に正規化する */
     }
 
     return MonoPcm {
@@ -81,9 +81,9 @@ pub fn wave_read_16bit_stereo_safer3(path: &str) -> StereoPcm {
     let mut pcm_sR = vec![0.0; pcm_length];
     for n in 0..pcm_length {
         let data = fp.read_i16::<LittleEndian>().unwrap();
-        pcm_sL[n] = data as f64 / 32768.0; /* 音データを-1以上1未満の範囲に正規化する */
+        pcm_sL[n] = data.convert_to_float(); /* 音データを-1以上1未満の範囲に正規化する */
         let data = fp.read_i16::<LittleEndian>().unwrap();
-        pcm_sR[n] = data as f64 / 32768.0; /* 音データを-1以上1未満の範囲に正規化する */
+        pcm_sR[n] = data.convert_to_float(); /* 音データを-1以上1未満の範囲に正規化する */
     }
 
     return StereoPcm {
@@ -295,6 +295,9 @@ impl WaveData for PCMU {
 
 pub trait WaveData {
     fn convert_from_float(d: f64) -> Self;
+    fn convert_to_float(&self) -> f64 {
+        0.0
+    }
     const BYTE_NUM: i32;
     const MYSTERIOUS: i32;
     const CHUNK_SIZE: i32;
@@ -302,6 +305,9 @@ pub trait WaveData {
 }
 
 impl WaveData for u8 {
+    fn convert_to_float(&self) -> f64 {
+        (*self as f64 - 128.0) / 128.0 /* 音データを-1以上1未満の範囲に正規化する */
+    }
     fn convert_from_float(d: f64) -> u8 {
         let mut s = (d + 1.0) / 2.0 * 256.0;
 
@@ -320,6 +326,9 @@ impl WaveData for u8 {
 }
 
 impl WaveData for i16 {
+    fn convert_to_float(&self) -> f64{
+        (*self as f64) / 32768.0
+    }
     fn convert_from_float(d: f64) -> i16 {
         let mut s = (d + 1.0) / 2.0 * 65536.0;
 
