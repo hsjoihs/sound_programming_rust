@@ -15,7 +15,7 @@ fn read_i8x4<T>(mut fp: T) -> [i8; 4] where T : byteorder::ReadBytesExt{
 }
 
 #[allow(non_snake_case)]
-fn foo(file_name: &str) -> (File, i32, i16, i32) {
+fn read_header(file_name: &str) -> (File, i32, i16, i32) {
     let mut fp = File::open(file_name).expect("file not found");
 
     let _riff_chunk_ID = read_i8x4(&mut fp);
@@ -42,7 +42,7 @@ fn foo(file_name: &str) -> (File, i32, i16, i32) {
 
 //not tested
 pub fn wave_read_8bit_mono_safer3(path: &str) -> MonoPcm {
-    let (mut fp, pcm_fs, pcm_bits, data_chunk_size) = foo(path);
+    let (mut fp, pcm_fs, pcm_bits, data_chunk_size) = read_header(path);
     let pcm_length = data_chunk_size as usize;
     let mut pcm_s = vec![0.0; pcm_length];
 
@@ -62,7 +62,7 @@ pub fn wave_read_8bit_mono_safer3(path: &str) -> MonoPcm {
 // not tested
 #[allow(non_snake_case)]
 pub fn wave_read_8bit_stereo_safer3(path: &str) -> StereoPcm {
-    let (mut fp, pcm_fs, pcm_bits, data_chunk_size) = foo(path);
+    let (mut fp, pcm_fs, pcm_bits, data_chunk_size) = read_header(path);
     let pcm_length = (data_chunk_size / 2) as usize; /* 音データの長さ */
 
     let mut pcm_sL = vec![0.0; pcm_length];
@@ -83,7 +83,7 @@ pub fn wave_read_8bit_stereo_safer3(path: &str) -> StereoPcm {
 }
 
 pub fn wave_read_16bit_mono_safer3(path: &str) -> MonoPcm {
-    let (mut fp, pcm_fs, pcm_bits, data_chunk_size) = foo(path);
+    let (mut fp, pcm_fs, pcm_bits, data_chunk_size) = read_header(path);
     let pcm_length = (data_chunk_size / 2) as usize;
     let mut pcm_s = vec![0.0; pcm_length];
 
@@ -102,7 +102,7 @@ pub fn wave_read_16bit_mono_safer3(path: &str) -> MonoPcm {
 
 #[allow(non_snake_case)]
 pub fn wave_read_16bit_stereo_safer3(path: &str) -> StereoPcm {
-    let (mut fp, pcm_fs, pcm_bits, data_chunk_size) = foo(path);
+    let (mut fp, pcm_fs, pcm_bits, data_chunk_size) = read_header(path);
     let pcm_length = (data_chunk_size / 4) as usize; /* 音データの長さ */
 
     let mut pcm_sL = vec![0.0; pcm_length];
