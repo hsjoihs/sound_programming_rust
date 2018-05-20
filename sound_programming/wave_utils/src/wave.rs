@@ -1,23 +1,34 @@
 extern crate byteorder;
-use to_c_str;
-use std::slice::from_raw_parts_mut;
-use STEREO_PCM_CONST;
+use self::byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use MONO_PCM;
 use MONO_PCM_CONST;
-use libc::c_char;
 use MonoPcm;
+use STEREO_PCM_CONST;
 use StereoPcm;
+use libc::c_char;
 use std::fs::File;
-use self::byteorder::{LittleEndian, ReadBytesExt};
 use std::mem;
+use std::slice::from_raw_parts_mut;
+use to_c_str;
 
-
-fn read_i8x4<T>(mut fp: T) -> [i8; 4] where T : byteorder::ReadBytesExt{
+fn read_i8x4<T>(mut fp: T) -> [i8; 4]
+where
+    T: byteorder::ReadBytesExt,
+{
     let mut arr = [0; 4];
     for item in arr.iter_mut() {
-       *item = fp.read_i8().unwrap();
+        *item = fp.read_i8().unwrap();
     }
-    return arr
+    return arr;
+}
+
+fn write_i8x4<T>(mut fp: T, arr: [i8; 4])
+where
+    T: byteorder::WriteBytesExt,
+{
+    for item in arr.iter() {
+        fp.write_i8(*item).unwrap();
+    }
 }
 
 #[allow(non_snake_case)]
@@ -38,12 +49,7 @@ fn read_header(file_name: &str) -> (File, i32, i16, i32) {
     let _data_chunk_ID = read_i8x4(&mut fp);
     let data_chunk_size = fp.read_i32::<LittleEndian>().unwrap();
 
-    return (
-        fp,
-        samples_per_sec,
-        bits_per_sample,
-        data_chunk_size,
-    );
+    return (fp, samples_per_sec, bits_per_sample, data_chunk_size);
 }
 
 //not tested
@@ -134,7 +140,6 @@ extern "C" {
     pub fn wave_write_8bit_mono(pcm: *const MONO_PCM_CONST, file_name: *const c_char);
     pub fn wave_write_8bit_stereo(pcm: *const STEREO_PCM_CONST, file_name: *const c_char);
 
-    fn wave_write_16bit_mono(pcm: *const MONO_PCM_CONST, file_name: *const c_char);
     fn wave_write_16bit_stereo(pcm: *const STEREO_PCM_CONST, file_name: *const c_char);
 
     fn wave_read_PCMA_mono(pcm: *mut MONO_PCM, file_name: *const c_char);
@@ -146,18 +151,48 @@ extern "C" {
 
 }
 
-
-
 #[allow(non_snake_case)]
 pub fn wave_write_16bit_mono_safer3(path: &str, pcm: &MonoPcm) {
-    let pcm1: MONO_PCM_CONST = MONO_PCM_CONST {
-        fs: pcm.fs as i32,
-        bits: pcm.bits,
-        length: pcm.length as i32,
-        s: pcm.s.as_ptr(),
-    };
-    unsafe {
-        wave_write_16bit_mono(&pcm1, to_c_str(path));
+    let riff_chunk_ID: [i8; 4] = ['R' as i8, 'I' as i8, 'F' as i8, 'F' as i8];
+    let riff_chunk_size: i32 = 36 + pcm.length as i32 * 2;
+    let file_format_type: [i8; 4] = ['W' as i8, 'A' as i8, 'V' as i8, 'E' as i8];
+    let fmt_chunk_ID: [i8; 4] = ['f' as i8, 'm' as i8, 't' as i8, ' ' as i8];
+    let fmt_chunk_size: i32 = 16;
+    let wave_format_type: i16 = 1;
+    let channel: i16 = 1;
+    let samples_per_sec: i32 = pcm.fs as i32; /* 標本化周波数 */
+    let bytes_per_sec: i32 = pcm.fs as i32 * pcm.bits / 8;
+    let block_size: i16 = (pcm.bits / 8) as i16;
+    let bits_per_sample: i16 = pcm.bits as i16; /* 量子化精度 */
+    let data_chunk_ID: [i8; 4] = ['d' as i8, 'a' as i8, 't' as i8, 'a' as i8];
+    let data_chunk_size: i32 = (pcm.length * 2) as i32;
+
+    let mut fp = File::create(path).expect("file cannot be created");
+    write_i8x4(&mut fp, riff_chunk_ID);
+    fp.write_i32::<LittleEndian>(riff_chunk_size).unwrap();
+    write_i8x4(&mut fp, file_format_type);
+    write_i8x4(&mut fp, fmt_chunk_ID);
+    fp.write_i32::<LittleEndian>(fmt_chunk_size).unwrap();
+    fp.write_i16::<LittleEndian>(wave_format_type).unwrap();
+    fp.write_i16::<LittleEndian>(channel).unwrap();
+    fp.write_i32::<LittleEndian>(samples_per_sec).unwrap();
+    fp.write_i32::<LittleEndian>(bytes_per_sec).unwrap();
+    fp.write_i16::<LittleEndian>(block_size).unwrap();
+    fp.write_i16::<LittleEndian>(bits_per_sample).unwrap();
+    write_i8x4(&mut fp, data_chunk_ID);
+    fp.write_i32::<LittleEndian>(data_chunk_size).unwrap();
+
+    for n in 0..pcm.length {
+        let mut s = (pcm.s[n] as f64 + 1.0) / 2.0 * 65536.0;
+
+        if s > 65535.0 {
+            s = 65535.0; /* クリッピング */
+        } else if s < 0.0 {
+            s = 0.0; /* クリッピング */
+        }
+
+        let data = ((s + 0.5) as i32 - 32768) as i16; /* 四捨五入とオフセットの調節 */
+        fp.write_i16::<LittleEndian>(data).unwrap(); /* 音データの書き出し */
     }
 }
 

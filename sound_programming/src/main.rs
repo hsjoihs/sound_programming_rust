@@ -1357,8 +1357,11 @@ fn ex11_6() {
             pcm1.s[offset1 + n] = pcm0.s[offset0 + n];
         }
         for n in 0..p {
-            pcm1.s[offset1 + p + n] = pcm0.s[offset0 + p + n] * (p - n) as f64 / p as f64; /* 単調減少の重み付け */
-            pcm1.s[offset1 + p + n] += pcm0.s[offset0 + n] * n as f64 / p as f64; /* 単調増加の重み付け */
+            /* 単調減少の重み付け */
+            pcm1.s[offset1 + p + n] = pcm0.s[offset0 + p + n] * (p - n) as f64 / p as f64;
+
+            /* 単調増加の重み付け */
+            pcm1.s[offset1 + p + n] += pcm0.s[offset0 + n] * n as f64 / p as f64;
         }
 
         let q = (p as f64 * rate / (1.0 - rate) + 0.5) as usize;
