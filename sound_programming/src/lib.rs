@@ -6,8 +6,6 @@ use std::f64::consts::PI;
 use std::ffi::CString;
 use std::mem;
 use std::slice::from_raw_parts_mut;
-pub mod fft;
-pub mod filter;
 pub mod wave;
 
 #[allow(non_snake_case)]
@@ -43,13 +41,6 @@ pub fn safe_ADSR(
     }
 }
 
-pub fn sinc(x: c_double) -> c_double {
-    if x == 0.0 {
-        1.0
-    } else {
-        x.sin() / x
-    }
-}
 
 #[derive(Clone)]
 pub struct MonoPcm {

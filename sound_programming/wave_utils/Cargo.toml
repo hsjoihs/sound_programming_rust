@@ -1,0 +1,8 @@
+[package]
+name = "wave_utils"
+version = "0.1.0"
+authors = ["hsjoihs <hs.ioling.hs@gmail.com>"]
+
+[dependencies]
+num-complex = "0.1"
+libc = "0.2.0"
