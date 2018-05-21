@@ -14,7 +14,6 @@ use wave_utils::filter::safe_IIR_filtering;
 use wave_utils::filter::safe_IIR_resonator;
 use wave_utils::linear;
 use wave_utils::mult;
-use wave_utils::sawtooth_with_varying_freq;
 use wave_utils::wave::wave_read_16bit_mono_safer3;
 use wave_utils::wave::wave_write_16bit_mono_safer3;
 
@@ -579,7 +578,7 @@ fn ex8_10() {
     let f0 = linear(500.0, 3500.0, pcm0_length);
 
     /* ノコギリ波 */
-    let pcm0_s = sawtooth_with_varying_freq(pcm0_fs, pcm0_length, &f0);
+    let pcm0 = MonoPcm::new16_sawtooth_with_varying_freq(pcm0_fs, pcm0_length, &f0);
 
     let pcm1_fs = 8000; /* 標本化周波数 */
     let pcm1_length = pcm1_fs * 2; /* 音データの長さ */
@@ -596,7 +595,7 @@ fn ex8_10() {
     for n in 0..pcm1_length {
         for m in 0..=J {
             if n * ratio + J / 2 >= m && n * ratio + J / 2 < pcm0_length + m {
-                pcm1.s[n] += b[m] * pcm0_s[n * ratio + J / 2 - m];
+                pcm1.s[n] += b[m] * pcm0.s[n * ratio + J / 2 - m];
             }
         }
     }
@@ -608,13 +607,11 @@ fn ex8_11() {
     let pcm0_fs = 192000; /* 標本化周波数 */
     let pcm0_length = pcm0_fs * 2; /* 音データの長さ */
 
-    let mut pcm0 = MonoPcm::new16(pcm0_fs, pcm0_length);
-
     /* 基本周波数 */
     let f0 = linear(500.0, 3500.0, pcm0_length);
 
     /* ノコギリ波 */
-    pcm0.s = sawtooth_with_varying_freq(pcm0_fs, pcm0_length, &f0);
+    let pcm0 = MonoPcm::new16_sawtooth_with_varying_freq(pcm0_fs, pcm0_length, &f0);
 
     let pcm1_fs = 8000; /* 標本化周波数 */
     let pcm1_length = pcm1_fs * 2; /* 音データの長さ */
@@ -633,13 +630,13 @@ fn ex8_11() {
 
 #[allow(non_snake_case)]
 fn ex8_12() {
-    let mut pcm0 = MonoPcm::new16(192000, 192000 * 2);
+    let pcm0_length = 192000 * 2;
 
     /* 基本周波数 */
-    let f0 = linear(500.0, 3500.0, pcm0.length);
+    let f0 = linear(500.0, 3500.0, pcm0_length);
 
     /* ノコギリ波 */
-    pcm0.s = sawtooth_with_varying_freq(pcm0.fs, pcm0.length, &f0);
+    let pcm0 = MonoPcm::new16_sawtooth_with_varying_freq(192000, pcm0_length, &f0);
 
     let mut pcm1 = MonoPcm::new16(8000, 8000 * 2);
     let ratio = pcm0.fs / pcm1.fs; /* ダウンサンプリングのレシオ */

@@ -81,6 +81,15 @@ impl MonoPcm {
             s: (0..length).map(|n| fun(n)).collect(),
         }
     }
+
+    pub fn new16_sawtooth_with_varying_freq(fs: usize, length: usize, f0: &[f64]) -> Self {
+        MonoPcm{
+            fs,
+            length,
+            bits: 16,
+            s: sawtooth_with_varying_freq(fs, length, f0)
+        }
+    }
 }
 
 pub fn linear(initial_v: f64, final_v: f64, length: usize) -> Vec<f64> {
