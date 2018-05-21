@@ -6,6 +6,7 @@ use wave_utils::MonoPcm;
 
 pub mod first;
 pub mod second;
+pub mod third;
 
 fn sine_wave(pcm: &mut MonoPcm, f0: f64, a: f64, offset: usize, duration: usize) {
     /* サイン波 */
