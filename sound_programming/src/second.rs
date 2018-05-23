@@ -1,6 +1,7 @@
 extern crate num_complex;
 extern crate rand;
 
+use wave_utils::filter::get_FIR_LPF;
 use num_complex::Complex;
 use rand::Rng;
 use wave_utils::MonoPcm;
@@ -8,7 +9,6 @@ use wave_utils::create_Hanning_window;
 use wave_utils::determine_J;
 use wave_utils::fft::safe_FFT_;
 use wave_utils::fft::safe_IFFT_;
-use wave_utils::filter::safe_FIR_LPF;
 use wave_utils::filter::safe_IIR_LPF;
 use wave_utils::filter::safe_IIR_filtering;
 use wave_utils::filter::safe_IIR_resonator;
@@ -587,9 +587,8 @@ fn ex8_10() {
     let fe = 0.45 / ratio as f64; /* エッジ周波数 */
     let delta = 0.1 / ratio as f64; /* 遷移帯域幅 */
     let J = determine_J(delta); /* 遅延器の数 */
-    let mut b = vec![0.0; J + 1];
     let mut w = create_Hanning_window(J + 1); /* ハニング窓 */
-    safe_FIR_LPF(fe, J, &mut b, &mut w); /* FIRフィルタの設計 */
+    let b = get_FIR_LPF(fe, J, &mut w); /* FIRフィルタの設計 */
 
     /* フィルタリング */
     for n in 0..pcm1_length {
@@ -643,9 +642,8 @@ fn ex8_12() {
     let fe = 0.45 / ratio as f64; /* エッジ周波数 */
     let delta = 0.1 / ratio as f64; /* 遷移帯域幅 */
     let J = determine_J(delta); /* 遅延器の数 */
-    let mut b = vec![0.0; J + 1];
-    let mut w = create_Hanning_window(J + 1); /* ハニング窓 */
-    safe_FIR_LPF(fe, J, &mut b, &mut w); /* FIRフィルタの設計 */
+    let w = create_Hanning_window(J + 1); /* ハニング窓 */
+    let b = get_FIR_LPF(fe, J, &w); /* FIRフィルタの設計 */
     for n in 0..pcm1.length {
         for m in 0..=J {
             if n * ratio + J / 2 >= m && n * ratio + J / 2 < pcm0.length + m {

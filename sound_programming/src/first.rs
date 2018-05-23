@@ -1,4 +1,5 @@
 extern crate rand;
+use wave_utils::filter::get_FIR_LPF;
 use num_complex::Complex;
 use rand::Rng;
 use sine_wave;
@@ -8,7 +9,6 @@ use wave_utils::create_Hanning_window;
 use wave_utils::determine_J;
 use wave_utils::fft::safe_FFT_;
 use wave_utils::fft::safe_IFFT_;
-use wave_utils::filter::safe_FIR_LPF;
 use wave_utils::filter::safe_FIR_filtering;
 use wave_utils::filter::safe_IIR_LPF;
 use wave_utils::filter::safe_IIR_filtering;
@@ -545,11 +545,11 @@ fn ex6_1() {
     let delta = 1000.0 / pcm0.fs as f64; /* 遷移帯域幅 */
     let J = determine_J(delta); /* 遅延器の数 */
 
-    let mut b = vec![0.0; J + 1];
-    let mut w = create_Hanning_window(J + 1); /* ハニング窓 */
+    vec![0.0; J + 1];
+    let w = create_Hanning_window(J + 1); /* ハニング窓 */
 
-    safe_FIR_LPF(fe, J, &mut b, &mut w); /* FIRフィルタの設計 */
-    safe_FIR_filtering(&pcm0.s, &mut pcm1.s, pcm1.length, &mut b, J);
+    let b = get_FIR_LPF(fe, J, &w); /* FIRフィルタの設計 */
+    safe_FIR_filtering(&pcm0.s, &mut pcm1.s, pcm1.length, &b, J);
     wave_write_16bit_mono_safer3("ex6_1.wav", &pcm1);
 }
 
@@ -582,9 +582,8 @@ fn ex6_3() {
 
     let J = determine_J(delta); /* 遅延器の数 */
 
-    let mut b = vec![0.0; J + 1];
-    let mut w = create_Hanning_window(J + 1); /* ハニング窓 */
-    safe_FIR_LPF(fe, J, &mut b, &mut w); /* FIRフィルタの設計 */
+    let w = create_Hanning_window(J + 1); /* ハニング窓 */
+    let b = get_FIR_LPF(fe, J, &w); /* FIRフィルタの設計 */
 
     let L: usize = 128; /* フレームの長さ */
     let N = 256; /* DFTのサイズ */

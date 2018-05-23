@@ -1,24 +1,36 @@
 use sinc;
 use std::f64::consts::PI;
 
-#[allow(non_snake_case)]
-pub fn safe_FIR_LPF(fe: f64, J: usize, b: &mut [f64], w: &mut [f64]) {
+/*#[allow(non_snake_case)]
+pub fn safe_FIR_LPF(fe: f64, J: usize, b: &mut [f64], w: &[f64]) {
     assert_eq!(J % 2, 0);
     assert_eq!(J + 1, b.len());
     assert_eq!(J + 1, w.len());
 
     // k = m + J/2
     for (k, item) in b.iter_mut().enumerate() {
-        *item = 2.0 * fe * sinc(2.0 * PI * fe * (k as f64 - (J / 2) as f64));
+        let m = k as f64 - (J/2) as f64;
+        *item = 2.0 * fe * sinc(2.0 * PI * fe * m);
     }
 
     for (m, item) in b.iter_mut().enumerate() {
         *item *= w[m];
     }
+}*/
+
+#[allow(non_snake_case)]
+pub fn get_FIR_LPF(fe: f64, J: usize, w: &[f64])-> Vec<f64> {
+    assert_eq!(J % 2, 0);
+    assert_eq!(J + 1, w.len());
+
+    (0..=J).map(|k| {
+        let m = k as f64 - (J/2) as f64;
+        (2.0 * fe * sinc(2.0 * PI * fe * m)) * w[k]
+    }).collect()
 }
 
 #[allow(non_snake_case)]
-pub fn safe_FIR_filtering(x: &[f64], y: &mut [f64], L: usize, b: &mut [f64], J: usize) {
+pub fn safe_FIR_filtering(x: &[f64], y: &mut [f64], L: usize, b: &[f64], J: usize) {
     // check index here
     assert_eq!(J + 1, b.len());
 
@@ -33,14 +45,15 @@ pub fn safe_FIR_filtering(x: &[f64], y: &mut [f64], L: usize, b: &mut [f64], J: 
 
 // not tested
 #[allow(non_snake_case)]
-pub fn safe_FIR_HPF(fe: f64, J: usize, b: &mut [f64], w: &mut [f64]) {
+pub fn safe_FIR_HPF(fe: f64, J: usize, b: &mut [f64], w: &[f64]) {
     assert_eq!(J % 2, 0);
     assert_eq!(J + 1, b.len());
     assert_eq!(J + 1, w.len());
-    let J = J as i32;
-    let offset = J / 2;
-    for m in -(J / 2)..J / 2 {
-        b[(offset + m) as usize] = sinc(PI * m as f64) - 2.0 * fe * sinc(2.0 * PI * fe * m as f64);
+    // k = m + J/2
+    for (k, item) in b.iter_mut().enumerate() {
+        let m = k as f64 - (J/2) as f64;
+        *item = sinc(PI * m) 
+         - 2.0 * fe * sinc(2.0 * PI * fe * m);
     }
 
     for m in 0..(J + 1) as usize {
@@ -50,15 +63,15 @@ pub fn safe_FIR_HPF(fe: f64, J: usize, b: &mut [f64], w: &mut [f64]) {
 
 // not tested
 #[allow(non_snake_case)]
-pub fn safe_FIR_BPF(fe1: f64, fe2: f64, J: usize, b: &mut [f64], w: &mut [f64]) {
+pub fn safe_FIR_BPF(fe1: f64, fe2: f64, J: usize, b: &mut [f64], w: &[f64]) {
     assert_eq!(J % 2, 0);
     assert_eq!(J + 1, b.len());
     assert_eq!(J + 1, w.len());
-    let J = J as i32;
-    let offset = J / 2;
-    for m in -(J / 2)..J / 2 {
-        b[(offset + m) as usize] = 2.0 * fe2 * sinc(2.0 * PI * fe2 * m as f64)
-            - 2.0 * fe1 * sinc(2.0 * PI * fe1 * m as f64);
+    // k = m + J/2
+    for (k, item) in b.iter_mut().enumerate()  {
+        let m = k as f64 - (J/2) as f64;
+        *item = 2.0 * fe2 * sinc(2.0 * PI * fe2 * m)
+            - 2.0 * fe1 * sinc(2.0 * PI * fe1 * m);
     }
 
     for m in 0..(J + 1) as usize {
@@ -68,15 +81,15 @@ pub fn safe_FIR_BPF(fe1: f64, fe2: f64, J: usize, b: &mut [f64], w: &mut [f64]) 
 
 // not tested
 #[allow(non_snake_case)]
-pub fn safe_FIR_BEF(fe1: f64, fe2: f64, J: usize, b: &mut [f64], w: &mut [f64]) {
+pub fn safe_FIR_BEF(fe1: f64, fe2: f64, J: usize, b: &mut [f64], w: &[f64]) {
     assert_eq!(J % 2, 0);
     assert_eq!(J + 1, b.len());
     assert_eq!(J + 1, w.len());
-    let J = J as i32;
-    let offset = J / 2;
-    for m in -(J / 2)..J / 2 {
-        b[(offset + m) as usize] = sinc(PI * m as f64) - 2.0 * fe2 * sinc(2.0 * PI * fe2 * m as f64)
-            + 2.0 * fe1 * sinc(2.0 * PI * fe1 * m as f64);
+    // k = m + J/2
+    for (k, item) in b.iter_mut().enumerate()  {
+        let m = k as f64 - (J/2) as f64;
+        *item = sinc(PI * m) - 2.0 * fe2 * sinc(2.0 * PI * fe2 * m)
+            + 2.0 * fe1 * sinc(2.0 * PI * fe1 * m);
     }
 
     for m in 0..(J + 1) as usize {
