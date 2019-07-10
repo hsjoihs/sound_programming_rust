@@ -1247,7 +1247,7 @@ fn ex11_5() {
 #[allow(non_snake_case)]
 fn Hanning_something(pcm1: &mut MonoPcm, pcm0: &MonoPcm, pitch: f64, N: usize) {
     for o in 0..pcm1.length {
-        let mut t = pitch * o as f64;
+        let t = pitch * o as f64;
         let mut tmp = 0.0;
 
         let ta = t as usize;

@@ -570,7 +570,7 @@ fn ex8_9() {
 
 #[allow(non_snake_case)]
 fn ex8_10() {
-    let pcm0_fs = 192000; /* 標本化周波数 */
+    let pcm0_fs = 192_000; /* 標本化周波数 */
     let _pcm0_bits = 16; /* 量子化精度 */
     let pcm0_length = pcm0_fs * 2; /* 音データの長さ */
 
@@ -603,7 +603,7 @@ fn ex8_10() {
 }
 
 fn ex8_11() {
-    let pcm0_fs = 192000; /* 標本化周波数 */
+    let pcm0_fs = 192_000; /* 標本化周波数 */
     let pcm0_length = pcm0_fs * 2; /* 音データの長さ */
 
     /* 基本周波数 */
@@ -629,13 +629,13 @@ fn ex8_11() {
 
 #[allow(non_snake_case)]
 fn ex8_12() {
-    let pcm0_length = 192000 * 2;
+    let pcm0_length = 192_000 * 2;
 
     /* 基本周波数 */
     let f0 = linear(500.0, 3500.0, pcm0_length);
 
     /* ノコギリ波 */
-    let pcm0 = MonoPcm::new16_sawtooth_with_varying_freq(192000, pcm0_length, &f0);
+    let pcm0 = MonoPcm::new16_sawtooth_with_varying_freq(192_000, pcm0_length, &f0);
 
     let mut pcm1 = MonoPcm::new16(8000, 8000 * 2);
     let ratio = pcm0.fs / pcm1.fs; /* ダウンサンプリングのレシオ */
@@ -651,13 +651,13 @@ fn ex8_12() {
             }
         }
     }
-    let mut pcm2 = MonoPcm::new16(192000, 192000 * 2);
+    let mut pcm2 = MonoPcm::new16(192_000, 192_000 * 2);
     /* 0を挿入する */
     for n in 0..pcm1.length {
         pcm2.s[n * ratio] = pcm1.s[n];
     }
 
-    let mut pcm3 = MonoPcm::new16(192000, 192000 * 2);
+    let mut pcm3 = MonoPcm::new16(192_000, 192_000 * 2);
     for n in 0..pcm3.length {
         for m in 0..=J {
             if n + J / 2 >= m && n + J / 2 < pcm2.length + m {
