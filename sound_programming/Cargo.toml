@@ -7,4 +7,3 @@ authors = ["hsjoihs <hs.ioling.hs@gmail.com>"]
 rand = "0.7.3"
 num-complex = "0.3.0"
 wave_utils = { path = "wave_utils" }
-fraction = "0.6.3"

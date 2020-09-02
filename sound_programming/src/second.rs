@@ -2,16 +2,14 @@ extern crate num_complex;
 extern crate rand;
 
 use rand::Rng;
-use wave_utils::MonoPcm;
 use wave_utils::wave::wave_write_16bit_mono_safer3;
-extern crate fraction;
-type F = fraction::GenericFraction<i32>;
+use wave_utils::MonoPcm;
 
 #[derive(Copy, Clone, Debug)]
 enum NoteName {
-    C = 3, 
-    CSh = 4, 
-    D = 5, 
+    C = 3,
+    CSh = 4,
+    D = 5,
     DSh = 6,
     E = 7,
     F = 8,
@@ -20,7 +18,7 @@ enum NoteName {
     GSh = 11,
     A = 12,
     ASh = 13,
-    B = 14
+    B = 14,
 }
 
 #[derive(Copy, Clone, Debug)]
@@ -32,19 +30,53 @@ impl Pitch {
     }
 }
 
-fn melody_font(mut pcm: &mut wave_utils::MonoPcm, unit_length: usize, counter: usize, pitch: f64, len: usize) {
-    square_wave(&mut pcm, pitch, 0.1, unit_length * counter, unit_length * len * 7 / 8)
-}
-
-fn render<F>(mut pcm: &mut wave_utils::MonoPcm, unit_length: usize, melody: &[(usize, Option<Pitch>)], melody_font: F)
-where F : Fn(&mut wave_utils::MonoPcm, usize, usize, f64, usize) -> (){
+fn render_pitched<F>(
+    mut pcm: &mut wave_utils::MonoPcm,
+    unit_length: usize,
+    font: F,
+    melody: &[(usize, Option<Pitch>)],
+) where
+    F: Fn(&mut wave_utils::MonoPcm, usize, usize, f64, usize) -> (),
+{
     let mut counter = 0;
     for (len, pitch) in melody {
         if let Some(p) = pitch {
-            melody_font(&mut pcm, unit_length, counter, p.to_hertz(), *len);
+            font(&mut pcm, unit_length, counter, p.to_hertz(), *len);
         }
         counter += len;
     }
+}
+
+fn melody_font(
+    mut pcm: &mut wave_utils::MonoPcm,
+    unit_length: usize,
+    counter: usize,
+    pitch: f64,
+    len: usize,
+) {
+    square_wave(
+        &mut pcm,
+        pitch,
+        0.1,
+        unit_length * counter,
+        unit_length * len * 7 / 8,
+    )
+}
+
+fn base_font(
+    mut pcm: &mut wave_utils::MonoPcm,
+    unit_length: usize,
+    counter: usize,
+    pitch: f64,
+    len: usize,
+) {
+    triangle_wave(
+        &mut pcm,
+        pitch,
+        0.2,
+        unit_length * counter,
+        unit_length * len * 7 / 8,
+    )
 }
 
 pub fn second() {
@@ -54,7 +86,7 @@ pub fn second() {
     let mut pcm = MonoPcm::new16(pcm_fs, pcm_length); /* 音データ */
 
     use self::NoteName::*;
-    let melody = vec![
+    render_pitched(&mut pcm, unit_length, melody_font, &vec![
         (1, Some(Pitch(E, 5))),
         (1, Some(Pitch(E, 5))),
         (1, None),
@@ -67,18 +99,24 @@ pub fn second() {
         (1, None),
         (1, None),
         (1, None),
-        (1, Some(Pitch(G, 4)))
-    ];
-    render(&mut pcm, unit_length, &melody, melody_font);
+        (1, Some(Pitch(G, 4))),
+    ]);
 
-    /* ベースパート */
-    triangle_wave(&mut pcm, 146.83, 0.2, unit_length * 0, 7000); /* D3 */
-    triangle_wave(&mut pcm, 146.83, 0.2, unit_length * 1, 7000); /* D3 */
-    triangle_wave(&mut pcm, 146.83, 0.2, unit_length * 3, 7000); /* D3 */
-    triangle_wave(&mut pcm, 146.83, 0.2, unit_length * 5, 7000); /* D3 */
-    triangle_wave(&mut pcm, 146.83, 0.2, unit_length * 6, 7000); /* D3 */
-    triangle_wave(&mut pcm, 196.00, 0.2, unit_length * 8, 7000); /* G3 */
-    triangle_wave(&mut pcm, 196.00, 0.2, unit_length * 12, 7000); /* G3 */
+    render_pitched(&mut pcm, unit_length, base_font, &vec![
+        (1, Some(Pitch(D, 3))),
+        (1, Some(Pitch(D, 3))),
+        (1, None),
+        (1, Some(Pitch(D, 3))),
+        (1, None),
+        (1, Some(Pitch(D, 3))),
+        (1, Some(Pitch(D, 3))),
+        (1, None),
+        (1, Some(Pitch(G, 3))),
+        (1, None),
+        (1, None),
+        (1, None),
+        (1, Some(Pitch(G, 3))),
+    ]);
 
     /* パーカッション */
     white_noise(&mut pcm, 0.1, unit_length * 0, 4000);
@@ -92,7 +130,7 @@ pub fn second() {
     white_noise(&mut pcm, 0.1, unit_length * 14, 1000);
     white_noise(&mut pcm, 0.1, unit_length * 15, 1000);
 
-    wave_write_16bit_mono_safer3("ex8_6.wav", &pcm); 
+    wave_write_16bit_mono_safer3("ex8_6.wav", &pcm);
 }
 
 fn square_wave(pcm: &mut MonoPcm, f0: f64, gain: f64, offset: usize, duration: usize) {

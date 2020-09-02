@@ -3,7 +3,6 @@ extern crate rand;
 extern crate sound_programming;
 extern crate wave_utils;
 use sound_programming::second::second;
-extern crate fraction;
 fn main() {
-    second(); 
+    second();
 }
