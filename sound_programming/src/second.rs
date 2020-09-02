@@ -47,6 +47,24 @@ fn render_pitched<F>(
     }
 }
 
+fn render_pitchless<F, A>(
+    mut pcm: &mut wave_utils::MonoPcm,
+    unit_length: usize,
+    font: F,
+    melody: &[(usize, Option<A>)],
+) where
+    F: Fn(&mut wave_utils::MonoPcm, usize, usize, A) -> (),
+    A: Clone,
+{
+    let mut counter = 0;
+    for (len, addendum) in melody {
+        if let Some(s) = addendum {
+            font(&mut pcm, unit_length, counter, s.clone());
+        }
+        counter += len;
+    }
+}
+
 fn melody_font(
     mut pcm: &mut wave_utils::MonoPcm,
     unit_length: usize,
@@ -79,6 +97,24 @@ fn base_font(
     )
 }
 
+#[derive(Copy, Clone, Debug)]
+enum Addendum {
+    Short,
+    Long,
+}
+
+fn percussion_font(mut pcm: &mut wave_utils::MonoPcm, unit_length: usize, counter: usize, addendum: Addendum) {
+    white_noise(
+        &mut pcm,
+        0.1,
+        unit_length * counter,
+        match addendum {
+            Addendum::Short => unit_length / 8,
+            Addendum::Long => unit_length / 2,
+        },
+    );
+}
+
 pub fn second() {
     let unit_length = 8000; // number of samples per an eighth note
     let pcm_fs = 44100; /* 標本化周波数 */
@@ -86,50 +122,71 @@ pub fn second() {
     let mut pcm = MonoPcm::new16(pcm_fs, pcm_length); /* 音データ */
 
     use self::NoteName::*;
-    render_pitched(&mut pcm, unit_length, melody_font, &vec![
-        (1, Some(Pitch(E, 5))),
-        (1, Some(Pitch(E, 5))),
-        (1, None),
-        (1, Some(Pitch(E, 5))),
-        (1, None),
-        (1, Some(Pitch(C, 5))),
-        (1, Some(Pitch(E, 5))),
-        (1, None),
-        (1, Some(Pitch(G, 5))),
-        (1, None),
-        (1, None),
-        (1, None),
-        (1, Some(Pitch(G, 4))),
-    ]);
+    render_pitched(
+        &mut pcm,
+        unit_length,
+        melody_font,
+        &vec![
+            (1, Some(Pitch(E, 5))),
+            (1, Some(Pitch(E, 5))),
+            (1, None),
+            (1, Some(Pitch(E, 5))),
+            (1, None),
+            (1, Some(Pitch(C, 5))),
+            (1, Some(Pitch(E, 5))),
+            (1, None),
+            (1, Some(Pitch(G, 5))),
+            (1, None),
+            (1, None),
+            (1, None),
+            (1, Some(Pitch(G, 4))),
+        ],
+    );
 
-    render_pitched(&mut pcm, unit_length, base_font, &vec![
-        (1, Some(Pitch(D, 3))),
-        (1, Some(Pitch(D, 3))),
-        (1, None),
-        (1, Some(Pitch(D, 3))),
-        (1, None),
-        (1, Some(Pitch(D, 3))),
-        (1, Some(Pitch(D, 3))),
-        (1, None),
-        (1, Some(Pitch(G, 3))),
-        (1, None),
-        (1, None),
-        (1, None),
-        (1, Some(Pitch(G, 3))),
-    ]);
+    render_pitched(
+        &mut pcm,
+        unit_length,
+        base_font,
+        &vec![
+            (1, Some(Pitch(D, 3))),
+            (1, Some(Pitch(D, 3))),
+            (1, None),
+            (1, Some(Pitch(D, 3))),
+            (1, None),
+            (1, Some(Pitch(D, 3))),
+            (1, Some(Pitch(D, 3))),
+            (1, None),
+            (1, Some(Pitch(G, 3))),
+            (1, None),
+            (1, None),
+            (1, None),
+            (1, Some(Pitch(G, 3))),
+        ],
+    );
 
-    /* パーカッション */
-    white_noise(&mut pcm, 0.1, unit_length * 0, 4000);
-    white_noise(&mut pcm, 0.1, unit_length * 2, 1000);
-    white_noise(&mut pcm, 0.1, unit_length * 3, 4000);
-    white_noise(&mut pcm, 0.1, unit_length * 5, 1000);
-    white_noise(&mut pcm, 0.1, unit_length * 6, 4000);
-    white_noise(&mut pcm, 0.1, unit_length * 8, 4000);
-    white_noise(&mut pcm, 0.1, unit_length * 11, 4000);
-    white_noise(&mut pcm, 0.1, unit_length * 13, 1000);
-    white_noise(&mut pcm, 0.1, unit_length * 14, 1000);
-    white_noise(&mut pcm, 0.1, unit_length * 15, 1000);
-
+    render_pitchless(
+        &mut pcm,
+        unit_length,
+        percussion_font,
+        &vec![
+            (1, Some(Addendum::Long)),
+            (1, None),
+            (1, Some(Addendum::Short)),
+            (1, Some(Addendum::Long)),
+            (1, None),
+            (1, Some(Addendum::Short)),
+            (1, Some(Addendum::Long)),
+            (1, None),
+            (1, Some(Addendum::Long)),
+            (1, None),
+            (1, None),
+            (1, Some(Addendum::Long)),
+            (1, None),
+            (1, Some(Addendum::Short)),
+            (1, Some(Addendum::Short)),
+            (1, Some(Addendum::Short)),
+        ],
+    );
     wave_write_16bit_mono_safer3("ex8_6.wav", &pcm);
 }
 
