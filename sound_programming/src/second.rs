@@ -5,25 +5,62 @@ use rand::Rng;
 use wave_utils::MonoPcm;
 use wave_utils::wave::wave_write_16bit_mono_safer3;
 
+#[derive(Copy, Clone, Debug)]
+enum NoteName {
+    C = 3, 
+    CSh = 4, 
+    D = 5, 
+    DSh = 6,
+    E = 7,
+    F = 8,
+    FSh = 9,
+    G = 10,
+    GSh = 11,
+    A = 12,
+    ASh = 13,
+    B = 14
+}
+
+#[derive(Copy, Clone, Debug)]
+struct Pitch(NoteName, i32);
+impl Pitch {
+    pub fn get_pitch(self) -> f64 {
+        let Pitch(name, octave) = self;
+        440. * 2f64.powf(1. / 12.).powi(name as i32 + 12 * (octave - 5))
+    }
+}
+
 pub fn second() {
+    let eighth_note_length = 8000; // number of samples per an eighth note
     let pcm_fs = 44100; /* 標本化周波数 */
-    let pcm_length = 7000 * 16; /* 音データの長さ */
+    let pcm_length = eighth_note_length * 16; /* 音データの長さ */
     let mut pcm = MonoPcm::new16(pcm_fs, pcm_length); /* 音データ */
 
     let mut counter = 0;
-    for pitch in "e5e5__e5__c5e5__g5______g4".chars().collect::<Vec<_>>().chunks(2) {
+    use self::NoteName::*;
+    for pitch in vec![
+        Some(Pitch(E, 5)),
+        Some(Pitch(E, 5)),
+        None,
+        Some(Pitch(E, 5)),
+        None,
+        Some(Pitch(C, 5)),
+        Some(Pitch(E, 5)),
+        None,
+        Some(Pitch(G, 5)),
+        None,
+        None,
+        None,
+        Some(Pitch(G, 4))
+    ] {
         let freq = match pitch {
-            ['e', '5'] => Some(440. * 2f64.powf(1. / 12.).powi(7)),
-            ['c', '5'] => Some(440. * 2f64.powf(1. / 12.).powi(3)),
-            ['g', '5'] => Some(440. * 2f64.powf(1. / 12.).powi(10)),
-            ['g', '4'] => Some(440. * 2f64.powf(1. / 12.).powi(-2)),
-            ['_', '_'] => None,
-            _ => panic!("unrecognized pitch {:?}", pitch)
+            Some(a) => Some(a.get_pitch()),
+            None => None,
         };
         match freq {
             None => {},
             Some(f) => {
-                square_wave(&mut pcm, f, 0.1, 7000 * counter, 6125);
+                square_wave(&mut pcm, f, 0.1, eighth_note_length * counter, 7000);
             }
         }
 
@@ -31,25 +68,25 @@ pub fn second() {
     }
 
     /* ベースパート */
-    triangle_wave(&mut pcm, 146.83, 0.2, 7000 * 0, 6125); /* D3 */
-    triangle_wave(&mut pcm, 146.83, 0.2, 7000 * 1, 6125); /* D3 */
-    triangle_wave(&mut pcm, 146.83, 0.2, 7000 * 3, 6125); /* D3 */
-    triangle_wave(&mut pcm, 146.83, 0.2, 7000 * 5, 6125); /* D3 */
-    triangle_wave(&mut pcm, 146.83, 0.2, 7000 * 6, 6125); /* D3 */
-    triangle_wave(&mut pcm, 196.00, 0.2, 7000 * 8, 6125); /* G3 */
-    triangle_wave(&mut pcm, 196.00, 0.2, 7000 * 12, 6125); /* G3 */
+    triangle_wave(&mut pcm, 146.83, 0.2, eighth_note_length * 0, 7000); /* D3 */
+    triangle_wave(&mut pcm, 146.83, 0.2, eighth_note_length * 1, 7000); /* D3 */
+    triangle_wave(&mut pcm, 146.83, 0.2, eighth_note_length * 3, 7000); /* D3 */
+    triangle_wave(&mut pcm, 146.83, 0.2, eighth_note_length * 5, 7000); /* D3 */
+    triangle_wave(&mut pcm, 146.83, 0.2, eighth_note_length * 6, 7000); /* D3 */
+    triangle_wave(&mut pcm, 196.00, 0.2, eighth_note_length * 8, 7000); /* G3 */
+    triangle_wave(&mut pcm, 196.00, 0.2, eighth_note_length * 12, 7000); /* G3 */
 
     /* パーカッション */
-    white_noise(&mut pcm, 0.1, 7000 * 0, 4000);
-    white_noise(&mut pcm, 0.1, 7000 * 2, 1000);
-    white_noise(&mut pcm, 0.1, 7000 * 3, 4000);
-    white_noise(&mut pcm, 0.1, 7000 * 5, 1000);
-    white_noise(&mut pcm, 0.1, 7000 * 6, 4000);
-    white_noise(&mut pcm, 0.1, 7000 * 8, 4000);
-    white_noise(&mut pcm, 0.1, 7000 * 11, 4000);
-    white_noise(&mut pcm, 0.1, 7000 * 13, 1000);
-    white_noise(&mut pcm, 0.1, 7000 * 14, 1000);
-    white_noise(&mut pcm, 0.1, 7000 * 15, 1000);
+    white_noise(&mut pcm, 0.1, eighth_note_length * 0, 4000);
+    white_noise(&mut pcm, 0.1, eighth_note_length * 2, 1000);
+    white_noise(&mut pcm, 0.1, eighth_note_length * 3, 4000);
+    white_noise(&mut pcm, 0.1, eighth_note_length * 5, 1000);
+    white_noise(&mut pcm, 0.1, eighth_note_length * 6, 4000);
+    white_noise(&mut pcm, 0.1, eighth_note_length * 8, 4000);
+    white_noise(&mut pcm, 0.1, eighth_note_length * 11, 4000);
+    white_noise(&mut pcm, 0.1, eighth_note_length * 13, 1000);
+    white_noise(&mut pcm, 0.1, eighth_note_length * 14, 1000);
+    white_noise(&mut pcm, 0.1, eighth_note_length * 15, 1000);
 
     wave_write_16bit_mono_safer3("ex8_6.wav", &pcm); 
 }
