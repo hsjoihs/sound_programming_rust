@@ -96,6 +96,22 @@ pub fn base_font(
     )
 }
 
+pub fn base_font2(
+    mut pcm: &mut wave_utils::MonoPcm,
+    unit_length: usize,
+    counter: usize,
+    pitch: f64,
+    len: usize,
+) {
+    nes_pseudo_triangle_wave(
+        &mut pcm,
+        pitch,
+        0.2,
+        unit_length * counter,
+        unit_length * len * 7 / 8,
+    )
+}
+
 #[derive(Copy, Clone, Debug)]
 pub enum Addendum {
     Short,
@@ -162,6 +178,34 @@ fn triangle_wave(pcm: &mut MonoPcm, f0: f64, gain: f64, offset: usize, duration:
         if m >= t0 {
             m = 0;
         }
+    }
+    for n in 0..duration {
+        s[n] *= gain;
+    }
+    for n in 0..duration {
+        pcm.s[offset + n] += s[n];
+    }
+}
+
+fn nes_pseudo_triangle_wave(pcm: &mut MonoPcm, f0: f64, gain: f64, offset: usize, duration: usize) {
+    let mut s = vec![0.0; duration];
+    /* ファミコン疑似三角波 */
+    let t0 = (pcm.fs as f64 / f0) as usize; /* 基本周期 */
+    let mut m = 0;
+    for n in 0..duration {
+        s[n] = if (m as f64) < t0 as f64 / 2.0 {
+            -1.0 + 4.0 * m as f64 / t0 as f64
+        } else {
+            3.0 - 4.0 * m as f64 / t0 as f64
+        };
+        m += 1;
+        if m >= t0 {
+            m = 0;
+        }
+    }
+    for n in 0..duration {
+        // 0123456789ABCDEFFEDCBA9876543210
+        s[n] = ((s[n] * 8.).floor() * 2. + 16.) / 15. -1.
     }
     for n in 0..duration {
         s[n] *= gain;

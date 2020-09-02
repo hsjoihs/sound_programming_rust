@@ -6,6 +6,12 @@ use wave_utils::wave::wave_write_16bit_mono_safer3;
 use wave_utils::MonoPcm;
 use sound_programming::second::*;
 fn main() {
+    a(base_font, "rebaku.wav");
+    a(base_font2, "rebaku_nes.wav");
+}
+
+fn a<F>(base: F, path: &str)  where
+F: Fn(&mut wave_utils::MonoPcm, usize, usize, f64, usize) -> () {
     let unit_length = 9320; // number of samples per an eighth note
     let pcm_fs = 44100; /* 標本化周波数 */
     let pcm_length = unit_length * 128; /* 音データの長さ */
@@ -95,7 +101,7 @@ fn main() {
     render_pitched(
         &mut pcm,
         unit_length,
-        base_font,
+        base,
         &vec![
             (8, Some(Pitch(G, 3))),
             (8, Some(Pitch(F, 3))),
@@ -186,5 +192,5 @@ fn main() {
         ]
         .concat(),
     );
-    wave_write_16bit_mono_safer3("rebaku.wav", &pcm);
+    wave_write_16bit_mono_safer3(path, &pcm);
 }
