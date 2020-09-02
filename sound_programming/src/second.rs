@@ -2,11 +2,10 @@ extern crate num_complex;
 extern crate rand;
 
 use rand::Rng;
-use wave_utils::wave::wave_write_16bit_mono_safer3;
 use wave_utils::MonoPcm;
 
 #[derive(Copy, Clone, Debug)]
-enum NoteName {
+pub enum NoteName {
     C = 3,
     CSh = 4,
     D = 5,
@@ -22,7 +21,7 @@ enum NoteName {
 }
 
 #[derive(Copy, Clone, Debug)]
-struct Pitch(NoteName, i32);
+pub struct Pitch(pub NoteName, pub i32);
 impl Pitch {
     pub fn to_hertz(self) -> f64 {
         let Pitch(name, octave) = self;
@@ -30,7 +29,7 @@ impl Pitch {
     }
 }
 
-fn render_pitched<F>(
+pub fn render_pitched<F>(
     mut pcm: &mut wave_utils::MonoPcm,
     unit_length: usize,
     font: F,
@@ -47,7 +46,7 @@ fn render_pitched<F>(
     }
 }
 
-fn render_pitchless<F, A>(
+pub fn render_pitchless<F, A>(
     mut pcm: &mut wave_utils::MonoPcm,
     unit_length: usize,
     font: F,
@@ -65,7 +64,7 @@ fn render_pitchless<F, A>(
     }
 }
 
-fn melody_font(
+pub fn melody_font(
     mut pcm: &mut wave_utils::MonoPcm,
     unit_length: usize,
     counter: usize,
@@ -81,7 +80,7 @@ fn melody_font(
     )
 }
 
-fn base_font(
+pub fn base_font(
     mut pcm: &mut wave_utils::MonoPcm,
     unit_length: usize,
     counter: usize,
@@ -98,12 +97,12 @@ fn base_font(
 }
 
 #[derive(Copy, Clone, Debug)]
-enum Addendum {
+pub enum Addendum {
     Short,
     Long,
 }
 
-fn percussion_font(
+pub fn percussion_font(
     mut pcm: &mut wave_utils::MonoPcm,
     unit_length: usize,
     counter: usize,
@@ -120,189 +119,6 @@ fn percussion_font(
     );
 }
 
-pub fn second() {
-    let unit_length = 9320; // number of samples per an eighth note
-    let pcm_fs = 44100; /* 標本化周波数 */
-    let pcm_length = unit_length * 128; /* 音データの長さ */
-    let mut pcm = MonoPcm::new16(pcm_fs, pcm_length); /* 音データ */
-
-    use self::NoteName::*;
-    let melody_1 = vec![
-        (1, None),
-        (1, Some(Pitch(E, 5))),
-        (1, None),
-        (1, Some(Pitch(E, 5))),
-        (1, None),
-        (1, Some(Pitch(C, 5))),
-        (1, None),
-        (1, Some(Pitch(C, 5))),
-        // --------------------
-        (1, None),
-        (1, Some(Pitch(A, 4))),
-        (1, None),
-        (1, Some(Pitch(A, 4))),
-        (3, Some(Pitch(B, 4))),
-        (1, None),
-        // --------------------
-        (1, None),
-        (1, Some(Pitch(E, 5))),
-        (1, None),
-        (1, Some(Pitch(E, 5))),
-        (1, None),
-        (1, Some(Pitch(C, 5))),
-        (1, None),
-        (1, Some(Pitch(C, 5))),
-        // --------------------
-        (1, None),
-        (1, Some(Pitch(F, 5))),
-        (1, Some(Pitch(E, 5))),
-        (1, Some(Pitch(D, 5))),
-        (1, Some(Pitch(C, 5))),
-        (1, None),
-        (1, Some(Pitch(B, 4))),
-        (1, None),
-        // --------------------
-        (1, None),
-        (1, Some(Pitch(E, 5))),
-        (1, None),
-        (1, Some(Pitch(E, 5))),
-        (1, None),
-        (1, Some(Pitch(C, 5))),
-        (1, None),
-        (1, Some(Pitch(C, 5))),
-        // --------------------
-        (1, None),
-        (1, Some(Pitch(A, 4))),
-        (1, None),
-        (1, Some(Pitch(A, 4))),
-        (3, Some(Pitch(B, 4))),
-        (1, None),
-        // --------------------
-        (1, None),
-        (1, Some(Pitch(E, 5))),
-        (1, None),
-        (1, Some(Pitch(E, 5))),
-        (1, Some(Pitch(F, 5))),
-        (1, Some(Pitch(E, 5))),
-        (1, Some(Pitch(D, 5))),
-        (1, Some(Pitch(C, 5))),
-        // --------------------
-        (1, Some(Pitch(B, 4))),
-        (1, Some(Pitch(G, 4))),
-        (1, None),
-        (1, Some(Pitch(G, 4))),
-        (1, Some(Pitch(A, 4))),
-        (1, Some(Pitch(B, 4))),
-        (1, Some(Pitch(C, 5))),
-        (1, None),
-    ];
-
-    let melody_2 = melody_1.iter().map(|(len, pitch)| {
-        (*len, pitch.map(|Pitch(name, octave)| Pitch(name, octave - 1)))
-    }).collect::<Vec<_>>();
-    render_pitched(
-        &mut pcm,
-        unit_length,
-        melody_font,
-        &[&melody_1[..], &melody_2[..]].concat(),
-    );
-
-    render_pitched(
-        &mut pcm,
-        unit_length,
-        base_font,
-        &vec![
-            (8, Some(Pitch(G, 3))),
-            (8, Some(Pitch(F, 3))),
-            (8, Some(Pitch(G, 3))),
-            (8, Some(Pitch(D, 3))),
-            // ===================
-            (8, Some(Pitch(E, 3))),
-            (8, Some(Pitch(A, 2))),
-            (8, Some(Pitch(G, 2))),
-            (2, Some(Pitch(A, 2))),
-            (2, Some(Pitch(B, 2))),
-            (4, Some(Pitch(C, 3))),
-            // ===================
-            (4, Some(Pitch(G, 3))),
-            (4, Some(Pitch(G, 3))),
-            (4, Some(Pitch(F, 3))),
-            (4, Some(Pitch(F, 3))),
-            (4, Some(Pitch(G, 3))),
-            (4, Some(Pitch(G, 3))),
-            (4, Some(Pitch(D, 3))),
-            (4, Some(Pitch(D, 3))),
-            // ===================
-            (4, Some(Pitch(E, 3))),
-            (4, Some(Pitch(E, 3))),
-            (4, Some(Pitch(A, 2))),
-            (4, Some(Pitch(A, 2))),
-            (4, Some(Pitch(G, 2))),
-            (4, Some(Pitch(G, 2))),
-            (2, Some(Pitch(A, 2))),
-            (2, Some(Pitch(B, 2))),
-            (4, Some(Pitch(C, 3))),
-        ],
-    );
-
-    let rhythm_1 = vec![
-        (1, Some(Addendum::Long)),
-        (1, None),
-        (1, Some(Addendum::Short)),
-        (1, Some(Addendum::Long)),
-        (1, None),
-        (1, Some(Addendum::Short)),
-        (1, Some(Addendum::Long)),
-        (1, None),
-        // --------------------
-        (1, Some(Addendum::Long)),
-        (1, None),
-        (1, None),
-        (1, Some(Addendum::Long)),
-        (1, None),
-        (1, Some(Addendum::Short)),
-        (1, Some(Addendum::Short)),
-        (1, Some(Addendum::Short)),
-    ];
-
-    let rhythm_2 = vec![
-        (1, Some(Addendum::Long)),
-        (1, None),
-        (1, Some(Addendum::Short)),
-        (1, Some(Addendum::Long)),
-        (1, None),
-        (1, Some(Addendum::Short)),
-        (1, Some(Addendum::Long)),
-        (1, None),
-        // --------------------
-        (1, Some(Addendum::Long)),
-        (1, Some(Addendum::Short)),
-        (1, Some(Addendum::Long)),
-        (1, Some(Addendum::Short)),
-        (1, None),
-        (1, Some(Addendum::Short)),
-        (1, Some(Addendum::Long)),
-        (1, None),
-    ];
-
-    render_pitchless(
-        &mut pcm,
-        unit_length,
-        percussion_font,
-        &[
-            &rhythm_1[..],
-            &rhythm_1[..],
-            &rhythm_1[..],
-            &rhythm_2[..],
-            &rhythm_1[..],
-            &rhythm_1[..],
-            &rhythm_1[..],
-            &rhythm_2[..],
-        ]
-        .concat(),
-    );
-    wave_write_16bit_mono_safer3("ex8_6.wav", &pcm);
-}
 
 fn square_wave(pcm: &mut MonoPcm, f0: f64, gain: f64, offset: usize, duration: usize) {
     let mut s = vec![0.0; duration];
