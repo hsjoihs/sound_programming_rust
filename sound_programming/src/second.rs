@@ -4,6 +4,8 @@ extern crate rand;
 use rand::Rng;
 use wave_utils::MonoPcm;
 use wave_utils::wave::wave_write_16bit_mono_safer3;
+extern crate fraction;
+type F = fraction::GenericFraction<i32>;
 
 #[derive(Copy, Clone, Debug)]
 enum NoteName {
