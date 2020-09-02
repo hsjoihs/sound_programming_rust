@@ -73,7 +73,7 @@ impl MonoPcm {
         }
     }
 
-    pub fn new16_fn(fs: usize, length: usize, mut fun: Box<FnMut(usize) -> f64>) -> Self {
+    pub fn new16_fn(fs: usize, length: usize, mut fun: Box<dyn FnMut(usize) -> f64>) -> Self {
         MonoPcm {
             fs,
             length,
