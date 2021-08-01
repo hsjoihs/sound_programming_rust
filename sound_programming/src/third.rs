@@ -2,7 +2,6 @@ extern crate num_complex;
 extern crate rand;
 extern crate wave_utils;
 use std::f64::consts::PI;
-use wave_utils::MonoPcm;
 use wave_utils::filter::safe_IIR_LPF;
 use wave_utils::lfo;
 use wave_utils::mult;
@@ -10,6 +9,7 @@ use wave_utils::safe_ADSR;
 use wave_utils::sinc;
 use wave_utils::wave::wave_read_16bit_mono_safer3;
 use wave_utils::wave::wave_write_16bit_mono_safer3;
+use wave_utils::MonoPcm;
 
 pub fn third() {
     ex9_1();
@@ -37,7 +37,6 @@ pub fn third() {
     ex11_6();
 }
 
-
 fn ex9_1() {
     let pcm_fs = 44100; /* 標本化周波数 */
     let pcm_length = pcm_fs * 2; /* 音データの長さ */
@@ -59,9 +58,7 @@ fn ex9_1() {
     }
 
     let vca = lfo(
-        &pcm,
-        1.0,
-        0.2, /* LFOの振幅 */
+        &pcm, 1.0, 0.2, /* LFOの振幅 */
         2.0, /* LFOの周波数 */
     );
 
@@ -77,8 +74,7 @@ fn ex9_2() {
     let pcm_length = pcm_fs * 2; /* 音データの長さ */
     let mut pcm = MonoPcm::new16(pcm_fs, pcm_length);
     let vco = lfo(
-        &pcm,
-        500.0, /* Hz */
+        &pcm, 500.0, /* Hz */
         100.0, /* LFOの振幅 */
         2.0,   /* LFOの周波数 */
     );
@@ -121,8 +117,7 @@ fn ex9_3() {
     }
 
     let vcf = lfo(
-        &pcm0,
-        1000.0, /* Hz */
+        &pcm0, 1000.0, /* Hz */
         800.0,  /* LFOの振幅 */
         2.0,    /* LFOの周波数 */
     );
@@ -239,7 +234,7 @@ fn ex9_5() {
     }
 
     let vcf = 4000.0; /* 遮断周波数 */
-    let Q = 1.0 / 2.0f64.sqrt(); /* レゾナンス */
+    let Q = 1.0 / 2.0_f64.sqrt(); /* レゾナンス */
     let I = 2; /* 遅延器の数 */
     let J = 2; /* 遅延器の数 */
     let mut a = [0.0; 3];
@@ -317,7 +312,7 @@ fn ex9_6() {
     for n in 0..pcm0.length {
         vcf[n] = offset + vcf[n] * depth;
     }
-    let Q = 1.0 / 2.0f64.sqrt(); /* レゾナンス */
+    let Q = 1.0 / 2.0_f64.sqrt(); /* レゾナンス */
     let I = 2; /* 遅延器の数 */
     let J = 2; /* 遅延器の数 */
     let mut a = [0.0; 3];
@@ -367,17 +362,20 @@ fn ex9_7() {
     let mut pcm0 = MonoPcm::new16(pcm0_fs, pcm0_length);
 
     let mut vco = vec![0.0; pcm0.length]; /* 基本周波数 */
-    let gate = pcm0.fs * 1;
-    let duration = pcm0.fs * 1;
-    let A = 0;
-    let D = (pcm0.fs as f64 * 0.4) as usize;
-    let S = 0.0;
-    let R = (pcm0.fs as f64 * 0.4) as usize;
-    safe_ADSR(&mut vco, A, D, S, R, gate, duration);
-    let offset = 40.0; /* 時間エンベロープのオフセット */
-    let depth = 120.0; /* 時間エンベロープのデプス */
-    for n in 0..pcm0.length {
-        vco[n] = offset + vco[n] * depth;
+    {
+        let gate = pcm0.fs * 1;
+        let duration = pcm0.fs * 1;
+        let A = 0;
+        let D = (pcm0.fs as f64 * 0.4) as usize;
+        let S = 0.0;
+        let R = (pcm0.fs as f64 * 0.4) as usize;
+        safe_ADSR(&mut vco, A, D, S, R, gate, duration);
+
+        let offset = 40.0; /* 時間エンベロープのオフセット */
+        let depth = 120.0; /* 時間エンベロープのデプス */
+        for n in 0..pcm0.length {
+            vco[n] = vco[n].mul_add(depth, offset);
+        }
     }
     {
         /* 三角波 */
@@ -399,18 +397,19 @@ fn ex9_7() {
     }
 
     let mut vcf = vec![0.0; pcm0.length]; /* 遮断周波数 */
-    let gate = pcm0.fs * 1;
-    let duration = pcm0.fs * 1;
-    let A = 0;
-    let D = (pcm0.fs as f64 * 0.4) as usize;
-    let S = 0.0;
-    let R = (pcm0.fs as f64 * 0.4) as usize;
-    safe_ADSR(&mut vcf, A, D, S, R, gate, duration);
-
-    let offset = 80.0; /* 時間エンベロープのオフセット */
-    let depth = 240.0; /* 時間エンベロープのデプス */
-    for n in 0..pcm0.length {
-        vcf[n] = offset + vcf[n] * depth;
+    {
+        let gate = pcm0.fs * 1;
+        let duration = pcm0.fs * 1;
+        let A = 0;
+        let D = (pcm0.fs as f64 * 0.4) as usize;
+        let S = 0.0;
+        let R = (pcm0.fs as f64 * 0.4) as usize;
+        safe_ADSR(&mut vcf, A, D, S, R, gate, duration);
+        let offset = 80.0; /* 時間エンベロープのオフセット */
+        let depth = 240.0; /* 時間エンベロープのデプス */
+        for n in 0..pcm0.length {
+            vcf[n] = vcf[n].mul_add(depth, offset);
+        }
     }
     let Q = 5.0; /* レゾナンス */
     let I = 2; /* 遅延器の数 */
@@ -436,17 +435,18 @@ fn ex9_7() {
     }
 
     let mut vca = vec![0.0; pcm1.length]; /* 振幅 */
-    let gate = pcm1.fs * 1;
-    let duration = pcm1.fs * 1;
-    let A = 0;
-    let D = (pcm0.fs as f64 * 0.4) as usize;
-    let S = 0.0;
-    let R = (pcm0.fs as f64 * 0.4) as usize;
-    safe_ADSR(&mut vca, A, D, S, R, gate, duration);
+    {
+        let gate = pcm1.fs * 1;
+        let duration = pcm1.fs * 1;
+        let A = 0;
+        let D = (pcm0.fs as f64 * 0.4) as usize;
+        let S = 0.0;
+        let R = (pcm0.fs as f64 * 0.4) as usize;
+        safe_ADSR(&mut vca, A, D, S, R, gate, duration);
 
-    let gain = 0.9; /* ゲイン */
-    pcm1.mult_varying_gain(&vca, gain);
-
+        let gain = 0.9; /* ゲイン */
+        pcm1.mult_varying_gain(&vca, gain);
+    }
     /* フェード処理 */
     for n in 0..(pcm1.fs as f64 * 0.01).ceil() as usize {
         pcm1.s[n] *= n as f64 / (pcm1.fs as f64 * 0.01);
@@ -472,7 +472,7 @@ fn ex9_8() {
     /* 積分フィルタ */
     s[0] = pcm.s[0] - 0.5;
     for n in 1..pcm.length {
-        s[n] = pcm.s[n] + 0.98 * s[n - 1];
+        s[n] = s[n - 1].mul_add(0.98, pcm.s[n]);
     }
     for n in 0..pcm.length {
         pcm.s[n] = s[n] * 2.0;
@@ -498,12 +498,24 @@ fn ex9_9() {
     while t < pcm.length as f64 {
         let ta = t as i32;
 
-        let tb = if t == ta as f64 { ta } else { ta + 1 };
+        // もともとのコードは
+        // ```
+        // let tb = if t == ta as f64 { ta } else { ta + 1 };
+        // ```
+        // これは f64 どうしで == を計算している、お行儀の悪いコードである。
+        // このコードの意図は、t を i32 にしてから f64 に戻した際にもとと一致する（= つまり、小数部分が 0）であるなら t as i32 を、
+        // さもなければ (t as i32) + 1 を使えということなので、
+        // つまり切り上げろという意味である。
+        // したがって、
+        let tb = t.ceil() as i32;
 
         for n in (tb - N / 2)..=(ta + N / 2) {
             if n >= 0 && n < pcm.length as i32 {
-                pcm.s[n as usize] += sign * sinc(PI * (t - n as f64))
-                    * (0.5 + 0.5 * (2.0 * PI * (t - n as f64) / (N * 2 + 1) as f64).cos());
+                pcm.s[n as usize] += sign
+                    * sinc(PI * (t - n as f64))
+                    * (2.0 * PI * (t - n as f64) / (N * 2 + 1) as f64)
+                        .cos()
+                        .mul_add(0.5, 0.5);
             }
         }
 
@@ -515,7 +527,7 @@ fn ex9_9() {
     /* 積分フィルタ */
     s[0] = pcm.s[0] - 0.5;
     for n in 1..pcm.length {
-        s[n] = pcm.s[n] + 0.98 * s[n - 1];
+        s[n] = s[n - 1].mul_add(0.98, pcm.s[n]);
     }
 
     for n in 0..pcm.length {
@@ -541,11 +553,21 @@ fn ex9_10() {
     while t < pcm.length as f64 {
         let ta = t as i32;
 
-        let tb = if t == ta as f64 { ta } else { ta + 1 };
+        // もともとのコードは
+        // ```
+        // let tb = if t == ta as f64 { ta } else { ta + 1 };
+        // ```
+        // これは f64 どうしで == を計算している、お行儀の悪いコードである。
+        // このコードの意図は、t を i32 にしてから f64 に戻した際にもとと一致する（= つまり、小数部分が 0）であるなら t as i32 を、
+        // さもなければ (t as i32) + 1 を使えということなので、
+        // つまり切り上げろという意味である。
+        // したがって、
+        let tb = t.ceil() as i32;
 
         for n in (tb - N / 2)..=(ta + N / 2) {
             if n >= 0 && n < pcm.length as i32 {
-                pcm.s[n as usize] += sign * sinc(PI * (t - n as f64))
+                pcm.s[n as usize] += sign
+                    * sinc(PI * (t - n as f64))
                     * (0.5 + 0.5 * (2.0 * PI * (t - n as f64) / (N * 2 + 1) as f64).cos());
             }
         }
@@ -558,7 +580,7 @@ fn ex9_10() {
     /* 積分フィルタ */
     s[0] = pcm.s[0] - 0.5;
     for n in 1..pcm.length {
-        s[n] = pcm.s[n] + 0.98 * s[n - 1];
+        s[n] = s[n - 1].mul_add(0.98, pcm.s[n]);
     }
 
     for n in 0..pcm.length {
@@ -572,7 +594,7 @@ fn ex9_10() {
     /* 積分フィルタ */
     s[0] = pcm.s[0] - 0.5;
     for n in 1..pcm.length {
-        s[n] = pcm.s[n] + 0.98 * s[n - 1];
+        s[n] = s[n - 1].mul_add(0.98, pcm.s[n]) ;
     }
 
     for n in 0..pcm.length {
@@ -598,14 +620,14 @@ fn ex9_11() {
     /* 積分フィルタ */
     s[0] = pcm0.s[0] - 0.5;
     for n in 1..pcm0.length {
-        s[n] = pcm0.s[n] + 0.98 * s[n - 1];
+        s[n] = s[n - 1].mul_add(0.98, pcm0.s[n]);
     }
 
     for n in 0..pcm0.length {
         pcm0.s[n] = s[n] * 2.0;
     }
     let vcf = 4000.0; /* 遮断周波数 */
-    let Q = 1.0 / 2.0f64.sqrt(); /* レゾナンス */
+    let Q = 1.0 / 2.0_f64.sqrt(); /* レゾナンス */
     let I = 2; /* 遅延器の数 */
     let J = 2; /* 遅延器の数 */
     let mut a = [0.0; 3];
@@ -710,8 +732,9 @@ fn ex10_1() {
 
     /* FM音源 */
     for n in 0..pcm.length {
-        pcm.s[n] = ac * (2.0 * PI * fc * n as f64 / pcm.fs as f64
-            + am * (2.0 * PI * fm * n as f64 / pcm.fs as f64).sin())
+        pcm.s[n] = ac
+            * (2.0 * PI * fc * n as f64 / pcm.fs as f64
+                + am * (2.0 * PI * fm * n as f64 / pcm.fs as f64).sin())
             .sin();
     }
 
@@ -731,8 +754,9 @@ fn ex10_2() {
     let fm = fc * ratio; /* モジュレータ周波数 */
     /* FM音源 */
     for n in 0..pcm.length {
-        pcm.s[n] = ac * (2.0 * PI * fc * n as f64 / pcm.fs as f64
-            + am * (2.0 * PI * fm * n as f64 / pcm.fs as f64).sin())
+        pcm.s[n] = ac
+            * (2.0 * PI * fc * n as f64 / pcm.fs as f64
+                + am * (2.0 * PI * fm * n as f64 / pcm.fs as f64).sin())
             .sin();
     }
     pcm.mult_constant_gain(0.1);
@@ -753,8 +777,9 @@ fn ex10_3() {
     let fm = fc * ratio; /* モジュレータ周波数 */
     /* FM音源 */
     for n in 0..pcm.length {
-        pcm.s[n] = ac * (2.0 * PI * fc * n as f64 / pcm.fs as f64
-            + am * (2.0 * PI * fm * n as f64 / pcm.fs as f64).sin())
+        pcm.s[n] = ac
+            * (2.0 * PI * fc * n as f64 / pcm.fs as f64
+                + am * (2.0 * PI * fm * n as f64 / pcm.fs as f64).sin())
             .sin();
     }
     pcm.mult_constant_gain(0.1);
@@ -798,7 +823,7 @@ fn ex10_4() {
         pcm.s[n] = ac[n]
             * (2.0 * PI * fc * n as f64 / pcm_fs as f64
                 + am[n] * (2.0 * PI * fm * n as f64 / pcm_fs as f64).sin())
-                .sin();
+            .sin();
     }
 
     pcm.mult_constant_gain(0.1);
@@ -845,7 +870,7 @@ fn ex10_5() {
         pcm0.s[n] = ac[n]
             * (2.0 * PI * fc * n as f64 / pcm0.fs as f64
                 + am[n] * (2.0 * PI * fm * n as f64 / pcm0.fs as f64).sin())
-                .sin();
+            .sin();
     }
     {
         /* キャリア振幅 */
@@ -875,7 +900,7 @@ fn ex10_5() {
         pcm1.s[n] = ac[n]
             * (2.0 * PI * fc * n as f64 / pcm1.fs as f64
                 + am[n] * (2.0 * PI * fm * n as f64 / pcm1.fs as f64).sin())
-                .sin();
+            .sin();
     }
 
     let gain = 0.1; /* ゲイン */
@@ -922,7 +947,8 @@ fn ex10_6() {
     let fm = fc * ratio; /* モジュレータ周波数 */
     /* AM変調 */
     for n in 0..pcm.length {
-        pcm.s[n] = ac[n] * (2.0 * PI * fc * n as f64 / pcm.fs as f64).sin()
+        pcm.s[n] = ac[n]
+            * (2.0 * PI * fc * n as f64 / pcm.fs as f64).sin()
             * (1.0 + am[n] * (2.0 * PI * fm * n as f64 / pcm.fs as f64).sin());
     }
 
@@ -975,7 +1001,8 @@ fn ex11_1() {
 
         for n in 0..p {
             pcm1.s[offset1 + n] = pcm0.s[offset0 + n] * (p - n) as f64 / p as f64; /* 単調減少の重みづけ */
-            pcm1.s[offset1 + n] += pcm0.s[offset0 + p + n] * n as f64 / p as f64; /* 単調増加の重みづけ */
+            pcm1.s[offset1 + n] += pcm0.s[offset0 + p + n] * n as f64 / p as f64;
+            /* 単調増加の重みづけ */
         }
 
         let q = (p as f64 / (rate - 1.0) + 0.5) as usize;
@@ -1087,7 +1114,16 @@ fn generate_pulse_sequence(pcm: &mut MonoPcm, vco: f64, N: usize) {
     while t < pcm.length as f64 {
         let ta = t as usize;
 
-        let tb = if t == ta as f64 { ta } else { ta + 1 };
+        // もともとのコードは
+        // ```
+        // let tb = if t == ta as f64 { ta } else { ta + 1 };
+        // ```
+        // これは f64 どうしで == を計算している、お行儀の悪いコードである。
+        // このコードの意図は、t を usize にしてから f64 に戻した際にもとと一致する（= つまり、小数部分が 0）であるなら t as usize を、
+        // さもなければ (t as usize) + 1 を使えということなので、
+        // つまり切り上げろという意味である。
+        // したがって、
+        let tb = t.ceil() as usize;
 
         for n in (tb as i32 - N as i32 / 2)..=(ta as i32 + N as i32 / 2) {
             if n >= 0 && n < pcm.length as i32 {
@@ -1147,7 +1183,8 @@ fn ex11_4() {
 
         for n in 0..p {
             pcm1.s[offset1 + n] = pcm0.s[offset0 + n] * (p - n) as f64 / p as f64; /* 単調減少の重み付け */
-            pcm1.s[offset1 + n] += pcm0.s[offset0 + p + n] * n as f64 / p as f64; /* 単調増加の重み付け */
+            pcm1.s[offset1 + n] += pcm0.s[offset0 + p + n] * n as f64 / p as f64;
+            /* 単調増加の重み付け */
         }
 
         let q = (p as f64 / (rate - 1.0) + 0.5) as usize;
@@ -1176,7 +1213,7 @@ fn ex11_4() {
 fn ex11_5() {
     let pcm0 = wave_read_16bit_mono_safer3("ex11_sine_500hz.wav");
     let rate = 0.5;
-    assert!(0.5 <= rate && rate < 1.0);
+    assert!((0.5..1.0).contains(&rate));
 
     let pcm1_fs = pcm0.fs; /* 標本化周波数 */
     let pcm1_length = (pcm0.length as f64 / rate) as usize + 1; /* 音データの長さ */
@@ -1194,8 +1231,9 @@ fn ex11_5() {
     let mut offset1 = 0;
 
     while offset0 + pmax * 2 < pcm0.length {
+        /* 本来の音データを書き込む */
         for n in 0..template_size {
-            x[n] = pcm0.s[offset0 + n]; /* 本来の音データ */
+            x[n] = pcm0.s[offset0 + n];
         }
 
         let mut rmax = 0.0;
@@ -1252,7 +1290,17 @@ fn Hanning_something(pcm1: &mut MonoPcm, pcm0: &MonoPcm, pitch: f64, N: usize) {
 
         let ta = t as usize;
 
-        let tb = if t == ta as f64 { ta } else { ta + 1 };
+        // もともとのコードは
+        // ```
+        // let tb = if t == ta as f64 { ta } else { ta + 1 };
+        // ```
+        // これは f64 どうしで == を計算している、お行儀の悪いコードである。
+        // このコードの意図は、t を usize にしてから f64 に戻した際にもとと一致する（= つまり、小数部分が 0）であるなら t as usize を、
+        // さもなければ (t as usize) + 1 を使えということなので、
+        // つまり切り上げろという意味である。
+        // したがって、
+        let tb = t.ceil() as usize;
+
         for m in (tb as i32 - N as i32 / 2)..=(ta as i32 + N as i32 / 2) {
             if m >= 0 && m < pcm0.length as i32 {
                 tmp += pcm0.s[m as usize] * something(t, m, N);
@@ -1267,7 +1315,7 @@ fn Hanning_something(pcm1: &mut MonoPcm, pcm0: &MonoPcm, pitch: f64, N: usize) {
 fn ex11_6() {
     let pcm0 = wave_read_16bit_mono_safer3("vocal.wav");
     let rate = 0.5;
-    assert!(0.5 <= rate && rate < 1.0);
+    assert!((0.5..1.0).contains(&rate));
 
     let pcm1_fs = pcm0.fs; /* 標本化周波数 */
     let pcm1_length = (pcm0.length as f64 / rate) as usize + 1; /* 音データの長さ */

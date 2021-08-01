@@ -1,3 +1,15 @@
+#![warn(clippy::pedantic, clippy::nursery)]
+#![allow(
+    clippy::cast_precision_loss,
+    clippy::cast_sign_loss,
+    clippy::cast_possible_truncation,
+    clippy::identity_op,
+    clippy::cast_possible_wrap,
+    clippy::cast_lossless,
+    clippy::erasing_op,
+    clippy::needless_range_loop
+)]
+
 extern crate num_complex;
 extern crate rand;
 extern crate wave_utils;

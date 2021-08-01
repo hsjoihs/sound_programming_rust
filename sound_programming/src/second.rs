@@ -1,14 +1,13 @@
 extern crate num_complex;
 extern crate rand;
 
-use wave_utils::filter::get_FIR_LPF;
 use num_complex::Complex;
 use rand::Rng;
-use wave_utils::MonoPcm;
 use wave_utils::create_Hanning_window;
 use wave_utils::determine_J;
 use wave_utils::fft::safe_FFT_;
 use wave_utils::fft::safe_IFFT_;
+use wave_utils::filter::get_FIR_LPF;
 use wave_utils::filter::safe_IIR_LPF;
 use wave_utils::filter::safe_IIR_filtering;
 use wave_utils::filter::safe_IIR_resonator;
@@ -16,6 +15,7 @@ use wave_utils::linear;
 use wave_utils::mult;
 use wave_utils::wave::wave_read_16bit_mono_safer3;
 use wave_utils::wave::wave_write_16bit_mono_safer3;
+use wave_utils::MonoPcm;
 
 pub fn second() {
     ex7_1();
@@ -47,7 +47,7 @@ fn ex7_1() {
     for n in 0..pcm0.length as usize {
         fc[n] = 10000.0 * (-5.0 * n as f64 / pcm0.length as f64).exp();
     }
-    let Q = 1.0 / 2.0f64.sqrt(); /* クオリティファクタ */
+    let Q = 1.0 / 2.0_f64.sqrt(); /* クオリティファクタ */
     let I = 2; /* 遅延器の数 */
     let J = 2; /* 遅延器の数 */
 
@@ -61,7 +61,7 @@ fn ex7_1() {
     wave_write_16bit_mono_safer3("ex7_1.wav", &pcm1);
 }
 
-#[allow(non_snake_case)]
+#[allow(non_snake_case, clippy::too_many_arguments)]
 fn filter_with_IIR_LPF(
     pcm0: &MonoPcm,
     pcm1: &mut MonoPcm,
@@ -98,7 +98,7 @@ fn ex7_2() {
     for n in 0..pcm0.length as usize {
         fc[n] = 10000.0 * (-5.0 * n as f64 / pcm0.length as f64).exp();
     }
-    let Q = 1.0 / 2.0f64.sqrt(); /* クオリティファクタ */
+    let Q = 1.0 / 2.0_f64.sqrt(); /* クオリティファクタ */
     let I = 2; /* 遅延器の数 */
     let J = 2; /* 遅延器の数 */
 
@@ -118,13 +118,17 @@ fn ex7_3() {
 
     let mut s = vec![0.0; pcm1.length as usize];
     let F = [
-        800.0 /* F1の周波数 */, 1200.0 /* F2の周波数 */,
-        2500.0 /* F3の周波数 */, 3500.0,
+        800.0,  /* F1の周波数 */
+        1200.0, /* F2の周波数 */
+        2500.0, /* F3の周波数 */
+        3500.0,
     ]; /* F4の周波数 */
 
     let B = [
-        100.0 /* F1の帯域幅 */, 100.0 /* F2の帯域幅 */,
-        100.0 /* F3の帯域幅 */, 100.0,
+        100.0, /* F1の帯域幅 */
+        100.0, /* F2の帯域幅 */
+        100.0, /* F3の帯域幅 */
+        100.0,
     ]; /* F4の帯域幅 */
 
     let I = 2; /* 遅延器の数 */
@@ -143,11 +147,9 @@ fn ex7_3() {
     /* ディエンファシス処理 */
     s[0] = pcm1.s[0];
     for n in 1..pcm1.length as usize {
-        s[n] = pcm1.s[n] + 0.98 * s[n - 1];
+        s[n] = s[n - 1].mul_add(0.98, pcm1.s[n]);
     }
-    for n in 0..pcm1.length as usize {
-        pcm1.s[n] = s[n];
-    }
+    pcm1.s[..(pcm1.length as usize)].clone_from_slice(&s[..(pcm1.length as usize)]);
     wave_write_16bit_mono_safer3("ex7_3.wav", &pcm1);
 }
 
@@ -163,9 +165,7 @@ fn ex7_4() {
     for n in 1..pcm1.length {
         s[n] = pcm1.s[n] - 0.98 * pcm1.s[n - 1];
     }
-    for n in 0..pcm1.length {
-        pcm1.s[n] = s[n];
-    }
+    pcm1.s[..pcm1.length].clone_from_slice(&s[..pcm1.length]);
 
     let N = 1024; /* DFTのサイズ */
 
@@ -188,7 +188,7 @@ fn ex7_4() {
             .collect();
         safe_FFT_(&mut b_);
 
-        for item in b_.iter_mut() {
+        for item in &mut b_ {
             *item = Complex::new(item.norm_sqr().sqrt(), 0.0);
         }
 
@@ -587,8 +587,8 @@ fn ex8_10() {
     let fe = 0.45 / ratio as f64; /* エッジ周波数 */
     let delta = 0.1 / ratio as f64; /* 遷移帯域幅 */
     let J = determine_J(delta); /* 遅延器の数 */
-    let mut w = create_Hanning_window(J + 1); /* ハニング窓 */
-    let b = get_FIR_LPF(fe, J, &mut w); /* FIRフィルタの設計 */
+    let w = create_Hanning_window(J + 1); /* ハニング窓 */
+    let b = get_FIR_LPF(fe, J, &w); /* FIRフィルタの設計 */
 
     /* フィルタリング */
     for n in 0..pcm1_length {

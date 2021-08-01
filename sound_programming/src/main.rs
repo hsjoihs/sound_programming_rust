@@ -20,8 +20,6 @@ use wave_utils::wave::wave_write_IMA_ADPCM_mono_safer3;
 use wave_utils::wave::wave_write_PCMA_mono_safer3;
 use wave_utils::wave::wave_write_PCMU_mono_safer3;
 
-
-
 fn main() {
     if false {
         first();
@@ -43,27 +41,27 @@ fn main() {
 fn eightbit() {
     {
         let pcm0 = wave_read_16bit_mono_safer3("ex1_1_a.wav"); /* 音データの入力 */
-        let mut pcm1 = pcm0.clone(); /* 音データのコピー */
+        let mut pcm1 = pcm0; /* 音データのムーブ */
         pcm1.bits = 8;
 
         wave_write_8bit_mono_safer3("ex1_1_8bit.wav", &pcm1); /* 音データの出力 */
     }
     {
         let pcm1 = wave_read_8bit_mono_safer3("ex1_1_8bit.wav");
-        let mut pcm2 = pcm1.clone();
+        let mut pcm2 = pcm1;
         pcm2.bits = 16;
         wave_write_16bit_mono_safer3("ex1_1_c.wav", &pcm2); /* 音データの出力 */
     }
     {
         let pcm0 = wave_read_16bit_stereo_safer3("ex1_2_a.wav");
-        let mut pcm1 = pcm0.clone(); /* 音データのコピー */
+        let mut pcm1 = pcm0; /* 音データのムーブ */
         pcm1.bits = 8;
 
         wave_write_8bit_stereo_safer3("ex1_2_8bit.wav", &pcm1);
     }
     {
         let pcm1 = wave_read_8bit_stereo_safer3("ex1_2_8bit.wav");
-        let mut pcm2 = pcm1.clone();
+        let mut pcm2 = pcm1;
         pcm2.bits = 16;
         wave_write_16bit_stereo_safer3("ex1_2_c.wav", &pcm2); /* 音データの出力 */
     }

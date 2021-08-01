@@ -1,14 +1,13 @@
 extern crate rand;
-use wave_utils::filter::get_FIR_LPF;
 use num_complex::Complex;
 use rand::Rng;
 use sine_wave;
 use std::f64::consts::PI;
-use wave_utils::MonoPcm;
 use wave_utils::create_Hanning_window;
 use wave_utils::determine_J;
 use wave_utils::fft::safe_FFT_;
 use wave_utils::fft::safe_IFFT_;
+use wave_utils::filter::get_FIR_LPF;
 use wave_utils::filter::safe_FIR_filtering;
 use wave_utils::filter::safe_IIR_LPF;
 use wave_utils::filter::safe_IIR_filtering;
@@ -18,9 +17,10 @@ use wave_utils::wave::wave_read_16bit_mono_safer3;
 use wave_utils::wave::wave_read_16bit_stereo_safer3;
 use wave_utils::wave::wave_write_16bit_mono_safer3;
 use wave_utils::wave::wave_write_16bit_stereo_safer3;
+use wave_utils::MonoPcm;
 
 #[allow(non_snake_case)]
-fn verify_(X: Vec<Complex<f64>>) {
+fn verify_(X: &[Complex<f64>]) {
     /* 周波数特性 */
     for (k, item) in X.iter().enumerate() {
         assert_close(item.re, 0.0);
@@ -48,7 +48,7 @@ fn exponential_decay(
 }
 
 #[allow(non_snake_case)]
-fn dft(N: usize, func: Box<Fn(usize) -> f64>) -> Vec<Complex<f64>> {
+fn dft(N: usize, func: &dyn Fn(usize) -> f64) -> Vec<Complex<f64>> {
     let mut x: Vec<Complex<f64>> = vec![Complex::new(0.0, 0.0); N];
     let mut X: Vec<Complex<f64>> = vec![Complex::new(0.0, 0.0); N];
 
@@ -109,7 +109,7 @@ pub fn first() {
 
 fn ex1_1() {
     let pcm0 = wave_read_16bit_mono_safer3("ex1_1_a.wav"); /* 音データの入力 */
-    let pcm1 = pcm0.clone(); /* 音データのコピー */
+    let pcm1 = pcm0; /* 音データのムーブ */
 
     wave_write_16bit_mono_safer3("ex1_1_b.wav", &pcm1); /* 音データの出力 */
 }
@@ -117,7 +117,7 @@ fn ex1_1() {
 #[allow(non_snake_case)]
 fn ex1_2() {
     let pcm0 = wave_read_16bit_stereo_safer3("ex1_2_a.wav");
-    let pcm1 = pcm0.clone(); /* 音データのコピー */
+    let pcm1 = pcm0; /* 音データのムーブ */
 
     wave_write_16bit_stereo_safer3("ex1_2_b.wav", &pcm1);
 }
@@ -256,7 +256,8 @@ fn ex3_3() {
     for j in 0..22 {
         let i = (2 * j + 1) as f64;
         for (n, item) in pcm.s.iter_mut().enumerate() {
-            *item += 1.0 / i / i * (PI * i / 2.0).sin()
+            *item += 1.0 / i / i
+                * (PI * i / 2.0).sin()
                 * (2.0 * PI * i * f0 * (n as f64) / (pcm_fs as f64)).sin();
         }
     }
@@ -315,8 +316,8 @@ fn ex3_5() {
 #[allow(non_snake_case)]
 fn ex4_1() {
     let N = 64;
-    let X = dft(N, Box::new(|_| 1.0));
-    verify_(X)
+    let X = dft(N, &(Box::new(|_| 1.0) as Box<_>));
+    verify_(&X);
 }
 
 #[allow(non_snake_case)]
@@ -324,19 +325,17 @@ fn ex4_2() {
     let N = 64;
     let w = create_Hanning_window(N); /* ハニング窓 */
 
-    let X = dft(N, Box::new(move |n| w[n]));
+    let X = dft(N, &(Box::new(move |n| w[n]) as Box<_>));
 
     for (k, item) in X.iter().enumerate() {
         assert_close(item.re, 0.0);
         assert_close(
             item.im,
             match k {
-                3 => 4.0,
+                3 | 5 => 4.0,
                 4 => -8.0,
-                5 => 4.0,
-                59 => -4.0,
+                59 | 61 => -4.0,
                 60 => 8.0,
-                61 => -4.0,
                 _ => 0.0,
             },
         );
@@ -422,8 +421,10 @@ fn ex5_2() {
     let f0 = linear(2500.0, 1500.0, pcm_length);
     let g0: Vec<f64> = (0..pcm_length)
         .map(|n| {
-            f0[0] * n as f64
-                + (f0[pcm_length - 1] - f0[0]) * n as f64 * n as f64 / (pcm_length - 1) as f64 / 2.0
+            f0[0].mul_add(
+                n as f64,
+                (f0[pcm_length - 1] - f0[0]) * n as f64 * n as f64 / (pcm_length - 1) as f64 / 2.0,
+            )
         })
         .collect();
 
@@ -447,8 +448,10 @@ fn ex5_3() {
     let mut g0 = vec![0.0; pcm_length];
 
     for n in 0..pcm_length {
-        g0[n] = f0[0] * n as f64
-            + (f0[pcm_length - 1] - f0[0]) * n as f64 * n as f64 / (pcm_length - 1) as f64 / 2.0;
+        g0[n] = f0[0].mul_add(
+            n as f64,
+            (f0[pcm_length - 1] - f0[0]) * n as f64 * n as f64 / (pcm_length - 1) as f64 / 2.0,
+        );
     }
 
     wave_write_16bit_mono_safer3(
@@ -559,7 +562,7 @@ fn ex6_2() {
     let mut pcm1 = MonoPcm::blank_copy(&pcm0);
 
     let fc = 1000.0 / pcm0.fs as f64; /* 遮断周波数 */
-    let Q = 1.0 / 2.0f64.sqrt(); /* クオリティファクタ */
+    let Q = 1.0 / 2.0_f64.sqrt(); /* クオリティファクタ */
     let I = 2; /* 遅延器の数 */
     let J = 2; /* 遅延器の数 */
 
